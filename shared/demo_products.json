@@ -1,0 +1,149 @@
+{
+  "categorias": [
+    { "id": "lacteos", "nombre": "Lácteos" },
+    { "id": "bebidas", "nombre": "Bebidas" },
+    { "id": "limpieza", "nombre": "Limpieza" },
+    { "id": "granos-basicos", "nombre": "Granos básicos" },
+    { "id": "higiene-personal", "nombre": "Higiene personal" }
+  ],
+
+  "supermercados": [
+    { "id": "selectos", "nombre": "Super Selectos", "sitio_web": "https://superselectos.com" },
+    { "id": "walmart", "nombre": "Walmart", "sitio_web": "https://walmart.com.sv" },
+    { "id": "pricesmart", "nombre": "PriceSmart", "sitio_web": "https://pricesmart.com/sv" }
+  ],
+
+  "sucursales": [
+    { "id": "selectos-centro", "supermercado": "selectos", "nombre": "Selectos San Salvador Centro", "direccion": "Av. España, San Salvador", "latitud": 13.6989, "longitud": -89.1914 },
+    { "id": "selectos-santa-elena", "supermercado": "selectos", "nombre": "Selectos Santa Elena", "direccion": "Antiguo Cuscatlán", "latitud": 13.6714, "longitud": -89.2436 },
+    { "id": "walmart-metrocentro", "supermercado": "walmart", "nombre": "Walmart Metrocentro", "direccion": "San Salvador", "latitud": 13.6996, "longitud": -89.2182 },
+    { "id": "pricesmart-santa-elena", "supermercado": "pricesmart", "nombre": "PriceSmart Santa Elena", "direccion": "Antiguo Cuscatlán", "latitud": 13.6739, "longitud": -89.2459 }
+  ],
+
+  "productos": [
+    {
+      "sku": "FOREMOST-LECHE-1L",
+      "categoria": "lacteos",
+      "marca": "Foremost",
+      "nombre": "Leche entera",
+      "presentacion": "cartón",
+      "unidad_medida": "l",
+      "contenido": 1,
+      "aliases": ["Leche Foremost 1L", "Leche Entera Foremost", "Foremost Entera"],
+      "precios": [
+        {
+          "sucursal": "selectos-centro",
+          "precio_normal": 2.10,
+          "precio_final": 2.10,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": null
+        },
+        {
+          "sucursal": "walmart-metrocentro",
+          "precio_normal": 2.25,
+          "precio_final": 1.95,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": { "tipo": "descuento_directo", "descripcion": "Precio rebajado" }
+        }
+      ]
+    },
+    {
+      "sku": "GENERICO-FRIJOL-ROJO-1LB",
+      "categoria": "granos-basicos",
+      "marca": "Genérico",
+      "nombre": "Frijol rojo",
+      "presentacion": "bolsa",
+      "unidad_medida": "lb",
+      "contenido": 1,
+      "aliases": ["Frijol rojo 1lb", "Frijoles rojos"],
+      "precios": [
+        {
+          "sucursal": "selectos-santa-elena",
+          "precio_normal": 1.15,
+          "precio_final": 1.15,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": null
+        },
+        {
+          "sucursal": "pricesmart-santa-elena",
+          "precio_normal": 1.05,
+          "precio_final": 1.05,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": null
+        }
+      ]
+    },
+    {
+      "sku": "COCACOLA-GASEOSA-2.5L",
+      "categoria": "bebidas",
+      "marca": "Coca-Cola",
+      "nombre": "Gaseosa",
+      "presentacion": "botella",
+      "unidad_medida": "l",
+      "contenido": 2.5,
+      "aliases": ["Coca Cola 2.5L", "Gaseosa Coca-Cola 2.5 litros"],
+      "precios": [
+        {
+          "sucursal": "walmart-metrocentro",
+          "precio_normal": 1.80,
+          "precio_final": 1.80,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": { "tipo": "2x1", "descripcion": "Compra 2 y paga 1" }
+        }
+      ]
+    },
+    {
+      "sku": "ARIEL-DETERGENTE-1KG",
+      "categoria": "limpieza",
+      "marca": "Ariel",
+      "nombre": "Detergente en polvo",
+      "presentacion": "bolsa",
+      "unidad_medida": "kg",
+      "contenido": 1,
+      "aliases": ["Ariel detergente 1kg", "Detergente Ariel polvo"],
+      "precios": [
+        {
+          "sucursal": "selectos-centro",
+          "precio_normal": 4.50,
+          "precio_final": 4.50,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": null
+        },
+        {
+          "sucursal": "pricesmart-santa-elena",
+          "precio_normal": 4.10,
+          "precio_final": 4.10,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": null
+        }
+      ]
+    },
+    {
+      "sku": "COLGATE-PASTA-100ML",
+      "categoria": "higiene-personal",
+      "marca": "Colgate",
+      "nombre": "Pasta dental",
+      "presentacion": "tubo",
+      "unidad_medida": "ml",
+      "contenido": 100,
+      "aliases": ["Colgate pasta dental 100ml", "Pasta dental Colgate"],
+      "precios": [
+        {
+          "sucursal": "walmart-metrocentro",
+          "precio_normal": 1.95,
+          "precio_final": 1.95,
+          "origen_dato": "manual",
+          "fecha_actualizacion": "2026-07-22T10:30:00",
+          "promocion": null
+        }
+      ]
+    }
+  ]
+}
