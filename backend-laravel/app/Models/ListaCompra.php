@@ -23,6 +23,6 @@ class ListaCompra extends Model
 
     public function detalles()
     {
-        return $this->hasMany(ListaCompraDetalle::class, 'lista_id');
+        return $this->hasMany(ListaCompraDetalles::class, 'lista_id');
     }
 }
