@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ListaCompra;
 use App\Models\ListaCompraDetalles;
+use App\Models\PrecioActual;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -50,7 +51,7 @@ class ListaCompraController extends Controller
         $lista = ListaCompra::create([
             'usuario_id' => $request->user()->id,
             'nombre' => $data['nombre'],
-            'prepuesto' => $data['presupuesto'] ?? null,
+            'presupuesto' => $data['presupuesto'] ?? null,
             'fecha' => now(),
         ]);
 
@@ -58,7 +59,7 @@ class ListaCompraController extends Controller
             $lista->detalles()->create([
                 'producto_id' => $item['producto_id'],
                 'cantidad' => $item['cantidad'] ?? 1,
-                'escencial' => $item['escencial'] ?? true,
+                'esencial' => $item['esencial'] ?? true,
             ]);
         }
 
@@ -72,7 +73,7 @@ class ListaCompraController extends Controller
     {
         $this->verificarPropietario($listaCompra);
 
-        return $listaCompra->load('detalles.productos.categoria');
+        return $listaCompra->load('detalles.producto.categoria');
     }
 
     /*
