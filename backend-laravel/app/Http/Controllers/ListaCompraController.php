@@ -3,26 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\ListaCompra;
-use App\Models\ListaCompraDetalles;
-use App\Models\PrecioActual;
+use App\Models\ListaCompraDetalle;
+use App\Services\Optimization\ComparisonService;
+use App\Services\Optimization\OptimizationService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ListaCompraController extends Controller
 {
-    //Checking de propiedad: Solo el dueño de la lista puede verla o modificarla
-    //Aqui aplicamos el requisito llamado "Permisos por Recurso"
+    public function __construct(
+        private ComparisonService $comparisonService,
+        private OptimizationService $optimizationService,
+    ) {}
 
-    private function verificarPropietario(ListaCompra $listaCompra): void
+    // Chequeo de propiedad: solo el dueño de la lista puede verla o modificarla.
+    private function verificarPropietario(ListaCompra $lista): void
     {
-        if ($listaCompra->usuario_id != auth()->id()) {
-            abort(403, 'No tienes permiso para acceder a este lista.');
+        if ($lista->usuario_id !== auth()->id()) {
+            abort(403, 'No tienes permiso para acceder a esta lista.');
         }
     }
 
-    /*
-     * GET: /api/listas - solo las listas del usuario autenticado, las listas ajenas no
-     */
+    // GET /api/listas
     public function index(Request $request)
     {
         return ListaCompra::where('usuario_id', $request->user()->id)
@@ -31,16 +32,11 @@ class ListaCompraController extends Controller
             ->paginate(20);
     }
 
-    /*
-     * POST: /api/listas
-     * con un json body: { "nombre": "...", "presupuesto": 100, "productos": [{"producto_id":1,"cantidad":2,"esencial":true}, ...] }
-     * El array que se creara puede ser opcional, se podra crear una lista vacia para luego ponerle los productos
-     */
+    // POST /api/listas
     public function store(Request $request)
     {
-        //Aqui generamos el payload
         $data = $request->validate([
-            'nombre' => ['required', 'max:150'],
+            'nombre' => ['required', 'string', 'max:150'],
             'presupuesto' => ['nullable', 'numeric', 'min:0'],
             'productos' => ['nullable', 'array'],
             'productos.*.producto_id' => ['required_with:productos', 'integer', 'exists:productos,id'],
@@ -66,33 +62,25 @@ class ListaCompraController extends Controller
         return $lista->load('detalles.producto');
     }
 
-    /*
-     * GET: /api/listas/{lista}
-     */
-    public function show(ListaCompra $listaCompra)
+    // GET /api/listas/{lista}
+    public function show(ListaCompra $lista)
     {
-        $this->verificarPropietario($listaCompra);
+        $this->verificarPropietario($lista);
 
-        return $listaCompra->load('detalles.producto.categoria');
+        return $lista->load('detalles.producto.categoria');
     }
 
-    /*
-     * DELETE: /api/listas/{lista}
-     * Para borrar una lista
-     */
-    public function destroy(ListaCompra $listaCompra)
+    // DELETE /api/listas/{lista}
+    public function destroy(ListaCompra $lista)
     {
-        $this->verificarPropietario($listaCompra);
+        $this->verificarPropietario($lista);
 
-        $listaCompra->delete();
+        $lista->delete();
 
         return response()->json(['message' => 'Lista eliminada.']);
     }
 
-    /*
-     * POST: /api/listas/{lista}/productos
-     * Con un body JSON: { "producto_id": 1, "cantidad": 2, "esencial": true }
-     */
+    // POST /api/listas/{lista}/productos
     public function agregarProducto(Request $request, ListaCompra $lista)
     {
         $this->verificarPropietario($lista);
@@ -112,10 +100,7 @@ class ListaCompraController extends Controller
         return $detalle->load('producto');
     }
 
-    /*
-     * PATCH: /api/listas/{lista}/productos/{detalle}
-     * Actualizara un producto
-     */
+    // PATCH /api/listas/{lista}/productos/{detalle}
     public function actualizarProducto(Request $request, ListaCompra $lista, ListaCompraDetalle $detalle)
     {
         $this->verificarPropietario($lista);
@@ -134,10 +119,7 @@ class ListaCompraController extends Controller
         return $detalle->load('producto');
     }
 
-    /*
-     * DELETE: /api/listas/{lista}/productos/{detalle}
-     *
-     */
+    // DELETE /api/listas/{lista}/productos/{detalle}
     public function quitarProducto(ListaCompra $lista, ListaCompraDetalle $detalle)
     {
         $this->verificarPropietario($lista);
@@ -151,78 +133,41 @@ class ListaCompraController extends Controller
         return response()->json(['message' => 'Producto quitado de la lista.']);
     }
 
-    /*
-     * GET: /api/listas/{lista}/comparar
-     *  El Comparador: calcula el costo total de la lista en cada sucursal donde haya
-     *  precios disponibles, y cuántos productos esenciales/opcionales encontró ahí.
-     *  Usa los mismos nombres de campo que el contrato JSON del Sistema Experto
-     *  (04-sistema-experto.md) para no tener que traducir nada cuando llegue esa fase.
-     */
+    // GET /api/listas/{lista}/comparar
+    // Ahora solo coordina la petición — todo el cálculo vive en ComparisonService
+    // (Fase 4, cierre de la deuda técnica de Fase 3 — 02-arquitectura.md sección 3).
     public function comparar(ListaCompra $lista)
     {
         $this->verificarPropietario($lista);
 
-        $detalles = $lista->detalles()->with('producto')->get();
+        $comparacion = $this->comparisonService->comparar($lista);
 
-        if ($detalles->isEmpty()) {
-            return response()->json(['message' => 'La lista no tiene productos todavía.'], 422);
+        if (empty($comparacion['resultados'])) {
+            return response()->json(['message' => 'La lista no tiene productos todavía, o ninguno tiene precio disponible.'], 422);
         }
 
-        $productoIds = $detalles->pluck('producto_id');
-        $totalEsenciales = $detalles->where('esencial', true)->count();
-        $totalOpcionales = $detalles->where('esencial', false)->count();
+        return response()->json($comparacion);
+    }
 
-        $preciosPorSucursal = PrecioActual::with('sucursal.supermercado')
-            ->whereIn('producto_id', $productoIds)
-            ->get()
-            ->groupBy('sucursal_id');
+    // GET /api/listas/{lista}/optimizar?lat=13.70&lng=-89.20
+    // Fase 4: calcula distancia + Score para cada sucursal, ordena por mejor
+    // alternativa (menor Score), y persiste el resultado en ResultadoOptimizacion.
+    public function optimizar(Request $request, ListaCompra $lista)
+    {
+        $this->verificarPropietario($lista);
 
-        $resultados = [];
-
-        foreach ($preciosPorSucursal as $sucursalId => $preciosSucursal) {
-            $costoTotal = 0;
-            $esencialesDisponibles = 0;
-            $opcionalesDisponibles = 0;
-
-            foreach ($detalles as $detalle) {
-                $precio = $preciosSucursal->firstWhere('producto_id', $detalle->producto_id);
-
-                if ($precio) {
-                    $costoTotal += $precio->precio_final * $detalle->cantidad;
-
-                    if ($detalle->esencial) {
-                        $esencialesDisponibles++;
-                    } else {
-                        $opcionalesDisponibles++;
-                    }
-                }
-            }
-
-            $sucursal = $preciosSucursal->first()->sucursal;
-
-            $resultados[] = [
-                'sucursal_id' => $sucursalId,
-                'sucursal' => $sucursal->nombre,
-                'supermercado' => $sucursal->supermercado->nombre,
-                'costo_total' => round($costoTotal, 2),
-                'productos_esenciales_disponibles' => $esencialesDisponibles,
-                'productos_esenciales_totales' => $totalEsenciales,
-                'productos_opcionales_disponibles' => $opcionalesDisponibles,
-                'productos_opcionales_totales' => $totalOpcionales,
-                'todos_los_esenciales_disponibles' => $esencialesDisponibles === $totalEsenciales,
-                'dentro_del_presupuesto' => $lista->presupuesto === null
-                    ? null
-                    : $costoTotal <= $lista->presupuesto,
-            ];
-        }
-
-        // Orden por costo total ascendente — el más barato primero.
-        usort($resultados, fn($a, $b) => $a['costo_total'] <=> $b['costo_total']);
-
-        return response()->json([
-            'lista' => $lista->nombre,
-            'presupuesto' => $lista->presupuesto,
-            'resultados' => array_values($resultados),
+        $data = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
         ]);
+
+        $comparacionPrevia = $this->comparisonService->comparar($lista);
+        if (empty($comparacionPrevia['resultados'])) {
+            return response()->json(['message' => 'La lista no tiene productos todavía, o ninguno tiene precio disponible.'], 422);
+        }
+
+        $resultado = $this->optimizationService->optimizar($lista, (float) $data['lat'], (float) $data['lng']);
+
+        return response()->json($resultado);
     }
 }
