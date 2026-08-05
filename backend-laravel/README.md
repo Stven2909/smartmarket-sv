@@ -1,58 +1,188 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SmartMarket SV — Backend (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API de Laravel que alimenta a SmartMarket SV: catálogo maestro de productos, comparador de
+precios entre supermercados, listas de compra y el Motor de Optimización que calcula la mejor
+alternativa de compra según costo, combustible, tiempo y promociones.
 
-## About Laravel
+Proyecto de emprendimiento social para las materias de **Emprendedurismo** y **Sistemas Expertos**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Componente | Tecnología |
+|---|---|
+| Framework | Laravel 13 (PHP 8.3) |
+| Base de datos | PostgreSQL (requiere la extensión `unaccent`) |
+| Autenticación | Laravel Sanctum (token Bearer) |
+| Panel admin | Filament 5.7 |
+| Optimización | Servicios propios (`app/Services/Optimization`) |
 
-## Learning Laravel
+> **Importante:** el Buscador Universal usa `unaccent()` en SQL crudo, por lo que PostgreSQL es
+> obligatorio. No se puede correr con SQLite aun cuando `.env.example` tenga ese valor por defecto.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Requisitos previos
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- PHP >= 8.3
+- Composer
+- PostgreSQL con la extensión `unaccent` habilitada
+- `shared/demo_products.json` en la raíz del repo (lo lee `DemoDataSeeder` vía `base_path('../shared/…')`)
 
-## Agentic Development
+---
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalación
 
 ```bash
-composer require laravel/boost --dev
+composer install
+cp .env.example .env
 
-php artisan boost:install
+# En .env apuntar a PostgreSQL:
+#   DB_CONNECTION=pgsql
+#   DB_HOST=127.0.0.1
+#   DB_PORT=5432
+#   DB_DATABASE=smartmarket
+#   DB_USERNAME=...
+#   DB_PASSWORD=...
+
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve          # http://127.0.0.1:8000
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+También existen scripts de Composer:
 
-## Contributing
+```bash
+composer setup             # instala dependencias, crea .env, key, migra y compila assets
+composer dev               # corre servidor + queue + logs + Vite en paralelo (concurrently)
+composer test              # ejecuta la suite de tests
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## Estructura
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```
+backend-laravel/
+├── app/
+│   ├── Http/Controllers/     # Auth, Producto, Categoria, Sucursal, Promocion, ListaCompra
+│   ├── Models/               # Producto, Categoria, AliasProducto, Supermercado, Sucursal,
+│   │                         #   PrecioActual, HistorialPrecio, ListaCompra, ListaCompraDetalles,
+│   │                         #   ResultadoOptimizacion, User
+│   ├── Services/
+│   │   ├── NormalizadorTexto.php          # limpieza sin tildes / minúsculas (Buscador)
+│   │   └── Optimization/
+│   │       ├── ComparisonService.php      # costo total de una lista por sucursal
+│   │       ├── DistanceService.php        # Haversine + costo de combustible
+│   │       └── OptimizationService.php    # Score, ordenamiento y persistencia
+├── config/
+│   ├── optimization.php                   # pesos α/β/γ/δ y supuestos del MVP (configurables por env)
+├── database/
+│   ├── migrations/                        # ERD v1.0 (ver docs/02-arquitectura.md)
+│   └── seeders/                           # DatabaseSeeder, DemoDataSeeder, UserSeeder
+├── routes/
+│   └── api.php                            # todas las rutas JSON
+└── tests/
+```
 
-## Security Vulnerabilities
+Arquitectura por capas **Controller → Service → Model** (ADR-005): los controladores solo coordinan
+la petición; el cálculo vive en servicios probables de forma aislada.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## API
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Base: `http://127.0.0.1:8000/api`
+
+### Públicas
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/register` | Crear usuario |
+| POST | `/login` | Iniciar sesión → devuelve token Sanctum |
+| GET | `/productos` | Catálogo maestro (paginado, filtro `categoria_id`) |
+| GET | `/productos/{producto}` | Detalle con precios actuales por sucursal |
+| GET | `/productos/buscar?q=…` | Buscador Universal (nombre/marca/alias + relevancia) |
+| GET | `/categorias` | Categorías del catálogo |
+| GET | `/sucursales` | Sucursales de los supermercados |
+| GET | `/promociones` | Precios con promoción activa (filtro `categoria_id`) |
+
+### Protegidas (header `Authorization: Bearer {token}`)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/logout` | Revocar token |
+| GET | `/me` | Usuario autenticado |
+| GET | `/listas` | Listas del usuario |
+| POST | `/listas` | Crear lista (con `productos[]` opcionales) |
+| GET | `/listas/{lista}` | Detalle de la lista |
+| DELETE | `/listas/{lista}` | Eliminar lista |
+| GET | `/listas/{lista}/comparar` | Comparación de precios por sucursal |
+| GET | `/listas/{lista}/optimizar?lat=…&lng=…` | Mejor alternativa con Score |
+| POST | `/listas/{lista}/productos` | Agregar producto |
+| PATCH | `/listas/{lista}/productos/{detalle}` | Actualizar cantidad/esencial |
+| DELETE | `/listas/{lista}/productos/{detalle}` | Quitar producto |
+
+---
+
+## Buscador Universal
+
+`GET /productos/buscar?q=…` compara el término contra **nombre**, **marca** y **alias** usando el
+mismo criterio de normalización del Motor de Normalización del MVP:
+
+1. **Multi-palabras:** cada palabra del término debe aparecer en nombre/marca (o todas dentro de un
+   mismo alias), sin importar el orden.
+2. **Relevancia:** coincidencia exacta → empieza con → contiene, vía `CASE` en `ORDER BY`.
+
+Usa `unaccent(lower(...))`, de ahí el requisito de PostgreSQL.
+
+---
+
+## Motor de Optimización
+
+Formula del Score (congelada en `02-arquitectura.md` sección 5.1, ADR-008):
+
+```
+Score = α · CostoCompra + β · CostoCombustible + γ · CostoTiempo − δ · BeneficioPromociones
+```
+
+- **Menor Score = mejor alternativa** (es costo ajustado, no una calificación).
+- Los pesos `α/β/γ/δ` no están hardcodeados: se configuran con `OPTIMIZATION_ALPHA/BETA/GAMMA/DELTA`
+  y otros supuestos del MVP (`FUEL_PRICE`, `VEHICLE_KM_PER_LITRE`, `VELOCIDAD_PROMEDIO_KMH`,
+  `COSTO_POR_MINUTO`) en `config/optimization.php`.
+- Distancia por **Haversine** (`DistanceService`), tiempo estimado con velocidad urbana promedio
+  constante (supuesto del MVP, sin tráfico real).
+- El flujo completo lo orquesta `OptimizationService::optimizar()` y persiste el resultado en
+  `ResultadoOptimizacion` (`resultado_json` guarda el detalle).
+
+---
+
+## Datos demo
+
+`php artisan db:seed` carga desde `shared/demo_products.json`:
+
+- Categorías, supermercados y sucursales (con coordenadas).
+- Productos, aliases y precios actuales (con promociones).
+
+El seeder es **idempotente** (`firstOrCreate` / `updateOrCreate`). El SKU lógico del JSON (ej.
+`FOREMOST-LECHE-1L`) se usa solo como clave interna del seeder; todavía no es columna en `productos`
+(ver nota al final de `DemoDataSeeder.php`).
+
+---
+
+## Calidad
+
+```bash
+composer test          # suite PHPUnit (usa SQLite en memoria)
+./vendor/bin/pint      # formateo de código
+```
+
+---
+
+## Documentación
+
+- `docs/00-contexto-proyecto.md` — resumen ejecutivo para retomar desarrollo
+- `docs/02-arquitectura.md` — arquitectura congelada (ERD v1.0, ADRs 001-009, Motor de Normalización)
+- `docs/03-plan-implementacion.md` — roadmap, fases y Definition of Done
+- `docs/04-sistema-experto.md` — Sistema Experto (Python) que consumirá esta API

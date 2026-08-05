@@ -30,8 +30,8 @@ Toda la documentación técnica y de negocio vive en `docs/`. Orden recomendado 
 | Parte | Tecnología |
 |---|---|
 | Frontend | React + Tailwind CSS (PWA) |
-| Backend | Laravel 12 (PHP) |
-| Panel admin | Filament |
+| Backend | Laravel 13 (PHP 8.3) |
+| Panel admin | Filament 5.7 |
 | Base de datos | PostgreSQL |
 | Mapas | Leaflet + OpenStreetMap |
 | Autenticación | Laravel Sanctum |
@@ -48,20 +48,57 @@ smartmarket/
 │   ├── 01-vision-negocio.md
 │   ├── 02-arquitectura.md
 │   ├── 03-plan-implementacion.md
-│   ├── 04-sistema-experto.md
-│   └── api/                        (contrato JSON / OpenAPI)
+│   └── 04-sistema-experto.md
 │
 ├── backend-laravel/
+│   └── README.md              → API Laravel: instalación, endpoints, Motor de Optimización
 ├── frontend-react/
-├── expert-system/                  (servicio en Python)
 │
 ├── shared/
-│   ├── openapi.yaml
-│   ├── demo_products.json
-│   └── seeders/
+│   └── demo_products.json     → datos de demo que consume DemoDataSeeder
 │
 └── README.md
 ```
+
+---
+
+## Ramas (branches)
+
+El repo está separado por tecnología para que cada rama solo contenga su árbol:
+
+```
+main                    → estado estable
+backend-laravel         → solo backend-laravel/, docs/, shared/ (sin frontend-react/)
+frontend-react          → solo frontend-react/, docs/, shared/ (sin backend-laravel/)
+```
+
+La separación se hace con `.gitignore` por rama, no borrando archivos del disco: los servidores
+de desarrollo (Laragon + Vite) siguen corriendo desde el mismo checkout.
+
+---
+
+## Estado actual del proyecto
+
+```
+Visión de negocio (ensayo)     ██████████  Terminado
+Arquitectura                   ██████████  Terminado
+ERD                             ██████████  Terminado
+Plan de implementación          ██████████  Terminado
+Documento Sistema Experto        █████████░  Falta reflejar la nota del campo `esencial`
+MVP Fase A (backend + API)       ██████████  Hecho: auth, catálogo, buscador, listas, comparador,
+                                                       optimización, promociones, datos demo
+MVP Fase B (frontend React)      ██████████  Hecho: PWA con home, buscador, comparador, listas, perfil
+Mapa + Motor de Optimización UI  ████████░░  Motor listo en API; integración visual pendiente
+Sistema Experto (Python)         ░░░░░░░░░░  Pendiente (Track B)
+Pruebas                          ░░░░░░░░░░  Pendiente
+Despliegue                        ░░░░░░░░░░  Pendiente
+```
+
+**Backend:** `php artisan serve` en `http://127.0.0.1:8000` — ver `backend-laravel/README.md`.
+**Frontend:** Vite en `http://localhost:5173`.
+
+**Siguiente paso:** conectar el frontend al Motor de Optimización (mapa + resultados por sucursal)
+y arrancar el Track B del Sistema Experto.
 
 ---
 
@@ -87,23 +124,6 @@ Ambos tracks comparten desde el día 0 el **contrato JSON** (cómo se hablan Lar
 
 ---
 
-## Ramas (branches)
-
-```
-main                    → siempre desplegable / estable, solo se llega por PR desde develop
-develop                 → rama de integración diaria de ambos tracks
-├─ feature/track-a-...  → tareas de Laravel + React (ej. feature/track-a-auth-sanctum)
-└─ feature/track-b-...  → tareas del Sistema Experto (ej. feature/track-b-motor-reglas)
-```
-
-**Reglas:**
-- Nombres de rama en minúsculas y con guiones: `feature/track-a-nombre-corto` o
-  `feature/track-b-nombre-corto`.
-- Nunca se hace commit directo a `main` ni a `develop` — todo entra por Pull Request.
-- Merge a `main` solo cuando haya una demo estable o se llegue a la fase de despliegue.
-
----
-
 ## Definition of Done
 
 Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
@@ -116,22 +136,3 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 - [ ] Integrado con el resto del sistema (si aplica)
 
 Ver `docs/03-plan-implementacion.md`, sección 5, para el detalle completo.
-
----
-
-## Estado actual del proyecto
-
-```
-Visión de negocio (ensayo)     ██████████  Terminado
-Arquitectura                   ██████████  Terminado
-ERD                             ██████████  Terminado
-Plan de implementación          ██████████  Terminado
-Documento Sistema Experto        █████████░  Falta reflejar la nota del campo `esencial`
-Diseño detallado (wireframes)     ░░░░░░░░░░  Pendiente
-Construcción del MVP               ░░░░░░░░░░  Pendiente
-Pruebas                            ░░░░░░░░░░  Pendiente
-Despliegue                          ░░░░░░░░░░  Pendiente
-```
-
-**Siguiente paso:** Fase 0B — casos de uso, contrato JSON congelado (Laravel ↔ Python),
-documentación OpenAPI y wireframes, antes de arrancar la Fase 1 (base de datos y autenticación).
