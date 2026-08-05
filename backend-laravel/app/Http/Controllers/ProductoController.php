@@ -91,7 +91,7 @@ class ProductoController extends Controller
         $empiezaCon = $termino . '%';
         $contiene = '%' . $termino . '%';
 
-        return Producto::with('categoria')
+        return Producto::with(['categoria', 'preciosActuales.sucursal.supermercado'])
             ->whereIn('id', $idsFinales)
             ->where('activo', true)
             ->selectRaw(

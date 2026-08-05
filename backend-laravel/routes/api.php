@@ -4,6 +4,8 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ListaCompraController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\PromocionController;
+use App\Http\Controllers\SucursalController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas de autenticación
@@ -17,6 +19,11 @@ Route::get('/productos/buscar', [ProductoController::class, 'buscar']);
 Route::get('/productos/{producto}', [ProductoController::class, 'show']);
 Route::get('/productos', [ProductoController::class, 'index']);
 Route::get('/categorias', [CategoriaController::class, 'index']);
+
+// Sucursales y Promociones: se construyeron durante la integración del frontend
+// (fuera del orden original de fases). /promociones adelanta trabajo de la Fase 5.
+Route::get('/sucursales', [SucursalController::class, 'index']);
+Route::get('/promociones', [PromocionController::class, 'index']);
 
 // Rutas protegidas (requieren token de Sanctum en el header Authorization: Bearer {token})
 Route::middleware('auth:sanctum')->group(function () {

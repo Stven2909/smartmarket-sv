@@ -71,6 +71,28 @@ Laravel y Python) — ver Fase 0B.
 - El usuario arma una lista y el sistema calcula el costo total en cada supermercado.
 - Segunda pantalla ya demostrable.
 
+> **Nota de integración (fuera del orden original de fases):** durante la integración del
+> frontend (`frontend-react/`) se construyeron dos endpoints que pertenecían a fases posteriores:
+>
+> - `GET /api/sucursales` (`SucursalController@index`) — lista las sucursales con su
+>   supermercado (`with('supermercado')`) para poblar la vista de ubicación del frontend.
+>   Es trabajo de la Fase 4 (Mapa).
+> - `GET /api/promociones` (`PromocionController@index`) — lista los precios con
+>   `tiene_promocion = true` (con `producto.categoria` y `sucursal.supermercado`). **Adelanta
+>   trabajo de la Fase 5** (Promociones). El controlador solo devuelve datos: el ahorro y el
+>   porcentaje de descuento los calcula el frontend (adaptador `promotionFromApi`) comparando
+>   `precio_normal` vs `precio_final`; no hay ranking ni lógica de negocio en el backend.
+>
+> **Pruebas de funcionamiento (integración frontend):**
+> - `OPTIONS /api/sucursales` con `Origin: http://localhost:5173` → 204 con
+>   `Access-Control-Allow-Origin: http://localhost:5173` y `Access-Control-Allow-Headers: authorization,content-type`.
+> - `GET /api/sucursales` → 4 sucursales, cada una con su `supermercado`.
+> - `GET /api/promociones` → 2 promociones (Leche entera y Gaseosa, @Walmart), con
+>   `tiene_promocion: true` y el objeto `sucursal.supermercado` anidado.
+> - `GET /api/productos/buscar?q=leche` → 1 resultado con `precios_actuales[].sucursal.supermercado`
+>   (2 precios: 2.10 @Super Selectos y 1.95 @Walmart).
+> - `npm run build` en `frontend-react/` → `tsc -b && vite build` sin errores ni warnings.
+
 ### Fase 4 — Mapa y Motor de Optimización (Track A)
 - Ubicación de supermercados y cálculo de distancias.
 - Implementación del Score (con sus pesos configurables).

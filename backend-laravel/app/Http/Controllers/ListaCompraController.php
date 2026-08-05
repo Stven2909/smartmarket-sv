@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ListaCompra;
-use App\Models\ListaCompraDetalle;
+use App\Models\ListaCompraDetalles;
 use App\Services\Optimization\ComparisonService;
 use App\Services\Optimization\OptimizationService;
 use Illuminate\Http\Request;
@@ -101,7 +101,7 @@ class ListaCompraController extends Controller
     }
 
     // PATCH /api/listas/{lista}/productos/{detalle}
-    public function actualizarProducto(Request $request, ListaCompra $lista, ListaCompraDetalle $detalle)
+    public function actualizarProducto(Request $request, ListaCompra $lista, ListaCompraDetalles $detalle)
     {
         $this->verificarPropietario($lista);
 
@@ -120,7 +120,7 @@ class ListaCompraController extends Controller
     }
 
     // DELETE /api/listas/{lista}/productos/{detalle}
-    public function quitarProducto(ListaCompra $lista, ListaCompraDetalle $detalle)
+    public function quitarProducto(ListaCompra $lista, ListaCompraDetalles $detalle)
     {
         $this->verificarPropietario($lista);
 
