@@ -12,6 +12,7 @@ class ListaCompra extends Model
         'usuario_id',
         'nombre',
         'presupuesto',
+        'estado',
         'fecha'
     ];
 

@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\PrecioActual;
 use Illuminate\Support\ServiceProvider;
+use App\Observers\PrecioActualObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,5 +22,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+        PrecioActual::observe(PrecioActualObserver::class);
     }
 }

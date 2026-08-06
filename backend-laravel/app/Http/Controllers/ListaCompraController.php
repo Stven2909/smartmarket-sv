@@ -23,14 +23,19 @@ class ListaCompraController extends Controller
         }
     }
 
-    // GET /api/listas
+    // GET /api/listas?estado=completada (el filtro es opcional)
     public function index(Request $request)
     {
-        return ListaCompra::where('usuario_id', $request->user()->id)
-            ->withCount('detalles')
-            ->orderByDesc('fecha')
-            ->paginate(20);
+        $query = ListaCompra::where('usuario_id', $request->user()->id)
+            ->withCount('detalles');
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->input('estado'));
+        }
+
+        return $query->orderByDesc('fecha')->paginate(20);
     }
+
 
     // POST /api/listas
     public function store(Request $request)
@@ -170,4 +175,32 @@ class ListaCompraController extends Controller
 
         return response()->json($resultado);
     }
+
+    // PATCH /api/listas/{lista}/completar
+    // Marca la lista como compra realizada. Distingue "en progreso" de "ya comprada"
+    // para poder construir el Historial de compras (Fase 5).
+    public function completar(ListaCompra $lista)
+    {
+        $this->verificarPropietario($lista);
+
+        $lista->update(['estado' => 'completada']);
+
+        return $lista;
+    }
+
+    // GET /api/listas/{lista}/promociones
+    // Cruza los productos de ESTA lista contra los precios con promoción activa.
+    // Distinto de GET /api/promociones (que es general, sin filtrar por lista).
+    public function promociones(ListaCompra $lista)
+    {
+        $this->verificarPropietario($lista);
+
+        $productoIds = $lista->detalles()->pluck('producto_id');
+
+        return \App\Models\PrecioActual::where('tiene_promocion', true)
+            ->whereIn('producto_id', $productoIds)
+            ->with(['producto.categoria', 'sucursal.supermercado'])
+            ->get();
+    }
+
 }

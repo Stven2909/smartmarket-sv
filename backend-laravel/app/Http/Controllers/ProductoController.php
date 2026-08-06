@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Services\NormalizadorTexto;
+use App\Models\HistorialPrecio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -108,4 +109,16 @@ class ProductoController extends Controller
             ->orderBy('nombre')
             ->paginate(20);
     }
+
+    // GET: /api/productos/{producto}/historial
+    // Evolución de precios de un producto a través del tiempo, por sucursal.
+    // Dato crudo únicamente — las gráficas son v1.1 (03-plan-implementacion.md, sección 7).
+    public function historial(Producto $producto)
+    {
+        return HistorialPrecio::with('sucursal.supermercado')
+            ->where('producto_id', $producto->id)
+            ->orderByDesc('fecha')
+            ->paginate(30);
+    }
+
 }

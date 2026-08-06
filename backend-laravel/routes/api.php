@@ -18,6 +18,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/productos/buscar', [ProductoController::class, 'buscar']);
 Route::get('/productos/{producto}', [ProductoController::class, 'show']);
 Route::get('/productos', [ProductoController::class, 'index']);
+//nueva
+Route::get('/productos/{producto}/historial', [ProductoController::class, 'historial']);
 Route::get('/categorias', [CategoriaController::class, 'index']);
 
 // Sucursales y Promociones: se construyeron durante la integración del frontend
@@ -29,6 +31,9 @@ Route::get('/promociones', [PromocionController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    //nuevas
+    Route::patch('/listas/{lista}/completar', [ListaCompraController::class, 'completar']);
+    Route::get('/listas/{lista}/promociones', [ListaCompraController::class, 'promociones']);
 
     // Listas de compra y Comparador (Fase 3)
     Route::get('/listas', [ListaCompraController::class, 'index']);
