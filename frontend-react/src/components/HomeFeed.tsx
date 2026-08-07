@@ -2,13 +2,10 @@ import { useEffect, useState } from 'react'
 import { fetchPromociones } from '../api/promos'
 import { friendlyError } from '../api/client'
 import { CheckCircle2, ChevronRight, Search, ShoppingBag, Tag, TrendingUp } from 'lucide-react'
+import { formatMoney } from '../lib/format'
 import type { Category, ListaSummary, Promotion } from '../types/domain'
 import { Promotions } from './Promotions'
 import { SavingsByCategory } from './SavingsByCategory'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -112,7 +109,7 @@ export function HomeFeed({ userName, categories, listas, onSearch, onOpenCategor
             <div>
               <h3>Hoy, {bestPromo.productName} bajó de precio</h3>
               <p className="rec-copy">
-                En <b>{bestPromo.supermarketName}</b> lo encontrás en <b>{money(bestPromo.price)}</b>,
+                En <b>{bestPromo.supermarketName}</b> lo encontrás en <b>{formatMoney(bestPromo.price)}</b>,
                 un <b className="rec-save">{bestPromo.discountPercent}% de descuento</b> sobre su precio anterior.
               </p>
               <div className="rec-actions">
@@ -158,7 +155,7 @@ export function HomeFeed({ userName, categories, listas, onSearch, onOpenCategor
                 <span className="recent-list-icon"><ShoppingBag size={20} /></span>
                 <div>
                   <b>{lista.nombre}</b>
-                  <small>{lista.detallesCount} productos · {lista.presupuesto != null ? money(lista.presupuesto) : 'sin presupuesto'} · {formatDate(lista.fecha) || 'reciente'}</small>
+                  <small>{lista.detallesCount} productos · {lista.presupuesto != null ? formatMoney(lista.presupuesto) : 'sin presupuesto'} · {formatDate(lista.fecha) || 'reciente'}</small>
                 </div>
                 <span className="recent-list-save"><ChevronRight size={18} /></span>
               </button>
@@ -178,7 +175,7 @@ export function HomeFeed({ userName, categories, listas, onSearch, onOpenCategor
               <button key={promo.id} type="button" className="drop-card" onClick={onOpenPromociones}>
                 <span className="product-emoji">{promo.categoryIcon}</span>
                 <b>{promo.productName}</b>
-                <small>{promo.supermarketName} · {money(promo.price)}</small>
+                <small>{promo.supermarketName} · {formatMoney(promo.price)}</small>
                 <span className="drop-save">-{promo.discountPercent}% <Tag size={13} /></span>
               </button>
             ))}
@@ -193,8 +190,8 @@ export function HomeFeed({ userName, categories, listas, onSearch, onOpenCategor
             <span className="promotion-badge">-{bestPromo.discountPercent}%</span>
             <span className="eyebrow">PROMO DEL DÍA</span>
             <h3>{bestPromo.productName}</h3>
-            <p>{bestPromo.supermarketName} · {money(bestPromo.price)}
-              {bestPromo.previousPrice != null ? ` · antes ${money(bestPromo.previousPrice)}` : ''}</p>
+            <p>{bestPromo.supermarketName} · {formatMoney(bestPromo.price)}
+              {bestPromo.previousPrice != null ? ` · antes ${formatMoney(bestPromo.previousPrice)}` : ''}</p>
           </button>
         </section>
       )}

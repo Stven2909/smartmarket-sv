@@ -3,14 +3,11 @@ import type { FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import * as listsApi from '../api/lists'
 import { buscarProductos } from '../api/catalog'
+import { formatMoney } from '../lib/format'
 import { productFromApi } from '../types/domain'
 import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 type Tab = 'activa' | 'completada'
 
@@ -380,7 +377,7 @@ export function ListasView({ onListasChange }: Props) {
               ))}
 
               <div className="quick-total">
-                <span>Presupuesto: {presupuesto != null ? money(presupuesto) : 'sin definir'}</span>
+                <span>Presupuesto: {presupuesto != null ? formatMoney(presupuesto) : 'sin definir'}</span>
               </div>
 
               {isActiveTab && (
@@ -449,10 +446,10 @@ export function ListasView({ onListasChange }: Props) {
                                 <h3>{promo.productName}</h3>
                                 <p>{promo.unitLabel}</p>
                                 <div className="promotion-price">
-                                  {promo.previousPrice != null && <s>{money(promo.previousPrice)}</s>}
-                                  <b>{money(promo.price)}</b>
+                                  {promo.previousPrice != null && <s>{formatMoney(promo.previousPrice)}</s>}
+                                  <b>{formatMoney(promo.price)}</b>
                                   {promo.savings != null && (
-                                    <span className="live-saving">Ahorras {money(promo.savings)}</span>
+                                    <span className="live-saving">Ahorras {formatMoney(promo.savings)}</span>
                                   )}
                                 </div>
                               </div>
@@ -492,11 +489,11 @@ export function ListasView({ onListasChange }: Props) {
                         <span className="recommendation-store">{r.sucursal}</span>
                         <small>
                           {r.esencialesDisponibles}/{r.esencialesTotales} esenciales
-                          {r.beneficioPromociones > 0 && ` · ahorro ${money(r.beneficioPromociones)}`}
+                          {r.beneficioPromociones > 0 && ` · ahorro ${formatMoney(r.beneficioPromociones)}`}
                           {r.dentroDelPresupuesto === false && ' · excede presupuesto'}
                         </small>
                       </div>
-                      <b className="recommendation-total">{money(r.costoTotal)}</b>
+                      <b className="recommendation-total">{formatMoney(r.costoTotal)}</b>
                     </article>
                   ))}
                 </div>
@@ -517,7 +514,7 @@ export function ListasView({ onListasChange }: Props) {
                         <span className="recommendation-label">{r.supermercado}</span>
                         <span className="recommendation-store">{r.sucursal}</span>
                         <small>
-                          {money(r.costoTotal)} · {r.distanciaKm.toFixed(1)} km · {r.tiempoMinutos} min · ahorro promos {money(r.beneficioPromociones)}
+                          {formatMoney(r.costoTotal)} · {r.distanciaKm.toFixed(1)} km · {r.tiempoMinutos} min · ahorro promos {formatMoney(r.beneficioPromociones)}
                         </small>
                       </div>
                       <b className="recommendation-total">Score {r.score}</b>

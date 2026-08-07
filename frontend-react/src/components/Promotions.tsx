@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fetchPromociones } from '../api/promos'
 import { friendlyError } from '../api/client'
+import { formatMoney } from '../lib/format'
 import type { Promotion } from '../types/domain'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 export function Promotions() {
   const [promotions, setPromotions] = useState<Promotion[]>([])
@@ -62,10 +59,10 @@ export function Promotions() {
                 <h3>{promo.productName}</h3>
                 <p>{[promo.unitLabel, promo.categoryName].filter(Boolean).join(' · ')}</p>
                 <div className="promotion-price">
-                  {promo.previousPrice != null && <s>{money(promo.previousPrice)}</s>}
-                  <b>{money(promo.price)}</b>
+                  {promo.previousPrice != null && <s>{formatMoney(promo.previousPrice)}</s>}
+                  <b>{formatMoney(promo.price)}</b>
                   {promo.savings != null && (
-                    <span className="live-saving">Ahorras {money(promo.savings)}</span>
+                    <span className="live-saving">Ahorras {formatMoney(promo.savings)}</span>
                   )}
                 </div>
               </div>

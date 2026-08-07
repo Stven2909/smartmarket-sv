@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fetchPromociones } from '../api/promos'
 import { friendlyError } from '../api/client'
+import { formatMoney } from '../lib/format'
 import type { Promotion } from '../types/domain'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 // Agrupa las promociones por categoría y destaca el mejor ahorro de cada una.
 export function SavingsByCategory() {
@@ -68,8 +65,8 @@ export function SavingsByCategory() {
                   <p>{best ? `${best.productName} en ${best.supermarketName}` : 'Sin ofertas activas'}</p>
                   {best && (
                     <div>
-                      <s>{best.previousPrice != null ? money(best.previousPrice) : ''}</s>
-                      <b>{money(best.price)}</b>
+                      <s>{best.previousPrice != null ? formatMoney(best.previousPrice) : ''}</s>
+                      <b>{formatMoney(best.price)}</b>
                     </div>
                   )}
                 </div>

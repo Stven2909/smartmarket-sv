@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiError, friendlyError } from '../api/client'
 import * as listsApi from '../api/lists'
+import { formatMoney } from '../lib/format'
 import { supermarketColor } from '../lib/presentation'
 import type { CompararResultado, ListaSummary, OptimizarResultado } from '../types/domain'
 import { Check, MapPin, Navigation, Plus, Trophy } from 'lucide-react'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 // Reverse geocoding con Nominatim/OSM (gratis, sin key). No es un dato del motor:
 // solo le da nombre humano a la ubicación del usuario. Si falla, se muestra
@@ -193,7 +190,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
             <div className="compare-narrative" key={selectedId}>
               <div className="compare-stats">
                 {runnerUp && (
-                  <span className="stat-chip"><span>💰</span><span>Ahorras <b>{money(ahorroVsSiguiente)}</b></span></span>
+                  <span className="stat-chip"><span>💰</span><span>Ahorras <b>{formatMoney(ahorroVsSiguiente)}</b></span></span>
                 )}
                 <span className="stat-chip"><span>🛒</span><span>{winner.todosLosEsenciales ? <b>Lista completa</b> : `${winner.esencialesDisponibles}/${winner.esencialesTotales} esenciales`}</span></span>
                 {rutaMejor && (
@@ -228,13 +225,13 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                         <small className="podium-branch">{r.sucursal}</small>
                         {isWinner ? (
                           <>
-                            <span className="podium-price winner-price">{money(r.costoTotal)}</span>
+                            <span className="podium-price winner-price">{formatMoney(r.costoTotal)}</span>
                             <span className="podium-label">Tu mejor opción hoy</span>
                           </>
                         ) : (
                           <>
-                            <span className="podium-price">{money(r.costoTotal)}</span>
-                            <span className="podium-vs">{runnerUp && winner ? `+${money(r.costoTotal - winner.costoTotal)} vs mejor` : ''}</span>
+                            <span className="podium-price">{formatMoney(r.costoTotal)}</span>
+                            <span className="podium-vs">{runnerUp && winner ? `+${formatMoney(r.costoTotal - winner.costoTotal)} vs mejor` : ''}</span>
                           </>
                         )}
                       </article>
@@ -263,7 +260,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 </div>
                 <ul className="why-list">
                   {runnerUp && ahorroVsSiguiente > 0 && (
-                    <li><Check size={15} /><span><b>Ahorras {money(ahorroVsSiguiente)}</b> vs la segunda opción</span></li>
+                    <li><Check size={15} /><span><b>Ahorras {formatMoney(ahorroVsSiguiente)}</b> vs la segunda opción</span></li>
                   )}
                   <li>
                     <Check size={15} />
@@ -277,7 +274,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                   {winner.productosConPromocion > 0 && (
                     <li>
                       <Check size={15} />
-                      <span><b>{winner.productosConPromocion} producto{winner.productosConPromocion === 1 ? '' : 's'} en promoción</b> · ahorro {money(winner.beneficioPromociones)}</span>
+                      <span><b>{winner.productosConPromocion} producto{winner.productosConPromocion === 1 ? '' : 's'} en promoción</b> · ahorro {formatMoney(winner.beneficioPromociones)}</span>
                     </li>
                   )}
                   {winner.dentroDelPresupuesto != null && (
@@ -315,8 +312,8 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                       </div>
                       <span>{r.esencialesDisponibles}/{r.esencialesTotales}</span>
                       <span className="saving-price" style={{ justifyContent: 'flex-end' }}>
-                        <b>{money(r.costoTotal)}</b>
-                        {r.beneficioPromociones > 0 && <small className="saving">ahorro {money(r.beneficioPromociones)}</small>}
+                        <b>{formatMoney(r.costoTotal)}</b>
+                        {r.beneficioPromociones > 0 && <small className="saving">ahorro {formatMoney(r.beneficioPromociones)}</small>}
                       </span>
                     </div>
                   ))}
@@ -360,7 +357,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                       <span className="route-km">{rutaMejor.distanciaKm.toFixed(1)} km</span>
                     </div>
                     <div className="route-meta">
-                      <span>Gas estimado <b>{money(rutaMejor.costoCombustible)}</b></span>
+                      <span>Gas estimado <b>{formatMoney(rutaMejor.costoCombustible)}</b></span>
                       <span>{rutaMejor.supermercado} · {rutaMejor.sucursal}</span>
                     </div>
                   </div>

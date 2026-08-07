@@ -1,12 +1,9 @@
+import { formatMoney } from '../lib/format'
 import type { Product } from '../types/domain'
 
 type Props = {
   product: Product
   onAddToList?: (product: Product) => void
-}
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
 }
 
 export function ProductCard({ product, onAddToList }: Props) {
@@ -47,9 +44,9 @@ export function ProductCard({ product, onAddToList }: Props) {
               </div>
               <div className="saving-price">
                 {offer.hasPromo && offer.previousPrice != null && (
-                  <s>{money(offer.previousPrice)}</s>
+                  <s>{formatMoney(offer.previousPrice)}</s>
                 )}
-                <b>{money(offer.price)}</b>
+                <b>{formatMoney(offer.price)}</b>
               </div>
             </div>
           ))}

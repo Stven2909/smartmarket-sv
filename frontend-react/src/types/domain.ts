@@ -169,6 +169,16 @@ export function branchFromApi(suc: ApiSucursal): Branch {
   }
 }
 
+// Convierte a número real los valores que Laravel serializa como string
+// (columnas NUMERIC/DECIMAL de PostgreSQL: "1.85"). Nunca devuelve 0 silencioso:
+// si el campo no viene (null/undefined/vacío) devuelve NaN, y formatMoney lo
+// muestra como "—" en vez de inventar un precio.
+function num(value: unknown): number {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string' && value !== '') return Number(value)
+  return NaN
+}
+
 export function unitLabel(p: ApiProductoLite): string {
   if (p.presentacion) return p.presentacion
   if (p.contenido != null && p.unidad_medida) return `${p.contenido} ${p.unidad_medida}`
@@ -176,18 +186,20 @@ export function unitLabel(p: ApiProductoLite): string {
 }
 
 export function offerFromApi(precio: ApiPrecioActual): Offer {
-  const hasPromo = Boolean(precio.tiene_promocion && precio.precio_final < precio.precio_normal)
-  const savings = hasPromo ? precio.precio_normal - precio.precio_final : undefined
+  const precioFinal = num(precio.precio_final)
+  const precioNormal = num(precio.precio_normal)
+  const hasPromo = Boolean(precio.tiene_promocion && precioFinal < precioNormal)
+  const savings = hasPromo ? precioNormal - precioFinal : undefined
   const discountPercent = hasPromo && savings
-    ? Math.round((savings / precio.precio_normal) * 100)
+    ? Math.round((savings / precioNormal) * 100)
     : undefined
   return {
     branchId: precio.sucursal.id,
     branchName: precio.sucursal.nombre,
     supermarketId: precio.sucursal.supermercado.id,
     supermarketName: precio.sucursal.supermercado.nombre,
-    price: precio.precio_final,
-    previousPrice: hasPromo ? precio.precio_normal : undefined,
+    price: precioFinal,
+    previousPrice: hasPromo ? precioNormal : undefined,
     hasPromo,
     promoType: precio.tipo_promocion ?? undefined,
     savings,
@@ -221,10 +233,12 @@ export function productLiteFromApi(p: ApiProductoLite): Product {
 
 export function promotionFromApi(precio: ApiPromocion): Promotion {
   const producto = precio.producto
-  const hasDiscount = precio.tiene_promocion && precio.precio_final < precio.precio_normal
-  const savings = hasDiscount ? precio.precio_normal - precio.precio_final : undefined
+  const precioFinal = num(precio.precio_final)
+  const precioNormal = num(precio.precio_normal)
+  const hasDiscount = Boolean(precio.tiene_promocion && precioFinal < precioNormal)
+  const savings = hasDiscount ? precioNormal - precioFinal : undefined
   const discountPercent = hasDiscount && savings
-    ? Math.round((savings / precio.precio_normal) * 100)
+    ? Math.round((savings / precioNormal) * 100)
     : undefined
   const productName = producto?.nombre ?? `Producto ${precio.producto_id}`
   const categoryName = producto?.categoria?.nombre ?? ''
@@ -238,8 +252,8 @@ export function promotionFromApi(precio: ApiPromocion): Promotion {
     supermarketId: precio.sucursal.supermercado.id,
     supermarketName: precio.sucursal.supermercado.nombre,
     branchName: precio.sucursal.nombre,
-    price: precio.precio_final,
-    previousPrice: hasDiscount ? precio.precio_normal : undefined,
+    price: precioFinal,
+    previousPrice: hasDiscount ? precioNormal : undefined,
     savings,
     discountPercent,
     promotionText: hasDiscount ? `Ahorras ${discountPercent}%` : (precio.tipo_promocion ?? 'Promoción'),
@@ -271,12 +285,14 @@ export function listaShowFromApi(l: ApiListaShow): ListaSummary & { detalles: Li
 }
 
 export function historialPrecioFromApi(h: ApiHistorialPrecio): HistorialPrecio {
-  const hasPromo = Boolean(h.tipo_promocion && h.precio_final < h.precio_normal)
+  const precioNormal = num(h.precio_normal)
+  const precioFinal = num(h.precio_final)
+  const hasPromo = Boolean(h.tipo_promocion && precioFinal < precioNormal)
   return {
     id: h.id,
     fecha: h.fecha,
-    precioNormal: h.precio_normal,
-    precioFinal: h.precio_final,
+    precioNormal,
+    precioFinal,
     tienePromo: hasPromo,
     tipoPromocion: h.tipo_promocion,
     origen: h.origen,

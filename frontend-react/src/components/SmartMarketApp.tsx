@@ -4,6 +4,7 @@ import { fetchCategorias, fetchProductos, fetchProducto, fetchSucursales, fetchH
 import * as listsApi from '../api/lists'
 import { productFromApi, productLiteFromApi, historialPrecioFromApi } from '../types/domain'
 import type { Branch, Category, HistorialPrecio, Product } from '../types/domain'
+import { formatMoney } from '../lib/format'
 import { BarChart2, Bell, ChevronLeft, Home, ListChecks, Plus, Search, User } from 'lucide-react'
 import { ProductCard } from './ProductCard'
 import { Promotions } from './Promotions'
@@ -13,10 +14,6 @@ import { PerfilView } from './PerfilView'
 import { BuscarView } from './BuscarView'
 import { CompararView } from './CompararView'
 import { HomeFeed } from './HomeFeed'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -281,9 +278,9 @@ export function SmartMarketApp() {
                           </div>
                           <span className="saving-price" style={{ justifyContent: 'flex-end' }}>
                             {h.tienePromo && h.precioNormal > h.precioFinal && (
-                              <s>{money(h.precioNormal)}</s>
+                              <s>{formatMoney(h.precioNormal)}</s>
                             )}
-                            <b>{money(h.precioFinal)}</b>
+                            <b>{formatMoney(h.precioFinal)}</b>
                           </span>
                         </div>
                       ))}

@@ -2,14 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../api/client'
 import { buscarProductos } from '../api/catalog'
 import * as listsApi from '../api/lists'
+import { formatMoney } from '../lib/format'
 import { productFromApi } from '../types/domain'
 import type { Product } from '../types/domain'
 import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
-
-function money(value: number): string {
-  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
-}
 
 export function BuscarView() {
   const [query, setQuery] = useState('')
@@ -74,7 +71,7 @@ export function BuscarView() {
     () =>
       results.reduce((sum, product) => {
         const best = [...product.offers].sort((a, b) => a.price - b.price)[0]
-        return sum + (best?.price ?? 0)
+        return sum + (Number(best?.price) || 0)
       }, 0),
     [results],
   )
@@ -82,7 +79,7 @@ export function BuscarView() {
   return (
     <div className="view" style={{ maxWidth: 860 }}>
       <div className="page-heading">
-        <div className="eyebrow"><span />COMPARADOR DE PRECIOS</div>
+        <div className="eyebrow"><span />BUSCADOR UNIVERSAL</div>
         <h1>Busca y compara en todos los supermercados</h1>
         <SearchBox query={query} setQuery={setQuery} onSubmit={runSearch} large />
       </div>
@@ -112,7 +109,7 @@ export function BuscarView() {
               ))}
             </select>
             <span className="search-summary">
-              {results.length} resultados · total estimado <b>{money(totalCost)}</b>
+              {results.length} {results.length === 1 ? 'resultado' : 'resultados'} · total estimado <b>{formatMoney(totalCost)}</b>
             </span>
           </div>
 

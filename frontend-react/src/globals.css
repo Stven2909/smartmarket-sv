@@ -1931,7 +1931,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
   .bottom-nav { display: grid; }
   .fab { display: inline-flex; }
   .view { width: calc(100% - 28px); padding: 20px 0 120px; }
-  .app-footer { padding: 0 14px 96px; }
+  .app-footer { padding: 0 14px 160px; }
   .app-header { height: 58px; padding-inline: 14px; }
   .app-brand { font-size: 15px; }
   .greeting h1 { font-size: 22px; }
