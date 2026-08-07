@@ -1,6 +1,8 @@
+import { Routes, Route } from 'react-router'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { SmartMarketApp } from './components/SmartMarketApp'
 import { LoginScreen } from './components/LoginScreen'
+import { NotFound } from './components/NotFound'
 
 function Gate() {
   const { isAuthenticated, loading } = useAuth()
@@ -19,7 +21,10 @@ function Gate() {
 export function App() {
   return (
     <AuthProvider>
-      <Gate />
+      <Routes>
+        <Route path="/" element={<Gate />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </AuthProvider>
   )
 }
