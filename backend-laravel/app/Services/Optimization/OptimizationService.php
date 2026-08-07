@@ -83,6 +83,21 @@ class OptimizationService
         usort($comparacion['resultados'], fn ($a, $b) => $a['score'] <=> $b['score']);
         $comparacion['resultados'] = array_values($comparacion['resultados']);
 
+        // "Nivel de optimización" (0-100): posición relativa de cada alternativa dentro
+        // del conjunto evaluado, derivada de los Scores reales de la fórmula congelada
+        // (02-arquitectura.md §5.1). No es una predicción ni personalización: mide qué
+        // tan destacada quedó una opción frente a las demás en esta optimización.
+        // Si todas empatan (scorePeor === scoreMejor, ej. una sola sucursal), vale 100.
+        $mejorScore = $comparacion['resultados'][0]['score'] ?? null;
+        $peorScore = end($comparacion['resultados'])['score'] ?? null;
+
+        foreach ($comparacion['resultados'] as &$resultado) {
+            $resultado['nivel_optimizacion'] = ($peorScore !== null && $peorScore > $mejorScore)
+                ? round(100 * ($peorScore - $resultado['score']) / ($peorScore - $mejorScore))
+                : 100;
+        }
+        unset($resultado);
+
         $mejorOpcion = $comparacion['resultados'][0] ?? null;
         $peorOpcion = end($comparacion['resultados']) ?: null;
 

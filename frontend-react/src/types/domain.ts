@@ -120,6 +120,7 @@ export type CompararResultado = {
   longitud: number
   costoTotal: number
   beneficioPromociones: number
+  productosConPromocion: number
   esencialesDisponibles: number
   esencialesTotales: number
   opcionalesDisponibles: number
@@ -134,6 +135,7 @@ export type OptimizarResultado = CompararResultado & {
   tiempoMinutos: number
   costoTiempo: number
   score: number
+  nivelOptimizacion: number
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +304,7 @@ export function compararResultadoFromApi(r: ApiCompararResultado): CompararResul
     longitud: r.longitud,
     costoTotal: r.costo_total,
     beneficioPromociones: r.beneficio_promociones,
+    productosConPromocion: r.productos_con_promocion,
     esencialesDisponibles: r.productos_esenciales_disponibles,
     esencialesTotales: r.productos_esenciales_totales,
     opcionalesDisponibles: r.productos_opcionales_disponibles,
@@ -319,5 +322,6 @@ export function optimizarResultadoFromApi(r: ApiOptimizarResultado): OptimizarRe
     tiempoMinutos: r.tiempo_minutos,
     costoTiempo: r.costo_tiempo,
     score: r.score,
+    nivelOptimizacion: r.nivel_optimizacion,
   }
 }

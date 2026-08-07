@@ -40,6 +40,7 @@ class ComparisonService
         foreach ($preciosPorSucursal as $sucursalId => $preciosSucursal) {
             $costoTotal = 0;
             $beneficioPromociones = 0;
+            $productosConPromocion = 0;
             $esencialesDisponibles = 0;
             $opcionalesDisponibles = 0;
 
@@ -51,6 +52,7 @@ class ComparisonService
 
                     if ($precio->tiene_promocion) {
                         $beneficioPromociones += ($precio->precio_normal - $precio->precio_final) * $detalle->cantidad;
+                        $productosConPromocion++;
                     }
 
                     if ($detalle->esencial) {
@@ -71,6 +73,7 @@ class ComparisonService
                 'longitud' => (float) $sucursal->longitud,
                 'costo_total' => round($costoTotal, 2),
                 'beneficio_promociones' => round($beneficioPromociones, 2),
+                'productos_con_promocion' => $productosConPromocion,
                 'productos_esenciales_disponibles' => $esencialesDisponibles,
                 'productos_esenciales_totales' => $totalEsenciales,
                 'productos_opcionales_disponibles' => $opcionalesDisponibles,

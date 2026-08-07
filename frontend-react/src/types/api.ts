@@ -126,6 +126,7 @@ export type ApiCompararResultado = {
   longitud: number
   costo_total: number
   beneficio_promociones: number
+  productos_con_promocion: number
   productos_esenciales_disponibles: number
   productos_esenciales_totales: number
   productos_opcionales_disponibles: number
@@ -146,6 +147,7 @@ export type ApiOptimizarResultado = ApiCompararResultado & {
   tiempo_minutos: number
   costo_tiempo: number
   score: number
+  nivel_optimizacion: number
 }
 
 export type ApiOptimizar = {
