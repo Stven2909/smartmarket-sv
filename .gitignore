@@ -1,2 +1,5 @@
 .idea/
-frontend-react/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db
