@@ -53,6 +53,7 @@ class ListaCompraController extends Controller
             'usuario_id' => $request->user()->id,
             'nombre' => $data['nombre'],
             'presupuesto' => $data['presupuesto'] ?? null,
+            'estado' => 'activa',
             'fecha' => now(),
         ]);
 
@@ -184,6 +185,19 @@ class ListaCompraController extends Controller
         $this->verificarPropietario($lista);
 
         $lista->update(['estado' => 'completada']);
+
+        return $lista;
+    }
+
+    // PATCH /api/listas/{lista}/reactivar
+    // Revierte una lista de completada a activa (undo de completar).
+    // Sin esto, completar por error sería irreversible: no se puede volver
+    // a comprar ni re-editar una lista marcada como comprada.
+    public function reactivar(ListaCompra $lista)
+    {
+        $this->verificarPropietario($lista);
+
+        $lista->update(['estado' => 'activa']);
 
         return $lista;
     }

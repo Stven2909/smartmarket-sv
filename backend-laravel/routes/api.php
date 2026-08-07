@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     //nuevas
     Route::patch('/listas/{lista}/completar', [ListaCompraController::class, 'completar']);
+    Route::patch('/listas/{lista}/reactivar', [ListaCompraController::class, 'reactivar']);
     Route::get('/listas/{lista}/promociones', [ListaCompraController::class, 'promociones']);
 
     // Listas de compra y Comparador (Fase 3)
