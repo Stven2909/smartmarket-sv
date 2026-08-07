@@ -248,15 +248,16 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
   margin-top: 14px;
   min-height: 40px;
   padding: 0 16px;
-  border: 1px solid var(--green-100);
+  border: 0;
   border-radius: var(--radius-pill);
-  background: var(--green-50);
-  color: var(--green-700);
+  background: var(--navy);
+  color: #fff;
   font-size: 13px;
   font-weight: 700;
+  box-shadow: var(--shadow-sm);
   transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
 }
-.live-add-button:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); background: var(--green-100); }
+.live-add-button:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); background: #1e293b; }
 .live-add-button:active { transform: scale(.98); }
 
 .load-more-button {
@@ -730,8 +731,8 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
   font-style: normal;
   padding: 5px 10px;
   border-radius: var(--radius-pill);
-  background: var(--green-50);
-  color: var(--green-700);
+  background: var(--slate-100);
+  color: var(--navy-soft);
   font-size: 11px;
   font-weight: 800;
 }
@@ -750,7 +751,24 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 }
 .best-offer-line strong { display: block; font-size: 14px; font-weight: 800; }
 .best-offer-line span { display: block; margin-top: 1px; color: var(--muted); font-size: 12px; }
-.best-offer-line .promotion-badge { display: inline-block; margin-top: 5px; width: fit-content; padding: 3px 8px; border-radius: var(--radius-pill); background: var(--green-100); color: var(--green-700); font-size: 11px; font-weight: 800; }
+.best-offer-line .promotion-badge { display: inline-block; margin-top: 5px; width: fit-content; padding: 3px 8px; border-radius: var(--radius-pill); background: var(--slate-100); color: var(--navy-soft); font-size: 11px; font-weight: 800; }
+.best-offer-line.cheapest {
+  border-color: var(--green-600);
+  background: linear-gradient(160deg, var(--green-50), var(--surface));
+}
+.cheapest-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--green-100);
+  color: var(--green-700);
+  font-size: 11px;
+  font-weight: 800;
+}
 .saving-price { display: grid; justify-items: end; gap: 1px; }
 .saving-price s { color: var(--muted); font-size: 12px; }
 .saving-price b { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }

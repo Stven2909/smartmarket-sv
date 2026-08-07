@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { formatMoney } from '../lib/format'
 import type { Product } from '../types/domain'
 
@@ -31,25 +32,31 @@ export function ProductCard({ product, onAddToList }: Props) {
 
       {offers.length > 0 && best && (
         <div className="live-offers">
-          {offers.map((offer) => (
-            <div key={offer.branchId} className="best-offer-line">
-              <div>
-                <strong>{offer.supermarketName}</strong>
-                <span>{offer.branchName}</span>
-                {offer.hasPromo && offer.previousPrice != null && (
-                  <span className="promotion-badge">
-                    -{offer.discountPercent}%
-                  </span>
-                )}
+          {offers.map((offer, idx) => {
+            const isCheapest = offers.length > 1 && idx === 0
+            return (
+              <div key={offer.branchId} className={`best-offer-line${isCheapest ? ' cheapest' : ''}`}>
+                <div>
+                  <strong>{offer.supermarketName}</strong>
+                  <span>{offer.branchName}</span>
+                  {isCheapest && (
+                    <span className="cheapest-badge"><Check size={11} /> Más barato</span>
+                  )}
+                  {offer.hasPromo && offer.previousPrice != null && (
+                    <span className="promotion-badge">
+                      -{offer.discountPercent}%
+                    </span>
+                  )}
+                </div>
+                <div className="saving-price">
+                  {offer.hasPromo && offer.previousPrice != null && (
+                    <s>{formatMoney(offer.previousPrice)}</s>
+                  )}
+                  <b>{formatMoney(offer.price)}</b>
+                </div>
               </div>
-              <div className="saving-price">
-                {offer.hasPromo && offer.previousPrice != null && (
-                  <s>{formatMoney(offer.previousPrice)}</s>
-                )}
-                <b>{formatMoney(offer.price)}</b>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
