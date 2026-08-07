@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { fetchCategorias, fetchProductos, fetchProducto, fetchSucursales } from '../api/catalog'
+import { fetchCategorias, fetchProductos, fetchProducto, fetchSucursales, fetchHistorialPrecios } from '../api/catalog'
 import * as listsApi from '../api/lists'
-import { productFromApi, productLiteFromApi } from '../types/domain'
-import type { Branch, Category, Product } from '../types/domain'
+import { productFromApi, productLiteFromApi, historialPrecioFromApi } from '../types/domain'
+import type { Branch, Category, HistorialPrecio, Product } from '../types/domain'
 import { BarChart2, Bell, ChevronLeft, Home, ListChecks, Plus, Search, User } from 'lucide-react'
 import { ProductCard } from './ProductCard'
 import { Promotions } from './Promotions'
@@ -13,6 +13,16 @@ import { PerfilView } from './PerfilView'
 import { BuscarView } from './BuscarView'
 import { CompararView } from './CompararView'
 import { HomeFeed } from './HomeFeed'
+
+function money(value: number): string {
+  return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
 type View = 'inicio' | 'buscar' | 'comparar' | 'mis-listas' | 'perfil' | 'categorias' | 'promociones' | 'sucursales'
 
@@ -46,6 +56,11 @@ export function SmartMarketApp() {
   const [catalogTotal, setCatalogTotal] = useState(0)
   const [detail, setDetail] = useState<Product | null>(null)
 
+  // historial de precios del producto en detalle (Fase 5)
+  const [historial, setHistorial] = useState<HistorialPrecio[]>([])
+  const [historialError, setHistorialError] = useState<string | null>(null)
+  const [historialLoading, setHistorialLoading] = useState(false)
+
   const loadCategories = useCallback(async () => {
     try {
       setCategories(await fetchCategorias())
@@ -64,7 +79,7 @@ export function SmartMarketApp() {
 
   const loadListas = useCallback(async () => {
     try {
-      setListas(await listsApi.fetchListas())
+      setListas(await listsApi.fetchListas('activa'))
     } catch {
       setListas([])
     }
@@ -101,6 +116,17 @@ export function SmartMarketApp() {
       setDetail(productFromApi(full))
     } catch {
       setDetail(null)
+    }
+    setHistorial([])
+    setHistorialError(null)
+    setHistorialLoading(true)
+    try {
+      const data = await fetchHistorialPrecios(id)
+      setHistorial(data.data.map(historialPrecioFromApi))
+    } catch {
+      setHistorialError('No se pudo cargar el historial de precios.')
+    } finally {
+      setHistorialLoading(false)
     }
   }
 
@@ -216,6 +242,54 @@ export function SmartMarketApp() {
                   <button type="button" className="link-button" onClick={() => setDetail(null)}>Cerrar detalle</button>
                 </div>
                 <ProductCard product={detail} />
+
+                <div className="optimizer-panel" style={{ marginTop: 18 }}>
+                  <div className="optimizer-head">
+                    <span className="spark-icon">📈</span>
+                    <div>
+                      <span>HISTORIAL DE PRECIOS</span>
+                      <h2>Evolución por supermercado</h2>
+                    </div>
+                  </div>
+                  {historialLoading && <div className="live-loading"><i />Cargando historial…</div>}
+                  {!historialLoading && historialError && (
+                    <div className="live-error"><b>Historial no disponible</b><span>{historialError}</span></div>
+                  )}
+                  {!historialLoading && !historialError && historial.length === 0 && (
+                    <div className="empty-optimizer">
+                      <span>📈</span>
+                      <h3>Sin historial registrado</h3>
+                      <p>Los cambios de precio de este producto aún no se han registrado.</p>
+                    </div>
+                  )}
+                  {!historialLoading && historial.length > 0 && (
+                    <div className="store-table">
+                      <div className="store-table-head">
+                        <span>Fecha</span>
+                        <span>Supermercado</span>
+                        <span>Precio</span>
+                      </div>
+                      {historial.map((h) => (
+                        <div key={h.id} className="store-table-row">
+                          <div>
+                            <b>{formatDate(h.fecha) || '—'}</b>
+                            {h.origen && <small> · {h.origen}</small>}
+                          </div>
+                          <div>
+                            <b>{h.sucursal.supermarket.name}</b>
+                            <small> · {h.sucursal.name}</small>
+                          </div>
+                          <span className="saving-price" style={{ justifyContent: 'flex-end' }}>
+                            {h.tienePromo && h.precioNormal > h.precioFinal && (
+                              <s>{money(h.precioNormal)}</s>
+                            )}
+                            <b>{money(h.precioFinal)}</b>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </section>
             )}
 

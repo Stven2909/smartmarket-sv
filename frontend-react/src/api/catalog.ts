@@ -1,6 +1,7 @@
 import { api } from './client'
 import type {
   ApiCategoria,
+  ApiHistorialPrecio,
   ApiPaginated,
   ApiProductoFull,
   ApiProductoLite,
@@ -28,6 +29,12 @@ export function buscarProductos(q: string, page = 1, categoriaId?: number, signa
 
 export function fetchProducto(id: number): Promise<ApiProductoFull> {
   return api.get<ApiProductoFull>(`/productos/${id}`)
+}
+
+// Historial de precios de un producto (Fase 5): evolución cruda por sucursal,
+// ordenada por fecha desc. Las gráficas son v1.1.
+export function fetchHistorialPrecios(productoId: number, signal?: AbortSignal): Promise<ApiPaginated<ApiHistorialPrecio>> {
+  return api.get<ApiPaginated<ApiHistorialPrecio>>(`/productos/${productoId}/historial`, signal)
 }
 
 export function fetchSucursales(): Promise<ReturnType<typeof branchFromApi>[]> {

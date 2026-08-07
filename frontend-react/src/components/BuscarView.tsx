@@ -47,7 +47,7 @@ export function BuscarView() {
 
   async function loadListas() {
     try {
-      const data = await listsApi.fetchListas()
+      const data = await listsApi.fetchListas('activa')
       setListas(data)
       if (selectedListaId == null && data.length > 0) setSelectedListaId(data[0].id)
     } catch {

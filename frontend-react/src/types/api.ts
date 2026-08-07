@@ -85,10 +85,23 @@ export type ApiLista = {
   usuario_id: number
   nombre: string
   presupuesto: number | null
+  estado: string
   fecha: string
   created_at: string
   updated_at: string
   detalles_count?: number
+}
+
+export type ApiHistorialPrecio = {
+  id: number
+  producto_id: number
+  sucursal_id: number
+  precio_normal: number
+  precio_final: number
+  tipo_promocion: string | null
+  fecha: string
+  origen: string | null
+  sucursal: ApiSucursal
 }
 
 export type ApiDetalle = {

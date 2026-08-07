@@ -26,7 +26,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   const [loading, setLoading] = useState(false)
 
   const refreshListas = useCallback(async () => {
-    const data = await listsApi.fetchListas()
+    const data = await listsApi.fetchListas('activa')
     setListas(data)
     onListasChange(data)
     return data

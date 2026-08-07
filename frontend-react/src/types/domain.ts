@@ -6,6 +6,7 @@ import type {
   ApiCategoria,
   ApiCompararResultado,
   ApiDetalle,
+  ApiHistorialPrecio,
   ApiLista,
   ApiListaShow,
   ApiOptimizarResultado,
@@ -86,8 +87,20 @@ export type ListaSummary = {
   id: number
   nombre: string
   presupuesto: number | null
+  estado: string
   fecha: string
   detallesCount: number
+}
+
+export type HistorialPrecio = {
+  id: number
+  fecha: string
+  precioNormal: number
+  precioFinal: number
+  tienePromo: boolean
+  tipoPromocion: string | null
+  origen: string | null
+  sucursal: Branch
 }
 
 export type ListaDetalle = {
@@ -237,6 +250,7 @@ export function listaFromApi(l: ApiLista): ListaSummary {
     id: l.id,
     nombre: l.nombre,
     presupuesto: l.presupuesto,
+    estado: l.estado ?? 'activa',
     fecha: l.fecha,
     detallesCount: l.detalles_count ?? 0,
   }
@@ -247,9 +261,24 @@ export function listaShowFromApi(l: ApiListaShow): ListaSummary & { detalles: Li
     id: l.id,
     nombre: l.nombre,
     presupuesto: l.presupuesto,
+    estado: l.estado ?? 'activa',
     fecha: l.fecha,
     detallesCount: l.detalles?.length ?? 0,
     detalles: (l.detalles ?? []).map(detalleFromApi),
+  }
+}
+
+export function historialPrecioFromApi(h: ApiHistorialPrecio): HistorialPrecio {
+  const hasPromo = Boolean(h.tipo_promocion && h.precio_final < h.precio_normal)
+  return {
+    id: h.id,
+    fecha: h.fecha,
+    precioNormal: h.precio_normal,
+    precioFinal: h.precio_final,
+    tienePromo: hasPromo,
+    tipoPromocion: h.tipo_promocion,
+    origen: h.origen,
+    sucursal: branchFromApi(h.sucursal),
   }
 }
 

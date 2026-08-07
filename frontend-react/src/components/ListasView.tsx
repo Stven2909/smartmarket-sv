@@ -4,7 +4,7 @@ import { ApiError } from '../api/client'
 import * as listsApi from '../api/lists'
 import { buscarProductos } from '../api/catalog'
 import { productFromApi } from '../types/domain'
-import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado } from '../types/domain'
+import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
 
@@ -12,11 +12,14 @@ function money(value: number): string {
   return value.toLocaleString('es-SV', { style: 'currency', currency: 'USD' })
 }
 
+type Tab = 'activa' | 'completada'
+
 type Props = {
   onListasChange: (listas: ListaSummary[]) => void
 }
 
 export function ListasView({ onListasChange }: Props) {
+  const [tab, setTab] = useState<Tab>('activa')
   const [listas, setListas] = useState<ListaSummary[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [detalles, setDetalles] = useState<ListaDetalle[]>([])
@@ -40,16 +43,40 @@ export function ListasView({ onListasChange }: Props) {
   const [lng, setLng] = useState('')
   const [geolocating, setGeolocating] = useState(false)
 
+  // promociones de la lista activa (Fase 5)
+  const [promociones, setPromociones] = useState<Promotion[]>([])
+  const [promosError, setPromosError] = useState<string | null>(null)
+  const [promosLoading, setPromosLoading] = useState(false)
+
   const refreshListas = useCallback(async () => {
-    const data = await listsApi.fetchListas()
+    const data = await listsApi.fetchListas(tab)
     setListas(data)
-    onListasChange(data)
+    if (tab === 'activa') onListasChange(data)
     return data
-  }, [onListasChange])
+  }, [tab, onListasChange])
 
   useEffect(() => {
     refreshListas().catch(() => setError('No se pudieron cargar tus listas.'))
   }, [refreshListas])
+
+  async function switchTab(next: Tab) {
+    if (next === tab) return
+    setTab(next)
+    setSelectedId(null)
+    setDetalles([])
+    setComparacion(null)
+    setOptimizacion(null)
+    setPromociones([])
+    setPromosError(null)
+    setError(null)
+    try {
+      const data = await listsApi.fetchListas(next)
+      setListas(data)
+      if (next === 'activa') onListasChange(data)
+    } catch {
+      setError('No se pudieron cargar las listas.')
+    }
+  }
 
   async function handleCreate(event: FormEvent) {
     event.preventDefault()
@@ -59,7 +86,8 @@ export function ListasView({ onListasChange }: Props) {
       await listsApi.createLista(newNombre, newPresupuesto ? Number(newPresupuesto) : undefined)
       setNewNombre('')
       setNewPresupuesto('')
-      await refreshListas()
+      if (tab === 'completada') await switchTab('activa')
+      else await refreshListas()
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo crear la lista.')
     } finally {
@@ -71,13 +99,59 @@ export function ListasView({ onListasChange }: Props) {
     setSelectedId(id)
     setComparacion(null)
     setOptimizacion(null)
+    setPromociones([])
+    setPromosError(null)
     setError(null)
     try {
       const lista = await listsApi.fetchLista(id)
       setDetalles(lista.detalles)
       setPresupuesto(lista.presupuesto)
+      if (tab === 'activa') {
+        setPromosLoading(true)
+        try {
+          setPromociones(await listsApi.fetchPromocionesDeLista(id))
+        } catch (e) {
+          setPromosError(e instanceof ApiError ? e.message : 'No se pudieron cargar las promociones de esta lista.')
+        } finally {
+          setPromosLoading(false)
+        }
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo cargar la lista.')
+    }
+  }
+
+  async function runCompletar() {
+    if (!selectedId) return
+    if (!window.confirm('¿Marcar esta lista como comprada? Podrás reactivarla después si te equivocas.')) return
+    setBusy(true)
+    setError(null)
+    try {
+      await listsApi.completarLista(selectedId)
+      setSelectedId(null)
+      setDetalles([])
+      await refreshListas()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudo completar la lista.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function runReactivar() {
+    if (!selectedId) return
+    if (!window.confirm('¿Reactivar esta lista? Volverá a estar activa para seguir editándola.')) return
+    setBusy(true)
+    setError(null)
+    try {
+      await listsApi.reactivarLista(selectedId)
+      setSelectedId(null)
+      setDetalles([])
+      await refreshListas()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'No se pudo reactivar la lista.')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -189,6 +263,8 @@ export function ListasView({ onListasChange }: Props) {
     )
   }
 
+  const isActiveTab = tab === 'activa'
+
   return (
     <section className="real-basket-panel">
       <div className="section-title-row">
@@ -196,6 +272,15 @@ export function ListasView({ onListasChange }: Props) {
           <div className="eyebrow"><span />MIS LISTAS DE COMPRA</div>
           <h2>Crea, compara y optimiza</h2>
         </div>
+      </div>
+
+      <div className="category-filters" style={{ marginBottom: 18 }}>
+        <button type="button" className={tab === 'activa' ? 'active' : ''} onClick={() => void switchTab('activa')}>
+          Activas
+        </button>
+        <button type="button" className={tab === 'completada' ? 'active' : ''} onClick={() => void switchTab('completada')}>
+          Completadas
+        </button>
       </div>
 
       {error && <div className="live-error"><b>Aviso</b><span>{error}</span></div>}
@@ -226,9 +311,13 @@ export function ListasView({ onListasChange }: Props) {
 
       {listas.length === 0 && (
         <div className="empty-state compact">
-          <span>📝</span>
-          <h3>No tienes listas todavía</h3>
-          <p>Crea tu primera lista para empezar a comparar precios.</p>
+          <span>{tab === 'activa' ? '📝' : '✅'}</span>
+          <h3>{tab === 'activa' ? 'No tienes listas activas' : 'Aún no has completado ninguna compra'}</h3>
+          <p>
+            {tab === 'activa'
+              ? 'Crea tu primera lista para empezar a comparar precios.'
+              : 'Cuando marques una lista como comprada, aparecerá aquí como parte de tu historial.'}
+          </p>
         </div>
       )}
 
@@ -241,7 +330,7 @@ export function ListasView({ onListasChange }: Props) {
               className={selectedId === lista.id ? 'active' : ''}
               onClick={() => selectLista(lista.id)}
             >
-              {lista.nombre} · {lista.detallesCount}
+              {tab === 'completada' ? '✓ ' : ''}{lista.nombre} · {lista.detallesCount}
             </button>
           ))}
         </div>
@@ -255,7 +344,7 @@ export function ListasView({ onListasChange }: Props) {
                 <div className="empty-state compact">
                   <span>🛒</span>
                   <h3>Lista vacía</h3>
-                  <p>Busca productos abajo y agrégalos a esta lista.</p>
+                  <p>{isActiveTab ? 'Busca productos abajo y agrégalos a esta lista.' : 'Esta compra no tenía productos registrados.'}</p>
                 </div>
               )}
               {detalles.map((detalle) => (
@@ -270,17 +359,23 @@ export function ListasView({ onListasChange }: Props) {
                       {detalle.esencial ? 'Esencial' : 'Opcional'}
                     </span>
                   </div>
-                  <div className="quantity-control">
-                    <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad - 1)}>-</button>
-                    <span>{detalle.cantidad}</span>
-                    <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad + 1)}>+</button>
-                  </div>
-                  <button type="button" className="link-button" onClick={() => toggleEsencial(detalle)}>
-                    Marcar {detalle.esencial ? 'opcional' : 'esencial'}
-                  </button>
-                  <button type="button" className="link-button danger" onClick={() => removeDetalle(detalle.id)}>
-                    Quitar
-                  </button>
+                  {isActiveTab ? (
+                    <>
+                      <div className="quantity-control">
+                        <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad - 1)}>-</button>
+                        <span>{detalle.cantidad}</span>
+                        <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad + 1)}>+</button>
+                      </div>
+                      <button type="button" className="link-button" onClick={() => toggleEsencial(detalle)}>
+                        Marcar {detalle.esencial ? 'opcional' : 'esencial'}
+                      </button>
+                      <button type="button" className="link-button danger" onClick={() => removeDetalle(detalle.id)}>
+                        Quitar
+                      </button>
+                    </>
+                  ) : (
+                    <span className="quantity-control"><b>{detalle.cantidad}</b> un.</span>
+                  )}
                 </article>
               ))}
 
@@ -288,32 +383,95 @@ export function ListasView({ onListasChange }: Props) {
                 <span>Presupuesto: {presupuesto != null ? money(presupuesto) : 'sin definir'}</span>
               </div>
 
-              <div className="category-filters">
-                <button type="button" className="add-button" onClick={runComparar}>Comparar precios</button>
-                <button type="button" className="add-button" onClick={runOptimizar}>Optimizar compra</button>
-              </div>
+              {isActiveTab && (
+                <>
+                  <div className="category-filters">
+                    <button type="button" className="add-button" onClick={runComparar}>Comparar precios</button>
+                    <button type="button" className="add-button" onClick={runOptimizar}>Optimizar compra</button>
+                    <button type="button" className="load-more-button" onClick={runCompletar} disabled={busy}>
+                      Marcar como completada
+                    </button>
+                  </div>
 
-              <div className="basket-location-panel">
-                <span>UBICACIÓN OPCIONAL</span>
-                <p>Para optimizar necesitamos latitud y longitud. No guardamos coordenadas.</p>
-                <div className="basket-location-controls">
-                  <input
-                    type="text"
-                    value={lat}
-                    onChange={(e) => setLat(e.target.value)}
-                    placeholder="Latitud (ej. 13.6989)"
-                  />
-                  <input
-                    type="text"
-                    value={lng}
-                    onChange={(e) => setLng(e.target.value)}
-                    placeholder="Longitud (ej. -89.1914)"
-                  />
-                  <button type="button" className="add-button" onClick={useGeolocation} disabled={geolocating}>
-                    {geolocating ? 'Obteniendo…' : 'Usar mi ubicación'}
+                  <div className="basket-location-panel">
+                    <span>UBICACIÓN OPCIONAL</span>
+                    <p>Para optimizar necesitamos latitud y longitud. No guardamos coordenadas.</p>
+                    <div className="basket-location-controls">
+                      <input
+                        type="text"
+                        value={lat}
+                        onChange={(e) => setLat(e.target.value)}
+                        placeholder="Latitud (ej. 13.6989)"
+                      />
+                      <input
+                        type="text"
+                        value={lng}
+                        onChange={(e) => setLng(e.target.value)}
+                        placeholder="Longitud (ej. -89.1914)"
+                      />
+                      <button type="button" className="add-button" onClick={useGeolocation} disabled={geolocating}>
+                        {geolocating ? 'Obteniendo…' : 'Usar mi ubicación'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {(promosLoading || promociones.length > 0 || promosError) && (
+                    <div className="optimizer-panel" style={{ marginTop: 18 }}>
+                      <div className="optimizer-head">
+                        <span className="spark-icon">🏷️</span>
+                        <div>
+                          <span>PROMOCIONES DE ESTA LISTA</span>
+                          <h2>Ofertas de tus productos</h2>
+                        </div>
+                      </div>
+                      {promosLoading && <div className="live-loading"><i />Buscando ofertas…</div>}
+                      {!promosLoading && promosError && (
+                        <div className="live-error"><b>Promociones no disponibles</b><span>{promosError}</span></div>
+                      )}
+                      {!promosLoading && !promosError && promociones.length === 0 && (
+                        <div className="empty-optimizer">
+                          <span>🏷️</span>
+                          <h3>Sin promociones para esta lista</h3>
+                        </div>
+                      )}
+                      {!promosLoading && promociones.length > 0 && (
+                        <div className="promotions-grid">
+                          {promociones.map((promo) => (
+                            <article key={promo.id} className="promotion-card">
+                              <div className="promotion-visual">
+                                <span className="promotion-emoji">{promo.categoryIcon}</span>
+                                {promo.discountPercent != null && (
+                                  <span className="promotion-badge">-{promo.discountPercent}%</span>
+                                )}
+                              </div>
+                              <div className="promotion-body">
+                                <span className="promotion-time">{promo.supermarketName} · {promo.branchName}</span>
+                                <h3>{promo.productName}</h3>
+                                <p>{promo.unitLabel}</p>
+                                <div className="promotion-price">
+                                  {promo.previousPrice != null && <s>{money(promo.previousPrice)}</s>}
+                                  <b>{money(promo.price)}</b>
+                                  {promo.savings != null && (
+                                    <span className="live-saving">Ahorras {money(promo.savings)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!isActiveTab && (
+                <div className="category-filters">
+                  <button type="button" className="load-more-button" onClick={runReactivar} disabled={busy}>
+                    Reactivar lista
                   </button>
                 </div>
-              </div>
+              )}
 
               {comparacion !== null && (
                 <div className="optimizer-panel">
@@ -370,16 +528,20 @@ export function ListasView({ onListasChange }: Props) {
             </div>
           </div>
 
-          <div className="conversation-search">
-            <SearchBox query={query} setQuery={setQuery} onSubmit={runSearch} placeholder="Agregar productos a esta lista…" />
-          </div>
-          {searchError && <div className="live-error"><b>Búsqueda fallida</b><span>{searchError}</span></div>}
-          {results.length > 0 && (
-            <div className="live-products">
-              {results.map((product) => (
-                <ProductCard key={product.id} product={product} onAddToList={() => addProduct(product.id)} />
-              ))}
-            </div>
+          {isActiveTab && (
+            <>
+              <div className="conversation-search">
+                <SearchBox query={query} setQuery={setQuery} onSubmit={runSearch} placeholder="Agregar productos a esta lista…" />
+              </div>
+              {searchError && <div className="live-error"><b>Búsqueda fallida</b><span>{searchError}</span></div>}
+              {results.length > 0 && (
+                <div className="live-products">
+                  {results.map((product) => (
+                    <ProductCard key={product.id} product={product} onAddToList={() => addProduct(product.id)} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

@@ -6,14 +6,23 @@ import type {
   ApiListaShow,
   ApiOptimizar,
   ApiPaginated,
+  ApiPromocion,
 } from '../types/api'
-import { compararResultadoFromApi, listaFromApi, listaShowFromApi, optimizarResultadoFromApi } from '../types/domain'
-import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado } from '../types/domain'
+import {
+  compararResultadoFromApi,
+  listaFromApi,
+  listaShowFromApi,
+  optimizarResultadoFromApi,
+  promotionFromApi,
+} from '../types/domain'
+import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 
 export type ListaDetallada = ListaSummary & { detalles: ListaDetalle[] }
 
-export async function fetchListas(page = 1): Promise<ListaSummary[]> {
-  const data = await api.get<ApiPaginated<ApiLista>>(`/listas?page=${page}`)
+export async function fetchListas(estado?: string, page = 1): Promise<ListaSummary[]> {
+  const params = new URLSearchParams({ page: String(page) })
+  if (estado) params.set('estado', estado)
+  const data = await api.get<ApiPaginated<ApiLista>>(`/listas?${params}`)
   return data.data.map(listaFromApi)
 }
 
@@ -29,6 +38,21 @@ export async function fetchLista(id: number): Promise<ListaDetallada> {
 
 export async function destroyLista(id: number): Promise<void> {
   await api.del(`/listas/${id}`)
+}
+
+export async function completarLista(id: number): Promise<ListaSummary> {
+  const data = await api.patch<ApiLista>(`/listas/${id}/completar`)
+  return listaFromApi(data)
+}
+
+export async function reactivarLista(id: number): Promise<ListaSummary> {
+  const data = await api.patch<ApiLista>(`/listas/${id}/reactivar`)
+  return listaFromApi(data)
+}
+
+export async function fetchPromocionesDeLista(listaId: number): Promise<Promotion[]> {
+  const data = await api.get<ApiPromocion[]>(`/listas/${listaId}/promociones`)
+  return data.map(promotionFromApi)
 }
 
 export async function addProductoToLista(listaId: number, productoId: number, cantidad = 1, esencial = true) {
