@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { formatMoney } from '../lib/format'
 import type { Product } from '../types/domain'
+import { CategoryIcon } from './CategoryIcon'
 
 type Props = {
   product: Product
@@ -14,7 +15,7 @@ export function ProductCard({ product, onAddToList }: Props) {
   return (
     <article className="live-product-card">
       <div className="live-product-title">
-        <span className="product-emoji">{product.categoryIcon}</span>
+        <span className="product-emoji"><CategoryIcon name={product.categoryName} size={22} /></span>
         <div>
           <h3>{product.name}</h3>
           <p>{[product.unitLabel, product.categoryName].filter(Boolean).join(' · ')}</p>

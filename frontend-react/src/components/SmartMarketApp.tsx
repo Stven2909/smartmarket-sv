@@ -5,6 +5,7 @@ import * as listsApi from '../api/lists'
 import { productFromApi, productLiteFromApi, historialPrecioFromApi } from '../types/domain'
 import type { Branch, Category, HistorialPrecio, Product } from '../types/domain'
 import { formatMoney } from '../lib/format'
+import { CategoryIcon } from './CategoryIcon'
 import { BarChart2, Bell, ChevronLeft, Home, ListChecks, Plus, Search, User } from 'lucide-react'
 import { ProductCard } from './ProductCard'
 import { Promotions } from './Promotions'
@@ -232,7 +233,7 @@ export function SmartMarketApp() {
               <section className="category-results">
                 <div className="category-results-head">
                   <div>
-                    <span className="eyebrow">{detail.categoryIcon} DETALLE</span>
+                    <span className="eyebrow"><CategoryIcon name={detail.categoryName} size={13} /> DETALLE</span>
                     <h2>{detail.name}</h2>
                     <p>{[detail.unitLabel, detail.categoryName].filter(Boolean).join(' · ')}</p>
                   </div>
@@ -298,7 +299,7 @@ export function SmartMarketApp() {
                   className="category-product-card"
                   onClick={() => void openDetail(product.id)}
                 >
-                  <span className="product-emoji">{product.categoryIcon}</span>
+                  <span className="product-emoji"><CategoryIcon name={product.categoryName} size={22} /></span>
                   <div className="category-product-body">
                     <h3>{product.name}</h3>
                     <p>{[product.unitLabel, product.categoryName].filter(Boolean).join(' · ')}</p>
