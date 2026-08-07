@@ -1,79 +1,79 @@
-# Desarrollo en ramas separadas (backend-laravel / frontend-react)
+# Desarrollo en monorepo (backend + frontend juntos)
 
-El repo está separado por tecnología: la rama `backend-laravel` solo contiene su árbol (sin
-`frontend-react/`) y la rama `frontend-react` solo contiene el suyo (sin `backend-laravel/`). La
-separación se logra con `.gitignore` por rama, **no** borrando archivos del disco: los servidores
-de desarrollo corren desde el mismo checkout.
+> **Actualización:** el repo pasó de separación por ramas a separación por carpetas en una sola
+> rama. Las ramas `backend-laravel` y `frontend-react` quedaron como *legacy* y se eliminarán
+> cuando la unificación se confirme estable. Este documento describe el flujo nuevo.
+
+## Estructura
+
+```
+smartmarket/
+├── backend-laravel/   → API Laravel
+├── frontend-react/    → PWA React
+├── docs/              → documentación
+└── shared/            → datos compartidos
+```
+
+Ambos proyectos viven **al mismo tiempo** en tu checkout. Ya no se "pasa" de un proyecto al otro
+con `git switch`: simplemente abrís la carpeta que vas a editar.
 
 ## Herramientas
 
-- **Frontend (VS Code):** carpeta `frontend-react/`, rama `frontend-react`.
-- **Backend (PhpStorm):** carpeta `backend-laravel/`, rama `backend-laravel`.
+- **Frontend (VS Code):** carpeta `frontend-react/`.
+- **Backend (PhpStorm):** carpeta `backend-laravel/`.
 
-## Regla de oro
+Puedes tener ambas herramientas abiertas a la vez, y ambos servidores corriendo en paralelo.
 
-> Editá el frontend solo con el checkout en `frontend-react`, y el backend solo con el checkout en
-> `backend-laravel`.
+## Cómo levantar cada proyecto
 
-Mientras estás en una rama, los archivos de la **otra** carpeta son "ignorados" para git: podés
-abrirlos y editarlos (VS Code / PhpStorm), pero git **no ve esos cambios**, y un `git switch`
-pelado los **pisa o borra sin avisar**.
-
-## Forma fácil: los scripts (recomendado)
-
-Doble clic (o ejecutar desde la terminal) según lo que vayas a trabajar:
-
-| Cuando voy a trabajar… | Ejecuto |
-|---|---|
-| El **frontend** | `frontend-on.bat` |
-| El **backend** | `backend-on.bat` |
-
-Qué hacen los scripts:
-
-1. Cancela si hay cambios sin commitear en la rama actual.
-2. Hace **backup** de tu carpeta destino antes de cambiar (para no perder ediciones "invisibles").
-3. `git switch` a la rama destino.
-4. Restaura la otra carpeta en disco (para que el servidor siga funcionando).
-5. Re-aplica el backup: si había ediciones, quedan como **modificaciones visibles** (`M`) en la rama
-   destino, listas para commitear.
-
-Si no hay nada que cambiar (ya estás en la rama), el script lo avisa y no hace nada.
-
-## Forma manual
-
-**Pasarse al frontend:**
+**Backend (terminal 1):**
 
 ```bash
-git switch frontend-react
-git restore --source=backend-laravel --worktree -- backend-laravel
+cd backend-laravel
+php artisan optimize:clear
+php artisan serve
 ```
 
-**Volver al backend:**
+**Frontend (terminal 2):**
 
 ```bash
-git switch backend-laravel
-git restore --source=frontend-react --worktree -- frontend-react
+cd frontend-react
+npm run dev
 ```
 
-## Lo que NUNCA se borra al cambiar de rama
+Ambos conviven sin conflictos: el API en `http://127.0.0.1:8000` y la PWA en
+`http://localhost:5173`.
 
-`vendor/`, `node_modules/`, `.env`, `.env.local` y `dist/` están ignorados en ambas ramas, así que
-los servidores (Laragon + Vite) sobreviven al switch. Solo se restaura el código fuente.
+## Reglas de oro
 
-## Cómo recuperar archivos si algo se pierde
+1. **Todo el trabajo se hace sobre `develop`** (o una rama de feature creada desde `develop`).
+2. Cada carpeta ignora sus propias dependencias: `vendor/`, `node_modules/`, `.env`, `dist/`,
+   `storage/logs/`, etc. viven en disco pero **no** se versionan.
+3. Un `git switch` normal **no borra nada**: todas las ramas del repo contienen ambas carpetas.
+4. Los cambios del backend y del frontend se commitan **juntos** en la misma rama. Si un cambio
+   toca solo una carpeta, se commitan solo esos archivos; git lo maneja solo.
 
-Desde cualquier rama, restaurar a mano el contenido de una carpeta desde su rama:
+## Flujo de ramas
 
-```bash
-git restore --source=backend-laravel --worktree -- backend-laravel
-git restore --source=frontend-react --worktree -- frontend-react
+```
+main                  → estable (pendiente de recibir el árbol unificado)
+develop               → rama de trabajo actual
+backend-laravel       → legacy, sin tocar (se retira después de migrar main)
+frontend-react        → legacy, sin tocar (se retira después de migrar main)
+expert-system-python  → placeholder del Sistema Experto
 ```
 
-## Recordatorio
-
-Antes de un `git switch` manual, commitéa los cambios de la rama actual:
+Crear una rama de feature:
 
 ```bash
+git switch develop
+git switch -c feature-mi-cambio
+# trabajar en backend-laravel/ y/o frontend-react/...
 git add -A
-git commit -m "WIP"
+git commit -m "feat: mi cambio"
+git push -u origin feature-mi-cambio
 ```
+
+Cuando la unificación esté probada (1-2 días), `main` recibe el árbol unificado y las ramas
+legacy se eliminan. Los tags `archive/backend-laravel` y `archive/frontend-react` conservan los
+últimos commits de esas ramas como respaldo.

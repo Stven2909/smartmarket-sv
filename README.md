@@ -25,55 +25,92 @@ Toda la documentación técnica y de negocio vive en `docs/`. Orden recomendado 
 
 ---
 
-## Stack
+## Requisitos
 
-| Parte | Tecnología |
-|---|---|
-| Frontend | React + Tailwind CSS (PWA) |
-| Backend | Laravel 13 (PHP 8.3) |
-| Panel admin | Filament 5.7 |
-| Base de datos | PostgreSQL |
-| Mapas | Leaflet + OpenStreetMap |
-| Autenticación | Laravel Sanctum |
-| Sistema Experto | Python (motor de reglas — tecnología exacta pendiente de confirmar) |
+- **Git** (clonar el repo)
+- **PHP 8.3** + **Composer** (backend)
+- **PostgreSQL** (base de datos)
+- **Node.js** + **npm** (frontend)
+- **Laragon** (recomendado en Windows para el entorno PHP/PostgreSQL)
 
 ---
 
 ## Estructura del repositorio
 
+Monorepo: todos los proyectos viven juntos en el mismo repo, cada uno en su carpeta.
+
 ```
 smartmarket/
 │
-├── docs/
-│   ├── 01-vision-negocio.md
-│   ├── 02-arquitectura.md
-│   ├── 03-plan-implementacion.md
-│   └── 04-sistema-experto.md
+├── backend-laravel/        → API Laravel (auth, catálogo, listas, promociones, optimización)
+│   └── README.md           → instalación, endpoints, Motor de Optimización
 │
-├── backend-laravel/
-│   └── README.md              → API Laravel: instalación, endpoints, Motor de Optimización
-├── frontend-react/
+├── frontend-react/         → PWA React + Tailwind (home, buscador, comparador, listas, perfil)
+│   └── README.md           → instalación y scripts de desarrollo
 │
-├── shared/
-│   └── demo_products.json     → datos de demo que consume DemoDataSeeder
+├── docs/                   → documentación técnica y de negocio
+├── shared/                 → datos compartidos (demo_products.json, contrato JSON)
 │
+├── .github/                → workflows de CI y plantillas de issues
+├── docker/                 → contenedores (pendiente de llenar)
+├── scripts/                → utilidades del repo (pendiente de llenar)
+│
+├── .editorconfig           → reglas de formato compartidas (LF, UTF-8)
 └── README.md
 ```
 
+Cada carpeta maneja sus propias dependencias y archivos ignorados (`vendor/`, `node_modules/`,
+`.env`, `dist/`, etc.) a través de su propio `.gitignore`.
+
 ---
 
-## Ramas (branches)
+## Cómo levantar el backend
 
-El repo está separado por tecnología para que cada rama solo contenga su árbol:
+```bash
+cd backend-laravel
+composer install
+cp .env.example .env        # configurar base de datos PostgreSQL
+php artisan key:generate
+php artisan migrate --seed
+php artisan optimize:clear
+php artisan serve
+```
+
+El API queda en `http://127.0.0.1:8000`. Detalles en `backend-laravel/README.md`.
+
+---
+
+## Cómo levantar el frontend
+
+```bash
+cd frontend-react
+npm install
+npm run dev
+```
+
+La PWA queda en `http://localhost:5173`. Verifica que el API responda en `:8000` (el frontend
+apunta a esa URL por defecto; se configura en `frontend-react/src/api/client.ts`).
+
+---
+
+## Flujo de ramas
 
 ```
-main                    → estado estable
-backend-laravel         → solo backend-laravel/, docs/, shared/ (sin frontend-react/)
-frontend-react          → solo frontend-react/, docs/, shared/ (sin backend-laravel/)
+main                  → rama principal (estable)
+develop               → rama de trabajo actual (backend + frontend unificados)
+backend-laravel       → rama legacy (solo backend) — pendiente de retirar
+frontend-react        → rama legacy (solo frontend) — pendiente de retirar
+expert-system-python  → placeholder del Sistema Experto (pendiente de implementar)
 ```
 
-La separación se hace con `.gitignore` por rama, no borrando archivos del disco: los servidores
-de desarrollo (Laragon + Vite) siguen corriendo desde el mismo checkout.
+- **Trabajo normal:** se trabaja sobre `develop` y se crean ramas de feature desde ahí
+  (`git switch -c feature-x`). Cada rama derivada contiene **ambos** proyectos.
+- **`git switch` seguro:** al estar todo en una sola rama, cambiar de rama ya **no borra** carpetas
+  ni requiere scripts de restauración.
+- **Tags de respaldo:** `archive/backend-laravel` y `archive/frontend-react` apuntan a los últimos
+  commits de las ramas legacy, por si hace falta recuperar algo.
+- **Migración a `main`:** se realizará cuando la unificación haya sido probada (1-2 días);
+  entonces `main` recibirá el árbol unificado y las ramas legacy se eliminarán.
 
 ---
 
@@ -86,16 +123,13 @@ ERD                             ██████████  Terminado
 Plan de implementación          ██████████  Terminado
 Documento Sistema Experto        █████████░  Falta reflejar la nota del campo `esencial`
 MVP Fase A (backend + API)       ██████████  Hecho: auth, catálogo, buscador, listas, comparador,
-                                                       optimización, promociones, datos demo
+                                                        optimización, promociones, datos demo
 MVP Fase B (frontend React)      ██████████  Hecho: PWA con home, buscador, comparador, listas, perfil
 Mapa + Motor de Optimización UI  ████████░░  Motor listo en API; integración visual pendiente
 Sistema Experto (Python)         ░░░░░░░░░░  Pendiente (Track B)
 Pruebas                          ░░░░░░░░░░  Pendiente
 Despliegue                        ░░░░░░░░░░  Pendiente
 ```
-
-**Backend:** `php artisan serve` en `http://127.0.0.1:8000` — ver `backend-laravel/README.md`.
-**Frontend:** Vite en `http://localhost:5173`.
 
 **Siguiente paso:** conectar el frontend al Motor de Optimización (mapa + resultados por sucursal)
 y arrancar el Track B del Sistema Experto.
