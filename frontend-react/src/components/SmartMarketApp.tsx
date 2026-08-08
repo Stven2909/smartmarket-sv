@@ -5,6 +5,7 @@ import * as listsApi from '../api/lists'
 import { productFromApi, productLiteFromApi, historialPrecioFromApi } from '../types/domain'
 import type { Branch, Category, HistorialPrecio, Product } from '../types/domain'
 import { formatMoney } from '../lib/format'
+import { useInstallPrompt } from '../lib/useInstallPrompt'
 import { CategoryIcon } from './CategoryIcon'
 import { BarChart2, Bell, ChevronLeft, Home, ListChecks, Plus, Search, User } from 'lucide-react'
 import { ProductCard } from './ProductCard'
@@ -15,6 +16,7 @@ import { PerfilView } from './PerfilView'
 import { BuscarView } from './BuscarView'
 import { CompararView } from './CompararView'
 import { HomeFeed } from './HomeFeed'
+import { InstallPrompt } from './InstallPrompt'
 
 function formatDate(iso: string): string {
   const date = new Date(iso)
@@ -41,6 +43,18 @@ const NAV_ACTIVE_PARENT: Partial<Record<View, View>> = {
 export function SmartMarketApp() {
   const { user } = useAuth()
   const [view, setView] = useState<View>('inicio')
+
+  // La invitación de instalación no aparece en el primer render: solo cuando el
+  // usuario ya interactuó con la app (salió de Inicio) o pasaron 30 segundos.
+  const [engagement, setEngagement] = useState(false)
+  useEffect(() => {
+    if (view !== 'inicio') setEngagement(true)
+  }, [view])
+  useEffect(() => {
+    const t = window.setTimeout(() => setEngagement(true), 30_000)
+    return () => window.clearTimeout(t)
+  }, [])
+  const install = useInstallPrompt()
 
   const [categories, setCategories] = useState<Category[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
@@ -198,7 +212,7 @@ export function SmartMarketApp() {
           </div>
         )}
 
-        {view === 'perfil' && <PerfilView onOpenSucursales={() => setView('sucursales')} />}
+        {view === 'perfil' && <PerfilView onOpenSucursales={() => setView('sucursales')} install={install} />}
 
         {view === 'categorias' && (
           <div className="view">
@@ -415,6 +429,10 @@ export function SmartMarketApp() {
         </div>
         <p className="data-disclaimer">SmartMarket SV · datos de ejemplo del catálogo maestro · precios manuales</p>
       </footer>
+
+      {install.installable && engagement && (
+        <InstallPrompt variant="banner" install={install} onClose={() => {}} />
+      )}
     </div>
   )
 }

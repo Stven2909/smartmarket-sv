@@ -1324,6 +1324,16 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 .profile-row span { margin-left: auto; color: var(--muted); }
 .profile-row.danger { color: var(--danger); }
 .profile-row.danger svg { color: var(--danger); }
+.profile-row.install .profile-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 0;
+}
+.profile-row.install .profile-row-text strong { color: var(--ink); font-size: 14px; font-weight: 700; }
+.profile-row.install .profile-row-text small { color: var(--muted); font-size: 12px; font-weight: 500; line-height: 1.4; }
 
 /* ---------------------------------------------------------------------------
    Navegación inferior + FAB
@@ -1937,8 +1947,211 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 }
 
 /* ---------------------------------------------------------------------------
-   Responsive
+   Invitación de instalación (PWA) — banner Chromium + modal iOS
 --------------------------------------------------------------------------- */
+.install-prompt-banner {
+  position: fixed;
+  z-index: 65;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 16px;
+  width: min(560px, calc(100% - 28px));
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: install-up .35s ease;
+}
+.install-prompt-banner[hidden] { display: none; }
+@keyframes install-up {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.install-smarty-img {
+  width: 100%;
+  height: auto;
+  align-self: center;
+  object-fit: contain;
+}
+.install-smarty-fallback {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  align-self: center;
+  justify-self: center;
+  border-radius: 50%;
+  background: var(--navy);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.install-smarty-fallback i {
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  width: 12px;
+  border-radius: 6px;
+  background: #34d399;
+}
+.install-smarty-fallback i:first-child { left: 20px; }
+.install-smarty-fallback i:last-child { right: 20px; top: 15px; bottom: 15px; background: #67e8f9; }
+.install-prompt-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.install-prompt-hi {
+  color: var(--green-700);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.install-prompt-body h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.install-prompt-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.install-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.install-primary {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.install-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); background: #1e293b; }
+.install-primary:active { transform: scale(.98); }
+.install-primary:disabled { opacity: .6; }
+.install-secondary {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.install-secondary:hover { color: var(--navy); background: var(--slate-100); }
+
+.install-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(4px);
+  animation: install-fade .2s ease;
+}
+@keyframes install-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.install-prompt-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: min(380px, 100%);
+  padding: 26px 22px 24px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+.install-prompt-modal .install-smarty-img { width: 84px; }
+.install-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+}
+.install-modal-close:hover { background: var(--slate-100); color: var(--navy); }
+.install-prompt-modal .eyebrow { margin-bottom: 2px; }
+.install-prompt-modal h2 {
+  margin: 2px 0 0;
+  color: var(--navy);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.install-modal-intro {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.install-steps {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 14px 0 18px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.install-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--slate-100);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+  counter-increment: install-step;
+}
+.install-steps li::before {
+  content: counter(install-step);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--green-100);
+  color: var(--green-700);
+  font-size: 12px;
+  font-weight: 800;
+}
+.install-steps strong { font-weight: 800; }
+
+
 @media (max-width: 860px) {
   .real-basket-layout { grid-template-columns: 1fr; }
   .live-products, .promotions-grid { grid-template-columns: 1fr; }
@@ -1970,6 +2183,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
   .store-table-head, .store-table-row { grid-template-columns: 1.2fr 1fr 1fr; }
   .category-results-head { flex-direction: column; }
   .fab { right: 14px; bottom: 92px; }
+  .install-prompt-banner { bottom: calc(env(safe-area-inset-bottom, 0px) + 104px); }
 }
 
 @media (max-width: 400px) {
