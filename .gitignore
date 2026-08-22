@@ -1,0 +1,29 @@
+# Entorno y secretos
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Artefactos generados
+output/
+.playwright-cli/
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Distribución / builds
+build/
+dist/
+*.egg-info/
+

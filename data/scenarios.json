@@ -1,0 +1,191 @@
+[
+  {
+    "id": "escenario-ideal",
+    "name": "Compra ideal",
+    "description": "Alternativa dentro del presupuesto, completa y conveniente.",
+    "facts": {
+      "request_id": "scenario-ideal",
+      "alternativa_id": "supermercado-1",
+      "costo_total": 42.5,
+      "presupuesto": 50.0,
+      "ahorro": 11.25,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": true
+    }
+  },
+  {
+    "id": "presupuesto-muy-excedido",
+    "name": "Presupuesto muy excedido",
+    "description": "El costo supera el presupuesto en más de un 10%.",
+    "facts": {
+      "request_id": "scenario-presupuesto-muy-excedido",
+      "alternativa_id": "supermercado-2",
+      "costo_total": 56.0,
+      "presupuesto": 50.0,
+      "ahorro": 11.25,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": true
+    }
+  },
+  {
+    "id": "productos-esenciales-faltantes",
+    "name": "Falta de productos esenciales",
+    "description": "La alternativa no contiene todos los productos esenciales.",
+    "facts": {
+      "request_id": "scenario-esenciales-faltantes",
+      "alternativa_id": "supermercado-3",
+      "costo_total": 42.5,
+      "presupuesto": 50.0,
+      "ahorro": 5.0,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 9,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 5,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "distancia-lejana-ahorro-bajo",
+    "name": "Distancia lejana con ahorro bajo",
+    "description": "La distancia adicional es alta y el ahorro es bajo.",
+    "facts": {
+      "request_id": "scenario-distancia-ahorro",
+      "alternativa_id": "supermercado-4",
+      "costo_total": 45.0,
+      "presupuesto": 50.0,
+      "ahorro": 2.99,
+      "distancia_km": 10.0,
+      "distancia_adicional_km": 8.0,
+      "tiempo_estimado_min": 35,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "tiempo-alto-ahorro-bajo",
+    "name": "Tiempo alto con ahorro bajo",
+    "description": "El tiempo de traslado es alto y el ahorro es bajo.",
+    "facts": {
+      "request_id": "scenario-tiempo-ahorro",
+      "alternativa_id": "supermercado-5",
+      "costo_total": 45.0,
+      "presupuesto": 50.0,
+      "ahorro": 2.99,
+      "distancia_km": 5.0,
+      "distancia_adicional_km": 4.0,
+      "tiempo_estimado_min": 45,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "compra-fragmentada",
+    "name": "Compra fragmentada",
+    "description": "La compra requiere tres o más supermercados.",
+    "facts": {
+      "request_id": "scenario-compra-fragmentada",
+      "alternativa_id": "supermercados-varios",
+      "costo_total": 45.0,
+      "presupuesto": 50.0,
+      "ahorro": 5.0,
+      "distancia_km": 4.0,
+      "distancia_adicional_km": 2.0,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 3,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "promociones-relevantes",
+    "name": "Promociones relevantes",
+    "description": "Cumple el presupuesto y tiene promociones relevantes.",
+    "facts": {
+      "request_id": "scenario-promociones",
+      "alternativa_id": "supermercado-6",
+      "costo_total": 45.0,
+      "presupuesto": 50.0,
+      "ahorro": 5.0,
+      "distancia_km": 5.0,
+      "distancia_adicional_km": 4.0,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": true
+    }
+  },
+  {
+    "id": "dos-supermercados-ahorro-alto",
+    "name": "Dos supermercados con ahorro alto",
+    "description": "Dos paradas con ahorro alto y dentro del presupuesto.",
+    "facts": {
+      "request_id": "scenario-dos-supermercados",
+      "alternativa_id": "supermercados-2",
+      "costo_total": 45.0,
+      "presupuesto": 50.0,
+      "ahorro": 10.0,
+      "distancia_km": 5.0,
+      "distancia_adicional_km": 4.0,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 2,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "sin-regla-dominante",
+    "name": "Caso sin regla dominante",
+    "description": "Alternativa válida sin una regla de recomendación dominante.",
+    "facts": {
+      "request_id": "scenario-sin-regla",
+      "alternativa_id": "supermercado-7",
+      "costo_total": 45.0,
+      "presupuesto": 50.0,
+      "ahorro": 5.0,
+      "distancia_km": 5.0,
+      "distancia_adicional_km": 4.0,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  }
+]

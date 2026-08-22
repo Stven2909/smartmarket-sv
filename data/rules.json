@@ -1,0 +1,124 @@
+[
+  {
+    "id": "R01",
+    "name": "Presupuesto muy excedido",
+    "priority": 1,
+    "category": "PRESUPUESTO",
+    "conditions": {
+      "presupuesto_muy_excedido": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Replantear la lista o buscar productos sustitutos.",
+      "explanation": "El costo supera el presupuesto en más de un 10%."
+    }
+  },
+  {
+    "id": "R02",
+    "name": "Faltan productos esenciales",
+    "priority": 2,
+    "category": "DISPONIBILIDAD",
+    "conditions": {
+      "faltan_esenciales": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Buscar una alternativa con todos los productos esenciales.",
+      "explanation": "La alternativa no incluye todos los productos esenciales."
+    }
+  },
+  {
+    "id": "R03",
+    "name": "Distancia alta con ahorro bajo",
+    "priority": 3,
+    "category": "DISTANCIA_AHORRO",
+    "conditions": {
+      "distancia_lejana": true,
+      "ahorro_bajo": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Elegir una alternativa más cercana.",
+      "explanation": "El ahorro bajo no compensa la distancia adicional elevada."
+    }
+  },
+  {
+    "id": "R04",
+    "name": "Tiempo alto con ahorro bajo",
+    "priority": 3,
+    "category": "TIEMPO_AHORRO",
+    "conditions": {
+      "tiempo_alto": true,
+      "ahorro_bajo": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Elegir una alternativa con menor tiempo de traslado.",
+      "explanation": "El ahorro bajo no compensa el tiempo de traslado elevado."
+    }
+  },
+  {
+    "id": "R05",
+    "name": "Compra fragmentada",
+    "priority": 4,
+    "category": "FRAGMENTACION",
+    "conditions": {
+      "compra_fragmentada": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Reducir la cantidad de supermercados.",
+      "explanation": "La compra requiere visitar tres o más supermercados."
+    }
+  },
+  {
+    "id": "R06",
+    "name": "Alternativa ideal",
+    "priority": 5,
+    "category": "CONVENIENCIA",
+    "conditions": {
+      "dentro_presupuesto": true,
+      "todos_esenciales_disponibles": true,
+      "distancia_cercana": true,
+      "tiempo_bajo": true,
+      "una_parada": true
+    },
+    "result": {
+      "level": "EXCELENTE",
+      "action": "Comprar todo en esta alternativa.",
+      "explanation": "Cumple el presupuesto, incluye los esenciales y requiere un recorrido conveniente."
+    }
+  },
+  {
+    "id": "R07",
+    "name": "Promociones relevantes",
+    "priority": 6,
+    "category": "PROMOCIONES",
+    "conditions": {
+      "dentro_presupuesto": true,
+      "todos_esenciales_disponibles": true,
+      "promociones_relevantes": true
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Aprovechar las promociones aplicables.",
+      "explanation": "La alternativa cumple el presupuesto y los productos esenciales, además de tener promociones relevantes."
+    }
+  },
+  {
+    "id": "R08",
+    "name": "Dos supermercados con ahorro alto",
+    "priority": 5,
+    "category": "AHORRO_FRAGMENTACION",
+    "conditions": {
+      "dos_paradas": true,
+      "ahorro_alto": true,
+      "dentro_presupuesto": true
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Dividir la compra únicamente si el ahorro compensa el traslado.",
+      "explanation": "La división en dos supermercados puede justificarse por el ahorro alto y el cumplimiento del presupuesto."
+    }
+  }
+]
