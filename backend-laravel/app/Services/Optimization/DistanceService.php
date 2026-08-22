@@ -24,16 +24,4 @@ class DistanceService
 
         return round($radioTierraKm * $c, 2);
     }
-
-    // Costo de combustible para recorrer una distancia dada, en dólares.
-    // Fórmula: (distancia_km / km_por_litro) * precio_por_litro
-    public function calcularCostoCombustible(float $distanciaKm): float
-    {
-        $precioPorLitro = config('optimization.combustible.precio_por_litro');
-        $kmPorLitro = config('optimization.combustible.km_por_litro');
-
-        $litrosNecesarios = $distanciaKm / $kmPorLitro;
-
-        return round($litrosNecesarios * $precioPorLitro, 2);
-    }
 }

@@ -131,7 +131,7 @@ export type CompararResultado = {
 
 export type OptimizarResultado = CompararResultado & {
   distanciaKm: number
-  costoCombustible: number
+  penalizacionDistancia: number
   tiempoMinutos: number
   costoTiempo: number
   score: number
@@ -334,7 +334,7 @@ export function optimizarResultadoFromApi(r: ApiOptimizarResultado): OptimizarRe
   return {
     ...compararResultadoFromApi(r),
     distanciaKm: r.distancia_km,
-    costoCombustible: r.costo_combustible,
+    penalizacionDistancia: r.penalizacion_distancia,
     tiempoMinutos: r.tiempo_minutos,
     costoTiempo: r.costo_tiempo,
     score: r.score,

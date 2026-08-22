@@ -29,16 +29,17 @@ class OptimizationService
         return round($this->calcularTiempoMinutos($distanciaKm) * $costoPorMinuto, 2);
     }
 
-    // La fórmula del Score, tal cual está congelada en 02-arquitectura.md sección 5.1.
-    // Mientras MENOR sea el Score, mejor es la alternativa — es costo ajustado, no
-    // una calificación.
-    public function calcularScore(float $costoCompra, float $costoCombustible, float $costoTiempo, float $beneficioPromociones): float
+    // La fórmula del Score, tal cual está congelada en 02-arquitectura.md sección 5.1
+    // y actualizada por ADR-05: CostoCombustible ($) se reemplazó por
+    // PenalizacionDistancia (normalizada 0–1). Mientras MENOR sea el Score, mejor
+    // es la alternativa — es costo ajustado, no una calificación.
+    public function calcularScore(float $costoCompra, float $penalizacionDistancia, float $costoTiempo, float $beneficioPromociones): float
     {
         $pesos = config('optimization.pesos');
 
         return round(
             $pesos['alpha'] * $costoCompra
-            + $pesos['beta'] * $costoCombustible
+            + $pesos['beta'] * $penalizacionDistancia
             + $pesos['gamma'] * $costoTiempo
             - $pesos['delta'] * $beneficioPromociones,
             4
@@ -60,22 +61,35 @@ class OptimizationService
                 $resultado['longitud'],
             );
 
-            $costoCombustible = $this->distanceService->calcularCostoCombustible($distancia);
-            $tiempoMinutos = $this->calcularTiempoMinutos($distancia);
-            $costoTiempo = $this->calcularCostoTiempo($distancia);
+            // Pase 1: señales que dependen solo de esta alternativa.
+            $resultado['distancia_km'] = $distancia;
+            $resultado['tiempo_minutos'] = $this->calcularTiempoMinutos($distancia);
+            $resultado['costo_tiempo'] = $this->calcularCostoTiempo($distancia);
+        }
+        unset($resultado);
 
-            $score = $this->calcularScore(
+        // Normalización de la distancia contra el set (PenalizacionDistancia 0–1):
+        // 0 = sucursal más cercana, 1 = la más lejana. Si todas miden lo mismo
+        // (o hay una sola alternativa) la penalización es 0. No se dolariza la
+        // distancia — sigue ADR-05. Ver 02-arquitectura.md §5.1.
+        $distancias = array_column($comparacion['resultados'], 'distancia_km');
+        $distanciaMin = min($distancias);
+        $distanciaMax = max($distancias);
+        $distanciaRango = $distanciaMax - $distanciaMin;
+
+        foreach ($comparacion['resultados'] as &$resultado) {
+            // Pase 2: penalización normalizada + Score.
+            $penalizacionDistancia = $distanciaRango > 0
+                ? round(($resultado['distancia_km'] - $distanciaMin) / $distanciaRango, 4)
+                : 0.0;
+
+            $resultado['penalizacion_distancia'] = $penalizacionDistancia;
+            $resultado['score'] = $this->calcularScore(
                 $resultado['costo_total'],
-                $costoCombustible,
-                $costoTiempo,
+                $penalizacionDistancia,
+                $resultado['costo_tiempo'],
                 $resultado['beneficio_promociones'],
             );
-
-            $resultado['distancia_km'] = $distancia;
-            $resultado['costo_combustible'] = $costoCombustible;
-            $resultado['tiempo_minutos'] = $tiempoMinutos;
-            $resultado['costo_tiempo'] = $costoTiempo;
-            $resultado['score'] = $score;
         }
         unset($resultado);
 

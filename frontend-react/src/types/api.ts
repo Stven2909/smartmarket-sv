@@ -143,7 +143,7 @@ export type ApiComparar = {
 
 export type ApiOptimizarResultado = ApiCompararResultado & {
   distancia_km: number
-  costo_combustible: number
+  penalizacion_distancia: number
   tiempo_minutos: number
   costo_tiempo: number
   score: number

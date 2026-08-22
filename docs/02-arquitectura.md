@@ -207,7 +207,7 @@ Para que quede claro qué tan crítico es cada módulo, los agrupamos en tres ca
 **El Score, formalmente:**
 
 ```
-Score = α·(CostoCompra) + β·(CostoCombustible) + γ·(CostoTiempo) − δ·(BeneficioPromociones)
+Score = α·(CostoCompra) + β·(PenalizacionDistancia) + γ·(CostoTiempo) − δ·(BeneficioPromociones)
 ```
 
 Donde `α`, `β`, `γ` y `δ` son los "pesos" de cada factor — configurables, no fijos en el código
@@ -217,6 +217,11 @@ Donde `α`, `β`, `γ` y `δ` son los "pesos" de cada factor — configurables, 
 **Importante:** **mientras menor sea el Score, mejor es la alternativa** — es un puntaje de
 "costo total ajustado", no de calificación. Esto evita que alguien interprete, por error, que un
 Score alto es preferible.
+
+**Nota (ADR-05):** el término `β·PenalizacionDistancia` reemplazó a `β·CostoCombustible`. La
+distancia (Haversine, sección 6) se normaliza 0–1 contra el set de alternativas y actúa como
+criterio de desempate, sin dolarizarse — para el MVP no se asume tipo de vehículo ni precio de
+combustible real (ver `05-decision-costo-combustible.md`).
 
 ### 5.2 Módulos de apoyo (mejoran la experiencia, no son indispensables para el valor central)
 

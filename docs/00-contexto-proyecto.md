@@ -47,7 +47,7 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 | 005 | Arquitectura por capas: Controller → Service → Model |
 | 006 | Pipeline de datos desacoplado: cualquier fuente de precios (manual, scraping, API, CSV) pasa por Staging → Normalización → Validación antes de tocar el Catálogo Maestro |
 | 007 | Motor de Normalización como módulo propio (no solo un paso genérico del pipeline) |
-| 008 | Score del Motor de Optimización configurable: `Score = α·CostoCompra + β·CostoCombustible + γ·CostoTiempo − δ·BeneficioPromociones` (menor Score = mejor opción; los pesos α/β/γ/δ no están fijos en el código) |
+| 008 | Score del Motor de Optimización configurable: `Score = α·CostoCompra + β·PenalizacionDistancia + γ·CostoTiempo − δ·BeneficioPromociones` (menor Score = mejor opción; los pesos α/β/γ/δ no están fijos en el código) |
 | 009 | Sistema Experto **stateless**: nunca accede directamente a PostgreSQL, solo recibe hechos en JSON desde Laravel y responde una recomendación en JSON. Laravel es el único dueño de la base de datos. |
 
 **Principios de arquitectura (resumen, los 8 completos están en `02-arquitectura.md` sección 1):**

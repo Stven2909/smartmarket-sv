@@ -13,12 +13,23 @@ return new class extends Migration
     // Administrador, Moderador, Usuario normal".
     public function up(): void
     {
+        // La restricción CHECK es exclusiva del driver de PostgreSQL (sqlite en
+        // pruebas no soporta ALTER TABLE ... CONSTRAINT); allí enum() ya guarda
+        // el valor tal cual y no necesita este reemplazo.
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_rol_check');
         DB::statement("ALTER TABLE users ADD CONSTRAINT users_rol_check CHECK (rol IN ('admin', 'moderador', 'usuario'))");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_rol_check');
         DB::statement("ALTER TABLE users ADD CONSTRAINT users_rol_check CHECK (rol IN ('admin', 'usuario'))");
     }

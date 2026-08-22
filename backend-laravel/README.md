@@ -144,13 +144,14 @@ Usa `unaccent(lower(...))`, de ahí el requisito de PostgreSQL.
 Formula del Score (congelada en `02-arquitectura.md` sección 5.1, ADR-008):
 
 ```
-Score = α · CostoCompra + β · CostoCombustible + γ · CostoTiempo − δ · BeneficioPromociones
+Score = α · CostoCompra + β · PenalizacionDistancia + γ · CostoTiempo − δ · BeneficioPromociones
 ```
 
 - **Menor Score = mejor alternativa** (es costo ajustado, no una calificación).
 - Los pesos `α/β/γ/δ` no están hardcodeados: se configuran con `OPTIMIZATION_ALPHA/BETA/GAMMA/DELTA`
-  y otros supuestos del MVP (`FUEL_PRICE`, `VEHICLE_KM_PER_LITRE`, `VELOCIDAD_PROMEDIO_KMH`,
-  `COSTO_POR_MINUTO`) en `config/optimization.php`.
+  y otros supuestos del MVP (`VELOCIDAD_PROMEDIO_KMH`, `COSTO_POR_MINUTO`) en `config/optimization.php`.
+  (`FUEL_PRICE` / `VEHICLE_KM_PER_LITRE` están reservados para v2, ver ADR-05: en el MVP la distancia
+  se normaliza y no se dolariza el combustible).
 - Distancia por **Haversine** (`DistanceService`), tiempo estimado con velocidad urbana promedio
   constante (supuesto del MVP, sin tráfico real).
 - El flujo completo lo orquesta `OptimizationService::optimizar()` y persiste el resultado en

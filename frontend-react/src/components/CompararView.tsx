@@ -354,10 +354,9 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                   <div className="route-hero">
                     <div className="route-primary">
                       <span className="route-time">{Math.round(rutaMejor.tiempoMinutos)} min</span>
-                      <span className="route-km">{rutaMejor.distanciaKm.toFixed(1)} km</span>
                     </div>
                     <div className="route-meta">
-                      <span>Gas estimado <b>{formatMoney(rutaMejor.costoCombustible)}</b></span>
+                      <span>Distancia <b>≈ {rutaMejor.distanciaKm.toFixed(1)} km</b></span>
                       <span>{rutaMejor.supermercado} · {rutaMejor.sucursal}</span>
                     </div>
                   </div>
