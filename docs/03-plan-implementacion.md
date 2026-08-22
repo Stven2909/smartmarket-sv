@@ -190,7 +190,7 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 ## 7. Lo que queda fuera del MVP (roadmap futuro)
 
 ### v1.1 (mejoras de infraestructura, no bloquean la entrega)
-- Extractor automático de precios (antes llamado "Web Scraper").
+- Extractor automático de precios (antes llamado "Web Scraper"). El análisis técnico ya está hecho y documentado en `06-referencia-extractor-vtex.md`: se adopta el **patrón** (API VTEX + cortesía HTTP), no el código del proyecto hermano; requiere revisión legal de ToS por supermercado antes de ejecutar nada.
 - Docker (para organizar mejor cómo se despliega cada servicio).
 - Documentación completa en OpenAPI.
 - Registro de actividad (logging) más detallado.

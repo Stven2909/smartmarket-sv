@@ -2,11 +2,11 @@
 
 > **Qué es este documento:** un resumen ejecutivo de todo lo definido hasta ahora, pensado para
 > pegarse al inicio de una nueva conversación centrada en el desarrollo (código, migraciones,
-> endpoints, etc.), sin tener que repetir todo el proceso de diseño. Los cuatro documentos
-> completos (`01` a `04`) ya existen y son la fuente de verdad — esto es el mapa para navegarlos
+> endpoints, etc.), sin tener que repetir todo el proceso de diseño. Los seis documentos
+> completos (`01` a `06`) ya existen y son la fuente de verdad — esto es el mapa para navegarlos
 > rápido y no perder decisiones ya tomadas.
 
-**Estado actual:** los 4 documentos están terminados y compartidos con el equipo. El repositorio
+**Estado actual:** los 6 documentos están terminados y compartidos con el equipo. El repositorio
 de GitHub ya está creado. Lo que sigue es diseño detallado (wireframes, OpenAPI) y construcción.
 
 ---
@@ -25,7 +25,7 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 
 ---
 
-## 2. Los 4 documentos y qué contiene cada uno
+## 2. Los 6 documentos y qué contiene cada uno
 
 | Documento | Audiencia | Contenido clave |
 |---|---|---|
@@ -33,6 +33,8 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 | `02-arquitectura.md` | Todo el equipo técnico | Principios de arquitectura (8), stack completo, arquitectura general, **2 flujos end-to-end**, módulos clasificados (Core/Apoyo/Externos), pipeline de datos (Price Providers → Staging → Normalización → Validación → Catálogo), Motor de Normalización, Sistema Experto (resumen), seguridad, testing, **No-objetivos**, riesgos, **ADRs numerados (001-009)**, **ERD v1.0 completo con diagramas e imágenes** (`erd_nivel1_core.png`, `erd_nivel2_pipeline.png`), estado del proyecto. **Documento congelado — cualquier cambio de fondo necesita un ADR nuevo.** |
 | `03-plan-implementacion.md` | Equipo (operativo, sí puede cambiar) | Organización en Track A (Laravel/React) y Track B (Sistema Experto/Python), roadmap por fases (0A/0B → 1-9), fases del Sistema Experto (P0-P4), Definition of Done, tabla de riesgos, roadmap futuro (v1.1/v1.2), estructura de carpetas del repo. |
 | `04-sistema-experto.md` | Materia de Sistemas Expertos + equipo | Dominio, hechos primarios vs. derivados, variables de salida, **Forward Chaining** (con justificación), **política de resolución de conflictos** (jerarquía de prioridad), 15 reglas derivadas por escenario, **explicabilidad a dos niveles** (reglas activadas + explicación en lenguaje natural), contrato de API con errores (400/422/500), casos de prueba (incluyendo uno ambiguo), limitaciones. Framework de Python **todavía pendiente de confirmar** (candidatos: PyKnow, CLIPS/clipspy, Durable Rules). |
+| `05-decision-costo-combustible.md` | Todo el equipo técnico | **ADR-05**: reemplazo de `CostoCombustible ($)` por `PenalizacionDistancia` normalizada (0–1, min-max por corrida) en la fórmula del motor de optimización — evita dolarizar combustible encadenando distancia Haversine × precio citado × consumo supuesto (tres capas de imprecisión). Justificación, fórmula antes/después, migraciones, implementación backend/frontend y suite de regresión. |
+| `06-referencia-extractor-vtex.md` | Equipo técnico (para v1.1) | Análisis de referencia del extractor automático de precios (repo hermano): fuentes y modos (HTML/VTEX/partner-feed), estrategia VTEX paso a paso, cortesía HTTP, normalización, persistencia append-only, crons; mapeo a nuestro pipeline (Price Providers → Staging → Normalización → Validación). **Adopta solo patrones, no código; revisión de ToS pendiente antes de ejecutar. No implementa nada hoy.** |
 
 ---
 
