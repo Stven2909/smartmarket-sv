@@ -6,9 +6,10 @@ import { CategoryIcon } from './CategoryIcon'
 type Props = {
   product: Product
   onAddToList?: (product: Product) => void
+  onViewHistorial?: () => void
 }
 
-export function ProductCard({ product, onAddToList }: Props) {
+export function ProductCard({ product, onAddToList, onViewHistorial }: Props) {
   const offers = [...product.offers].sort((a, b) => a.price - b.price)
   const best = offers[0]
 
@@ -35,6 +36,7 @@ export function ProductCard({ product, onAddToList }: Props) {
         <div className="live-offers">
           {offers.map((offer, idx) => {
             const isCheapest = offers.length > 1 && idx === 0
+            const prevPrice = offer.hasPromo && offer.previousPrice != null ? formatMoney(offer.previousPrice) : null
             return (
               <div key={offer.branchId} className={`best-offer-line${isCheapest ? ' cheapest' : ''}`}>
                 <div>
@@ -50,8 +52,8 @@ export function ProductCard({ product, onAddToList }: Props) {
                   )}
                 </div>
                 <div className="saving-price">
-                  {offer.hasPromo && offer.previousPrice != null && (
-                    <s>{formatMoney(offer.previousPrice)}</s>
+                  {prevPrice !== null && (
+                    {prevPrice}
                   )}
                   <b>{formatMoney(offer.price)}</b>
                 </div>
@@ -59,6 +61,13 @@ export function ProductCard({ product, onAddToList }: Props) {
             )
           })}
         </div>
+      )}
+
+      {onViewHistorial && (
+        <button type="button" className="live-historial-button" onClick={onViewHistorial}>
+          <span className="historial-icon">📈</span>
+          Ver histórico
+        </button>
       )}
 
       {onAddToList && (

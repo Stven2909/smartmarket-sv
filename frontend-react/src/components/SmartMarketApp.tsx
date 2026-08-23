@@ -253,7 +253,7 @@ export function SmartMarketApp() {
                   </div>
                   <button type="button" className="link-button" onClick={() => setDetail(null)}>Cerrar detalle</button>
                 </div>
-                <ProductCard product={detail} />
+                <ProductCard product={detail} onViewHistorial={() => alert('Ver historial de precios - feature en desarrollo')} />
 
                 <div className="optimizer-panel" style={{ marginTop: 18 }}>
                   <div className="optimizer-head">
