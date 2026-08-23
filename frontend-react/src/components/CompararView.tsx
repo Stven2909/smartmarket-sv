@@ -5,6 +5,7 @@ import { formatMoney } from '../lib/format'
 import { supermarketColor } from '../lib/presentation'
 import type { CompararResultado, ListaSummary, OptimizarResultado } from '../types/domain'
 import { Check, MapPin, Navigation, Plus, Trophy } from 'lucide-react'
+import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
 
 // Reverse geocoding con Nominatim/OSM (gratis, sin key). No es un dato del motor:
 // solo le da nombre humano a la ubicación del usuario. Si falla, se muestra
@@ -377,6 +378,18 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                     </div>
                   )}
                 </section>
+              )}
+
+              {rutaMejor?.expertRecommendation && (
+                <section style={{ marginTop: 18 }}>
+                  <ExpertRecommendationBadge recommendation={rutaMejor.expertRecommendation} />
+                </section>
+              )}
+
+              {!rutaMejor?.expertSystemAvailable && rutaMejor != null && (
+                <div style={{ marginTop: 14, padding: '8px 12px', borderRadius: 8, background: 'var(--surface, #f9fafb)', border: '1px solid var(--border, #e5e7eb)', fontSize: 12, color: 'var(--muted, #6b7280)' }}>
+                  🧠 Sistema Experto no disponible — la recomendación se basa únicamente en costo, distancia y promociones.
+                </div>
               )}
             </div>
           )}

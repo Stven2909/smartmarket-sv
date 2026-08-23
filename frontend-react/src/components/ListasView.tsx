@@ -8,6 +8,7 @@ import { productFromApi } from '../types/domain'
 import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
+import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
 
 type Tab = 'activa' | 'completada'
 
@@ -516,6 +517,14 @@ export function ListasView({ onListasChange }: Props) {
                         <small>
                           {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : '—'} · {r.tiempoMinutos != null ? `${r.tiempoMinutos} min` : '—'} · ahorro promos {formatMoney(r.beneficioPromociones)}
                         </small>
+                        {r.expertRecommendation && (
+                          <ExpertRecommendationBadge recommendation={r.expertRecommendation} />
+                        )}
+                        {!r.expertSystemAvailable && (
+                          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--muted, #6b7280)' }}>
+                            🧠 Sistema Experto no disponible
+                          </div>
+                        )}
                       </div>
                       <b className="recommendation-total">Score {r.score}</b>
                     </article>
