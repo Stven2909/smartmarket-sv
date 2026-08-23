@@ -1,28 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { fetchCategorias, fetchProductos, fetchProducto, fetchSucursales, fetchHistorialPrecios } from '../api/catalog'
+import { fetchCategorias, fetchProductos, fetchProducto, fetchHistorialPrecios, fetchSucursales } from '../api/catalog'
 import * as listsApi from '../api/lists'
 import { productFromApi, productLiteFromApi, historialPrecioFromApi } from '../types/domain'
 import type { Branch, Category, HistorialPrecio, Product } from '../types/domain'
-import { formatMoney } from '../lib/format'
 import { useInstallPrompt } from '../lib/useInstallPrompt'
 import { CategoryIcon } from './CategoryIcon'
 import { BarChart2, Bell, ChevronLeft, Home, ListChecks, Plus, Search, User } from 'lucide-react'
 import { ProductCard } from './ProductCard'
-import { Promotions } from './Promotions'
-import { SavingsByCategory } from './SavingsByCategory'
-import { ListasView } from './ListasView'
-import { PerfilView } from './PerfilView'
+import { HomeFeed } from './HomeFeed'
 import { BuscarView } from './BuscarView'
 import { CompararView } from './CompararView'
-import { HomeFeed } from './HomeFeed'
+import { ListasView } from './ListasView'
+import { PerfilView } from './PerfilView'
+import { Promotions } from './Promotions'
+import { SavingsByCategory } from './SavingsByCategory'
 import { InstallPrompt } from './InstallPrompt'
-
-function formatDate(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
-}
+import { PriceHistoryChart } from './PriceHistoryChart'
 
 type View = 'inicio' | 'buscar' | 'comparar' | 'mis-listas' | 'perfil' | 'categorias' | 'promociones' | 'sucursales'
 
@@ -134,7 +128,8 @@ export function SmartMarketApp() {
     setHistorialLoading(true)
     try {
       const data = await fetchHistorialPrecios(id)
-      setHistorial(data.data.map(historialPrecioFromApi))
+      // Antes: data.data.map(...) - ahora el endpoint devuelve array plano
+      setHistorial(data.map(historialPrecioFromApi))
     } catch {
       setHistorialError('No se pudo cargar el historial de precios.')
     } finally {
@@ -253,7 +248,7 @@ export function SmartMarketApp() {
                   </div>
                   <button type="button" className="link-button" onClick={() => setDetail(null)}>Cerrar detalle</button>
                 </div>
-                <ProductCard product={detail} onViewHistorial={() => alert('Ver historial de precios - feature en desarrollo')} />
+                <ProductCard product={detail} />
 
                 <div className="optimizer-panel" style={{ marginTop: 18 }}>
                   <div className="optimizer-head">
@@ -274,32 +269,8 @@ export function SmartMarketApp() {
                       <p>Los cambios de precio de este producto aún no se han registrado.</p>
                     </div>
                   )}
-                  {!historialLoading && historial.length > 0 && (
-                    <div className="store-table">
-                      <div className="store-table-head">
-                        <span>Fecha</span>
-                        <span>Supermercado</span>
-                        <span>Precio</span>
-                      </div>
-                      {historial.map((h) => (
-                        <div key={h.id} className="store-table-row">
-                          <div>
-                            <b>{formatDate(h.fecha) || '—'}</b>
-                            {h.origen && <small> · {h.origen}</small>}
-                          </div>
-                          <div>
-                            <b>{h.sucursal.supermarket.name}</b>
-                            <small> · {h.sucursal.name}</small>
-                          </div>
-                          <span className="saving-price" style={{ justifyContent: 'flex-end' }}>
-                            {h.tienePromo && h.precioNormal > h.precioFinal && (
-                              <s>{formatMoney(h.precioNormal)}</s>
-                            )}
-                            <b>{formatMoney(h.precioFinal)}</b>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                  {!historialLoading && !historialError && historial.length > 0 && (
+                    <PriceHistoryChart historial={historial} />
                   )}
                 </div>
               </section>
