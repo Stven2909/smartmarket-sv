@@ -1,0 +1,201 @@
+{
+  "contract_version": "1.0.0",
+  "rules_version": "1.0.0",
+  "requests": {
+    "ideal": {
+      "request_id": "demo-001",
+      "alternativa_id": "supermercado-1",
+      "costo_total": 42.5,
+      "presupuesto": 50.0,
+      "ahorro": 11.25,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": true
+    },
+    "budget_exceeded": {
+      "request_id": "demo-budget-001",
+      "alternativa_id": "supermercado-2",
+      "costo_total": 56.0,
+      "presupuesto": 50.0,
+      "ahorro": 11.25,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": true
+    },
+    "essential_missing": {
+      "request_id": "demo-essential-001",
+      "alternativa_id": "supermercado-3",
+      "costo_total": 42.5,
+      "presupuesto": 50.0,
+      "ahorro": 5.0,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 9,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 5,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    },
+    "far_distance": {
+      "request_id": "demo-distance-001",
+      "alternativa_id": "supermercado-4",
+      "costo_total": 42.5,
+      "presupuesto": 50.0,
+      "ahorro": 2.99,
+      "distancia_km": 12.0,
+      "distancia_adicional_km": 8.0,
+      "tiempo_estimado_min": 25,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  "responses": {
+    "ideal": {
+      "request_id": "demo-001",
+      "nivel_recomendacion": "EXCELENTE",
+      "accion_sugerida": "Comprar todo en esta alternativa.",
+      "explicacion": "Cumple el presupuesto y las condiciones principales.",
+      "reglas_activadas": ["R06", "R07"],
+      "prioridad_aplicada": "CONVENIENCIA",
+      "hechos_derivados": {
+        "dentro_presupuesto": true,
+        "todos_esenciales_disponibles": true,
+        "porcentaje_productos_disponibles": 100.0
+      },
+      "version_reglas": "1.0.0",
+      "version_contrato": "1.0.0",
+      "winning_rule": "R06",
+      "losing_rules": ["R07"],
+      "trace": [],
+      "indice_conveniencia": 82.39,
+      "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
+      "componentes_conveniencia": {
+        "ahorro": 0.5625,
+        "disponibilidad": 1.0,
+        "distancia": 0.96,
+        "tiempo": 0.9,
+        "promociones": 1.0
+      },
+      "pesos_conveniencia": {
+        "ahorro": 0.35,
+        "disponibilidad": 0.25,
+        "distancia": 0.2,
+        "tiempo": 0.15,
+        "promociones": 0.05
+      }
+    },
+    "not_recommended": {
+      "request_id": "demo-budget-001",
+      "nivel_recomendacion": "NO_RECOMENDABLE",
+      "accion_sugerida": "Replantear la lista o buscar productos sustitutos.",
+      "explicacion": "El costo supera el presupuesto en más de un 10%.",
+      "reglas_activadas": ["R01"],
+      "prioridad_aplicada": "PRESUPUESTO",
+      "hechos_derivados": {
+        "dentro_presupuesto": false,
+        "presupuesto_muy_excedido": true
+      },
+      "version_reglas": "1.0.0",
+      "version_contrato": "1.0.0",
+      "winning_rule": "R01",
+      "losing_rules": [],
+      "trace": [
+        {
+          "rule_id": "R01",
+          "evaluated": true,
+          "activated": true,
+          "conditions": {
+            "presupuesto_muy_excedido": {
+              "expected": true,
+              "actual": true,
+              "matched": true
+            }
+          },
+          "matched_conditions": ["presupuesto_muy_excedido"],
+          "unmatched_conditions": [],
+          "reason": "Todas las condiciones se cumplieron."
+        }
+      ],
+      "indice_conveniencia": 82.39,
+      "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
+      "componentes_conveniencia": {
+        "ahorro": 0.25,
+        "disponibilidad": 1.0,
+        "distancia": 0.96,
+        "tiempo": 0.9,
+        "promociones": 0.0
+      },
+      "pesos_conveniencia": {
+        "ahorro": 0.35,
+        "disponibilidad": 0.25,
+        "distancia": 0.2,
+        "tiempo": 0.15,
+        "promociones": 0.05
+      }
+    },
+    "with_complementary_index": {
+      "request_id": "demo-neutral-001",
+      "nivel_recomendacion": "NO_RECOMENDABLE",
+      "accion_sugerida": "Comparar con otras alternativas antes de decidir.",
+      "explicacion": "Ninguna regla específica de ventaja o riesgo se activó.",
+      "reglas_activadas": [],
+      "prioridad_aplicada": "SIN_REGLA",
+      "hechos_derivados": {
+        "dentro_presupuesto": true,
+        "ahorro_medio": true,
+        "distancia_media": true,
+        "tiempo_medio": true
+      },
+      "version_reglas": "1.0.0",
+      "version_contrato": "1.0.0",
+      "winning_rule": null,
+      "losing_rules": [],
+      "trace": [],
+      "indice_conveniencia": 61.0,
+      "clasificacion_conveniencia": "CONVENIENCIA_MEDIA",
+      "componentes_conveniencia": {
+        "ahorro": 0.25,
+        "disponibilidad": 1.0,
+        "distancia": 0.8,
+        "tiempo": 0.75,
+        "promociones": 0.0
+      },
+      "pesos_conveniencia": {
+        "ahorro": 0.35,
+        "disponibilidad": 0.25,
+        "distancia": 0.2,
+        "tiempo": 0.15,
+        "promociones": 0.05
+      }
+    }
+  },
+  "errors": {
+    "validation_422": {
+      "detail": [
+        {
+          "loc": ["body", "presupuesto"],
+          "msg": "Input should be greater than 0",
+          "type": "greater_than"
+        }
+      ]
+    }
+  }
+}

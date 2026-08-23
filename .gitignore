@@ -4,6 +4,7 @@ venv/
 .env
 .env.*
 !.env.example
+.streamlit/secrets.toml
 
 # Cachés de Python
 __pycache__/
@@ -26,4 +27,3 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
-

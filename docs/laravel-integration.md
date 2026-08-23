@@ -20,6 +20,76 @@ Python es el motor experto:
 
 Python no consulta Laravel, PostgreSQL ni modelos internos de Laravel.
 
+## Mapeo con el backend actual de `Desarrollo-Experto`
+
+La versión actual de Laravel (`OptimizationService`) ya no calcula
+`costo_combustible`. Calcula y devuelve, por alternativa:
+
+```json
+{
+  "costo_total": 42.5,
+  "beneficio_promociones": 3.25,
+  "productos_esenciales_disponibles": 6,
+  "productos_esenciales_totales": 6,
+  "productos_opcionales_disponibles": 4,
+  "productos_opcionales_totales": 4,
+  "distancia_km": 2.3,
+  "penalizacion_distancia": 0.0,
+  "tiempo_minutos": 12.0,
+  "costo_tiempo": 0.6,
+  "score": 40.1
+}
+```
+
+Ese es el resultado interno del optimizador, no el payload que debe enviarse
+a Python. Laravel debe construir el contrato normalizado de esta forma:
+
+| Campo Python | Construcción desde Laravel |
+|---|---|
+| `request_id` | `lista-{lista_id}-sucursal-{sucursal_id}` |
+| `alternativa_id` | `sucursal-{sucursal_id}` |
+| `costo_total` | `resultado.costo_total` |
+| `presupuesto` | `lista.presupuesto`; si es `null`, omitir la llamada experta |
+| `ahorro` | `max(0, costo_referencia - resultado.costo_total)` por alternativa |
+| `distancia_km` | `resultado.distancia_km` |
+| `distancia_adicional_km` | `resultado.distancia_km - distancia_minima` entre alternativas físicas |
+| `tiempo_estimado_min` | `resultado.tiempo_minutos` |
+| `productos_disponibles` | `productos_esenciales_disponibles + productos_opcionales_disponibles` |
+| `productos_totales` | `productos_esenciales_totales + productos_opcionales_totales` |
+| `productos_esenciales_disponibles` | `resultado.productos_esenciales_disponibles` |
+| `productos_esenciales_totales` | `resultado.productos_esenciales_totales` |
+| `numero_supermercados` | `1` para la evaluación actual por sucursal; usar el número real si se implementa compra dividida |
+| `promociones_aplicables` | `resultado.beneficio_promociones > 0` |
+
+No enviar al endpoint Python:
+
+```text
+score
+penalizacion_distancia
+costo_tiempo
+costo_combustible
+tipo_vehiculo
+km_por_litro
+precio_por_litro
+```
+
+`penalizacion_distancia` es una señal interna normalizada entre 0 y 1 para
+ordenar alternativas en Laravel. No reemplaza a `distancia_adicional_km` en
+R03: esa regla usa umbrales expresados en kilómetros. Por eso el adaptador
+debe calcular la distancia mínima del conjunto antes de llamar a Python.
+
+Las alternativas sin coordenadas físicas (`distancia_km = null`), como una
+posible tienda en línea, no deben enviarse a Python en la primera versión:
+`RecommendationRequest` exige una distancia numérica y las reglas de
+conveniencia necesitan distancia y tiempo. Laravel debe conservarlas en su
+optimización y marcar la recomendación experta como no disponible para esa
+alternativa.
+
+El backend actual evalúa una sucursal por alternativa, así que
+`numero_supermercados` vale `1` en esta integración. Los escenarios Python de
+dos o tres supermercados siguen siendo pruebas del motor y solo deben usarse
+cuando Laravel implemente explícitamente una compra dividida.
+
 ## Configuración
 
 En el `.env` de Laravel:

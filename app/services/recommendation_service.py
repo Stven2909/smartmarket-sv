@@ -3,9 +3,7 @@ from app.schemas.recommendation import (
     RecommendationRequest,
     RecommendationResponse,
 )
-
-
-RULES_VERSION = "1.0.0"
+from app.schemas.versions import CONTRACT_VERSION, RULES_VERSION
 
 
 def recommend(request: RecommendationRequest) -> RecommendationResponse:
@@ -22,7 +20,12 @@ def recommend(request: RecommendationRequest) -> RecommendationResponse:
         prioridad_aplicada=result["priority_category"] or "SIN_REGLA",
         hechos_derivados=result["facts"],
         version_reglas=RULES_VERSION,
+        version_contrato=CONTRACT_VERSION,
         winning_rule=result["winning_rule"],
         losing_rules=result["losing_rules"],
         trace=result["trace"],
+        indice_conveniencia=result["indice_conveniencia"],
+        clasificacion_conveniencia=result["clasificacion_conveniencia"],
+        componentes_conveniencia=result["componentes_conveniencia"],
+        pesos_conveniencia=result["pesos_conveniencia"],
     )

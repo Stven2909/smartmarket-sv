@@ -1,0 +1,752 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SmartMarket SV Expert Service",
+    "description": "API independiente para el Sistema Experto de SmartMarket SV.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Verifica la disponibilidad del servicio",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Servicio disponible.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                },
+                "example": {
+                  "status": "ok",
+                  "service": "smartmarket-expert-service"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommend": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Genera una recomendaci\u00f3n explicable",
+        "description": "Valida los hechos de una alternativa, ejecuta el motor de reglas y a\u00f1ade el \u00edndice auxiliar de conveniencia sin alterar las reglas cr\u00edticas.",
+        "operationId": "create_recommendation_api_v1_recommend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recomendaci\u00f3n validada y explicable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                },
+                "examples": {
+                  "alternativa_ideal": {
+                    "summary": "Alternativa ideal con \u00edndice complementario",
+                    "value": {
+                      "request_id": "demo-001",
+                      "nivel_recomendacion": "EXCELENTE",
+                      "accion_sugerida": "Comprar todo en esta alternativa.",
+                      "explicacion": "Cumple el presupuesto y las condiciones principales.",
+                      "reglas_activadas": [
+                        "R06",
+                        "R07"
+                      ],
+                      "prioridad_aplicada": "CONVENIENCIA",
+                      "hechos_derivados": {
+                        "dentro_presupuesto": true,
+                        "todos_esenciales_disponibles": true,
+                        "ahorro_alto": true,
+                        "porcentaje_productos_disponibles": 100.0
+                      },
+                      "version_reglas": "1.0.0",
+                      "version_contrato": "1.0.0",
+                      "winning_rule": "R06",
+                      "losing_rules": [
+                        "R07"
+                      ],
+                      "trace": [
+                        {
+                          "rule_id": "R06",
+                          "evaluated": true,
+                          "activated": true,
+                          "conditions": {
+                            "dentro_presupuesto": {
+                              "expected": true,
+                              "actual": true,
+                              "matched": true
+                            }
+                          },
+                          "matched_conditions": [
+                            "dentro_presupuesto"
+                          ],
+                          "unmatched_conditions": [],
+                          "reason": "Todas las condiciones se cumplieron."
+                        }
+                      ],
+                      "indice_conveniencia": 82.39,
+                      "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
+                      "componentes_conveniencia": {
+                        "ahorro": 0.5625,
+                        "disponibilidad": 1.0,
+                        "distancia": 0.96,
+                        "tiempo": 0.9,
+                        "promociones": 1.0
+                      },
+                      "pesos_conveniencia": {
+                        "ahorro": 0.35,
+                        "disponibilidad": 0.25,
+                        "distancia": 0.2,
+                        "tiempo": 0.15,
+                        "promociones": 0.05
+                      }
+                    }
+                  },
+                  "regla_critica": {
+                    "summary": "Presupuesto muy excedido",
+                    "value": {
+                      "request_id": "demo-001",
+                      "nivel_recomendacion": "NO_RECOMENDABLE",
+                      "accion_sugerida": "Replantear la lista o buscar productos sustitutos.",
+                      "explicacion": "El costo supera el presupuesto en m\u00e1s de un 10%. La decisi\u00f3n principal fue determinada por la regla R01. El \u00edndice de conveniencia se muestra como informaci\u00f3n complementaria.",
+                      "reglas_activadas": [
+                        "R01"
+                      ],
+                      "prioridad_aplicada": "PRESUPUESTO",
+                      "hechos_derivados": {
+                        "dentro_presupuesto": false,
+                        "presupuesto_muy_excedido": true,
+                        "ahorro_alto": true,
+                        "porcentaje_productos_disponibles": 100.0
+                      },
+                      "version_reglas": "1.0.0",
+                      "version_contrato": "1.0.0",
+                      "winning_rule": "R01",
+                      "losing_rules": [],
+                      "trace": [
+                        {
+                          "rule_id": "R01",
+                          "evaluated": true,
+                          "activated": true,
+                          "conditions": {
+                            "presupuesto_muy_excedido": {
+                              "expected": true,
+                              "actual": true,
+                              "matched": true
+                            }
+                          },
+                          "matched_conditions": [
+                            "presupuesto_muy_excedido"
+                          ],
+                          "unmatched_conditions": [],
+                          "reason": "Todas las condiciones se cumplieron."
+                        }
+                      ],
+                      "indice_conveniencia": 82.39,
+                      "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
+                      "componentes_conveniencia": {
+                        "ahorro": 0.5625,
+                        "disponibilidad": 1.0,
+                        "distancia": 0.96,
+                        "tiempo": 0.9,
+                        "promociones": 1.0
+                      },
+                      "pesos_conveniencia": {
+                        "ahorro": 0.35,
+                        "disponibilidad": 0.25,
+                        "distancia": 0.2,
+                        "tiempo": 0.15,
+                        "promociones": 0.05
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "JSON ausente, inv\u00e1lido o inconsistente.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "presupuesto"
+                      ],
+                      "msg": "Input should be greater than 0",
+                      "type": "greater_than"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno no controlado del servicio."
+          }
+        }
+      }
+    },
+    "/api/v1/chat": {
+      "post": {
+        "tags": [
+          "chatbot"
+        ],
+        "summary": "Explica una recomendaci\u00f3n con un chatbot determinista",
+        "description": "Responde usando \u00fanicamente los hechos y la recomendaci\u00f3n recibidos; no ejecuta reglas nuevas ni genera datos inventados.",
+        "operationId": "create_chat_response_api_v1_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta determinista del chatbot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                },
+                "example": {
+                  "request_id": "demo-001",
+                  "intent": "EXPLICACION",
+                  "response": "La recomendaci\u00f3n actual es EXCELENTE porque cumple el presupuesto y las condiciones principales.",
+                  "supported": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Solicitud de chatbot inv\u00e1lida.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "message"
+                      ],
+                      "msg": "String should have at least 1 character",
+                      "type": "string_too_short"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message"
+          },
+          "facts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Facts"
+          },
+          "recommendation": {
+            "$ref": "#/components/schemas/RecommendationResponse"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message",
+          "recommendation"
+        ],
+        "title": "ChatRequest",
+        "examples": [
+          {
+            "facts": {
+              "ahorro": 11.25,
+              "costo_total": 42.5,
+              "distancia_adicional_km": 0.8,
+              "presupuesto": 50.0,
+              "productos_disponibles": 10,
+              "productos_esenciales_disponibles": 6,
+              "productos_esenciales_totales": 6,
+              "productos_totales": 10,
+              "promociones_aplicables": true,
+              "tiempo_estimado_min": 12
+            },
+            "message": "\u00bfPor qu\u00e9 se recomienda esta alternativa?",
+            "recommendation": {
+              "accion_sugerida": "Comprar todo en esta alternativa.",
+              "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
+              "componentes_conveniencia": {
+                "ahorro": 0.5625,
+                "disponibilidad": 1.0,
+                "distancia": 0.96,
+                "promociones": 1.0,
+                "tiempo": 0.9
+              },
+              "explicacion": "Cumple el presupuesto y las condiciones principales.",
+              "hechos_derivados": {
+                "ahorro_alto": true,
+                "dentro_presupuesto": true,
+                "porcentaje_productos_disponibles": 100.0,
+                "todos_esenciales_disponibles": true
+              },
+              "indice_conveniencia": 82.39,
+              "losing_rules": [
+                "R07"
+              ],
+              "nivel_recomendacion": "EXCELENTE",
+              "pesos_conveniencia": {
+                "ahorro": 0.35,
+                "disponibilidad": 0.25,
+                "distancia": 0.2,
+                "promociones": 0.05,
+                "tiempo": 0.15
+              },
+              "prioridad_aplicada": "CONVENIENCIA",
+              "reglas_activadas": [
+                "R06",
+                "R07"
+              ],
+              "request_id": "demo-001",
+              "trace": [
+                {
+                  "activated": true,
+                  "conditions": {
+                    "dentro_presupuesto": {
+                      "actual": true,
+                      "expected": true,
+                      "matched": true
+                    }
+                  },
+                  "evaluated": true,
+                  "matched_conditions": [
+                    "dentro_presupuesto"
+                  ],
+                  "reason": "Todas las condiciones se cumplieron.",
+                  "rule_id": "R06",
+                  "unmatched_conditions": []
+                }
+              ],
+              "version_contrato": "1.0.0",
+              "version_reglas": "1.0.0",
+              "winning_rule": "R06"
+            }
+          }
+        ]
+      },
+      "ChatResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Request Id"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "EXPLICACION",
+              "PRESUPUESTO",
+              "AHORRO",
+              "DISTANCIA",
+              "TIEMPO",
+              "PRODUCTOS",
+              "MEJORAR",
+              "REGLAS",
+              "AYUDA"
+            ],
+            "title": "Intent"
+          },
+          "response": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Response"
+          },
+          "supported": {
+            "type": "boolean",
+            "title": "Supported"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "intent",
+          "response",
+          "supported"
+        ],
+        "title": "ChatResponse",
+        "examples": [
+          {
+            "intent": "EXPLICACION",
+            "request_id": "demo-001",
+            "response": "La recomendaci\u00f3n actual es EXCELENTE porque cumple el presupuesto y las condiciones principales.",
+            "supported": true
+          }
+        ]
+      },
+      "RecommendationRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Request Id"
+          },
+          "alternativa_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Alternativa Id"
+          },
+          "costo_total": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Costo Total"
+          },
+          "presupuesto": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Presupuesto"
+          },
+          "ahorro": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Ahorro"
+          },
+          "distancia_km": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distancia Km"
+          },
+          "distancia_adicional_km": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distancia Adicional Km"
+          },
+          "tiempo_estimado_min": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tiempo Estimado Min"
+          },
+          "productos_disponibles": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Productos Disponibles"
+          },
+          "productos_totales": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Productos Totales"
+          },
+          "productos_esenciales_disponibles": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Productos Esenciales Disponibles"
+          },
+          "productos_esenciales_totales": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Productos Esenciales Totales"
+          },
+          "numero_supermercados": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Numero Supermercados"
+          },
+          "promociones_aplicables": {
+            "type": "boolean",
+            "title": "Promociones Aplicables"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "alternativa_id",
+          "costo_total",
+          "presupuesto",
+          "ahorro",
+          "distancia_km",
+          "distancia_adicional_km",
+          "tiempo_estimado_min",
+          "productos_disponibles",
+          "productos_totales",
+          "productos_esenciales_disponibles",
+          "productos_esenciales_totales",
+          "numero_supermercados",
+          "promociones_aplicables"
+        ],
+        "title": "RecommendationRequest",
+        "description": "Hechos de una alternativa de compra recibidos por el sistema experto.",
+        "examples": [
+          {
+            "ahorro": 11.25,
+            "alternativa_id": "supermercado-1",
+            "costo_total": 42.5,
+            "distancia_adicional_km": 0.8,
+            "distancia_km": 2.3,
+            "numero_supermercados": 1,
+            "presupuesto": 50.0,
+            "productos_disponibles": 10,
+            "productos_esenciales_disponibles": 6,
+            "productos_esenciales_totales": 6,
+            "productos_totales": 10,
+            "promociones_aplicables": true,
+            "request_id": "demo-001",
+            "tiempo_estimado_min": 12
+          }
+        ]
+      },
+      "RecommendationResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Request Id"
+          },
+          "nivel_recomendacion": {
+            "type": "string",
+            "enum": [
+              "EXCELENTE",
+              "BUENA",
+              "NO_RECOMENDABLE"
+            ],
+            "title": "Nivel Recomendacion"
+          },
+          "accion_sugerida": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Accion Sugerida"
+          },
+          "explicacion": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Explicacion"
+          },
+          "reglas_activadas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reglas Activadas"
+          },
+          "prioridad_aplicada": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Prioridad Aplicada"
+          },
+          "hechos_derivados": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Hechos Derivados"
+          },
+          "version_reglas": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Version Reglas"
+          },
+          "winning_rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winning Rule"
+          },
+          "losing_rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Losing Rules"
+          },
+          "trace": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Trace"
+          },
+          "version_contrato": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Version Contrato",
+            "default": "1.0.0"
+          },
+          "indice_conveniencia": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indice Conveniencia"
+          },
+          "clasificacion_conveniencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clasificacion Conveniencia"
+          },
+          "componentes_conveniencia": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Componentes Conveniencia"
+          },
+          "pesos_conveniencia": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pesos Conveniencia"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "nivel_recomendacion",
+          "accion_sugerida",
+          "explicacion",
+          "reglas_activadas",
+          "prioridad_aplicada",
+          "hechos_derivados",
+          "version_reglas"
+        ],
+        "title": "RecommendationResponse",
+        "description": "Resultado explicable que devolver\u00e1 el sistema experto.",
+        "examples": [
+          {
+            "accion_sugerida": "Comprar todo en esta alternativa.",
+            "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
+            "componentes_conveniencia": {
+              "ahorro": 0.5625,
+              "disponibilidad": 1.0,
+              "distancia": 0.96,
+              "promociones": 1.0,
+              "tiempo": 0.9
+            },
+            "explicacion": "Cumple el presupuesto y las condiciones principales.",
+            "hechos_derivados": {
+              "ahorro_alto": true,
+              "dentro_presupuesto": true,
+              "porcentaje_productos_disponibles": 100.0,
+              "todos_esenciales_disponibles": true
+            },
+            "indice_conveniencia": 82.39,
+            "losing_rules": [
+              "R07"
+            ],
+            "nivel_recomendacion": "EXCELENTE",
+            "pesos_conveniencia": {
+              "ahorro": 0.35,
+              "disponibilidad": 0.25,
+              "distancia": 0.2,
+              "promociones": 0.05,
+              "tiempo": 0.15
+            },
+            "prioridad_aplicada": "CONVENIENCIA",
+            "reglas_activadas": [
+              "R06",
+              "R07"
+            ],
+            "request_id": "demo-001",
+            "trace": [
+              {
+                "activated": true,
+                "conditions": {
+                  "dentro_presupuesto": {
+                    "actual": true,
+                    "expected": true,
+                    "matched": true
+                  }
+                },
+                "evaluated": true,
+                "matched_conditions": [
+                  "dentro_presupuesto"
+                ],
+                "reason": "Todas las condiciones se cumplieron.",
+                "rule_id": "R06",
+                "unmatched_conditions": []
+              }
+            ],
+            "version_contrato": "1.0.0",
+            "version_reglas": "1.0.0",
+            "winning_rule": "R06"
+          }
+        ]
+      }
+    }
+  }
+}

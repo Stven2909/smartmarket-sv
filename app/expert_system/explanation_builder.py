@@ -5,10 +5,11 @@ from app.expert_system.models import ProductionRule
 
 DEFAULT_CONCLUSION = {
     "level": "NO_RECOMENDABLE",
-    "action": "Revisar la alternativa y comparar otras opciones.",
+    "action": "Comparar con otras alternativas antes de decidir.",
     "explanation": (
-        "Ninguna regla de la base de conocimiento se activó; "
-        "la alternativa requiere una revisión adicional."
+        "Ninguna regla específica de ventaja o riesgo se activó; "
+        "la alternativa queda clasificada provisionalmente como "
+        "NO_RECOMENDABLE y requiere comparación adicional."
     ),
 }
 

@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.expert_system.classifiers import derive_facts
+from app.expert_system.convenience_index import enrich_inference_result
 from app.expert_system.conflict_resolver import resolve_conflicts
 from app.expert_system.explanation_builder import build_inference_result
 from app.expert_system.models import ProductionRule
@@ -87,7 +88,7 @@ def get_activated_rules(
     """Devuelve todas las reglas cuyas condiciones se cumplieron."""
 
     activated_rules: list[ProductionRule] = []
-    for rule in rules:
+    for rule in sorted(rules, key=lambda item: item.id):
         if evaluate_rule(rule, facts):
             activated_rules.append(rule)
     return activated_rules
@@ -99,7 +100,7 @@ def _evaluate_all_rules(
     activated_rules: list[ProductionRule] = []
     trace: list[dict[str, Any]] = []
 
-    for rule in rules:
+    for rule in sorted(rules, key=lambda item: item.id):
         activated, rule_trace = _evaluate_rule_with_trace(rule, facts)
         trace.append(rule_trace)
         if activated:
@@ -118,9 +119,10 @@ def run_inference(
     activated_rules, trace = _evaluate_all_rules(rules, facts)
     conflict = resolve_conflicts(activated_rules)
 
-    return build_inference_result(
+    result = build_inference_result(
         facts=facts,
         trace=trace,
         activated_rules=activated_rules,
         conflict=conflict,
     )
+    return enrich_inference_result(result, request)

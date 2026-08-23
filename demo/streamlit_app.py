@@ -59,7 +59,15 @@ def load_scenarios(path: Path | None = None) -> list[dict[str, Any]]:
 
 
 def api_base_url() -> str:
-    return os.getenv("SMARTMARKET_API_URL", DEFAULT_API_BASE_URL).rstrip("/")
+    configured_url = os.getenv("SMARTMARKET_API_URL", "").strip()
+
+    if not configured_url:
+        try:
+            configured_url = str(st.secrets.get("SMARTMARKET_API_URL", "")).strip()
+        except (FileNotFoundError, KeyError):
+            configured_url = ""
+
+    return (configured_url or DEFAULT_API_BASE_URL).rstrip("/")
 
 
 def validate_payload(payload: dict[str, Any]) -> list[str]:

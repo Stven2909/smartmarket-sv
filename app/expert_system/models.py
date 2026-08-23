@@ -1,9 +1,6 @@
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, model_validator
 
-
-RecommendationLevel = Literal["EXCELENTE", "BUENA", "NO_RECOMENDABLE"]
+from app.schemas.levels import RecommendationLevel
 
 DERIVED_FACT_NAMES = frozenset(
     {
