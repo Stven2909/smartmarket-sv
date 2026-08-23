@@ -112,13 +112,21 @@ class ProductoController extends Controller
 
     // GET: /api/productos/{producto}/historial
     // Evolución de precios de un producto a través del tiempo, por sucursal.
-    // Dato crudo únicamente — las gráficas son v1.1 (03-plan-implementacion.md, sección 7).
-    public function historial(Producto $producto)
+    // Devuelve un array plano (no paginado) con todos los snapshots de las
+    // últimas 90 días, ordenados por fecha ascendente. Cada item incluye su
+    // sucursal y supermercado (eager load) para que el frontend dibuje una línea
+    // por tienda. El parámetro ?dias= ajusta la ventana.
+    public function historial(Producto $producto, Request $request)
     {
-        return HistorialPrecio::with('sucursal.supermercado')
-            ->where('producto_id', $producto->id)
-            ->orderByDesc('fecha')
-            ->paginate(30);
+        $dias = (int) $request->query('dias', 90);
+
+        return response()->json(
+            HistorialPrecio::with('sucursal.supermercado')
+                ->where('producto_id', $producto->id)
+                ->when($dias > 0, fn ($q) => $q->whereDate('fecha', '>=', today()->subDays($dias)))
+                ->orderBy('fecha')
+                ->get()
+        );
     }
 
 }
