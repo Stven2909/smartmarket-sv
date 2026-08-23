@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -9,7 +10,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -28,8 +28,28 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->font(
+                'Plus Jakarta Sans',
+                url: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
+                provider: GoogleFontProvider::class,
+            )
             ->colors([
-                'primary' => Color::Amber,
+                // Paleta derivada del sistema de diseño del frontend (globals.css):
+                // 50-600 son tokens literales; 700-950 hacen puente hacia el teal
+                // #134e4a del gradiente "promo del día".
+                'primary' => [
+                    50 => '#ecfdf5',
+                    100 => '#d1fae5',
+                    200 => '#a7f3d0',
+                    300 => '#6ee7b7',
+                    400 => '#34d399',
+                    500 => '#10b981',
+                    600 => '#0d9668',
+                    700 => '#0f766e',
+                    800 => '#115e59',
+                    900 => '#134e4a',
+                    950 => '#042f2e',
+                ],
             ])
             ->favicon(asset('images/favicon_admin_64.png'))
             ->navigationGroups([
