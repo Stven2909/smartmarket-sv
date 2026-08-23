@@ -1,0 +1,17 @@
+[
+    {
+        "id": 1,
+        "name": "Mercado",
+        "children": [
+            { "id": 11, "name": "Frutas", "hasChildren": false },
+            {
+                "id": 12,
+                "name": "Lácteos",
+                "children": [
+                    { "id": 121, "name": "Leche", "hasChildren": false }
+                ]
+            }
+        ]
+    },
+    { "id": 2, "name": "Limpieza", "hasChildren": false }
+]

@@ -33,6 +33,8 @@ return [
         'super-selectos' => [
             'modo' => 'html',
             'base_url' => 'https://www.superselectos.com/',
+            // Páginas de listado a recorrer; paginación profunda queda para después.
+            'urls_listado' => ['https://www.superselectos.com/'],
             'enabled' => true,
             'notas' => 'Única cadena independiente; ToS sin cláusulas anti-extracción (doc 06 §5.1).',
         ],

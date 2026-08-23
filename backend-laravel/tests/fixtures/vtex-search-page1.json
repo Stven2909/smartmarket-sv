@@ -1,0 +1,29 @@
+[
+    {
+        "productName": "Cereal Choco 500 g",
+        "linkText": "cereal-choco-500-g",
+        "categoryName": "Mercado/Frutas",
+        "measurementUnit": "un",
+        "unitMultiplier": 6,
+        "items": [
+            {
+                "sellers": [
+                    {
+                        "commertialOffer": {
+                            "Price": 7.0,
+                            "ListPrice": 7.0,
+                            "AvailableQuantity": 2
+                        }
+                    },
+                    {
+                        "commertialOffer": {
+                            "Price": 5.5,
+                            "ListPrice": 7.0,
+                            "AvailableQuantity": 10
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]

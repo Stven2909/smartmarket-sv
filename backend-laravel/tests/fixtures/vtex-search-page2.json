@@ -1,0 +1,37 @@
+[
+    {
+        "productName": "Leche Entera Lata 900 ml",
+        "linkText": "leche-entera-lata-900-ml",
+        "categoryName": "Lácteos/Leche",
+        "measurementUnit": "ml",
+        "unitMultiplier": 1,
+        "items": [
+            {
+                "sellers": [
+                    {
+                        "commertialOffer": {
+                            "Price": 0,
+                            "ListPrice": 0,
+                            "AvailableQuantity": 0
+                        }
+                    },
+                    {
+                        "commertialOffer": {
+                            "Price": 3.0,
+                            "ListPrice": 3.0,
+                            "AvailableQuantity": 4
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "productName": "Producto Sin Oferta",
+        "linkText": "producto-sin-oferta",
+        "categoryName": "Lácteos/Leche",
+        "measurementUnit": "un",
+        "unitMultiplier": 1,
+        "items": []
+    }
+]
