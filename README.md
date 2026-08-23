@@ -7,10 +7,17 @@
 ![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)
 ![CI](https://github.com/Stven2909/smartmarket-sv/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/licencia-MIT-green)
+![Deploy](https://img.shields.io/badge/demo-Streamlit%20Cloud-FF4B4B?logo=streamlit&logoColor=white)
 
 Sistema Experto determinista que recomienda la mejor alternativa de compra de supermercado según **presupuesto, ahorro, disponibilidad, distancia, tiempo de traslado y cantidad de tiendas**, explicando cada recomendación de forma trazable.
 
 > Proyecto académico para las materias de **Emprendedurismo** y **Sistemas Expertos** — parte del ecosistema [SmartMarket SV](https://github.com/Stven2909/smartmarket-sv).
+
+## 🚀 Demo en vivo
+
+La interfaz está desplegada en Streamlit Community Cloud y disponible públicamente:
+
+**[sistema-experto-fork.streamlit.app](https://sistema-experto-fork.streamlit.app)**
 
 ---
 
