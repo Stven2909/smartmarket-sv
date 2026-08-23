@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Nette\Utils\Process;
 
 class Categoria extends Model
 {
