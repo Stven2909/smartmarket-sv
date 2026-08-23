@@ -29,6 +29,20 @@ class ProductoResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nombre', 'marca'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var Producto $record */
+        return [
+            'Marca' => $record->marca,
+            'Categoría' => $record->categoria?->nombre,
+        ];
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ProductoForm::configure($schema);
