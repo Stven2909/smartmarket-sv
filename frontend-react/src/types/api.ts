@@ -142,12 +142,28 @@ export type ApiComparar = {
 }
 
 export type ApiOptimizarResultado = ApiCompararResultado & {
-  distancia_km: number
+  distancia_km: number | null
   penalizacion_distancia: number
-  tiempo_minutos: number
-  costo_tiempo: number
+  tiempo_minutos: number | null
+  costo_tiempo: number | null
   score: number
   nivel_optimizacion: number
+  recommendation: ApiExpertRecommendation | null
+  expert_system_available: boolean
+}
+
+export type ApiExpertRecommendation = {
+  request_id: string
+  nivel_recomendacion: 'EXCELENTE' | 'BUENA' | 'NO_RECOMENDABLE'
+  accion_sugerida: string
+  explicacion: string
+  reglas_activadas: string[]
+  prioridad_aplicada: string
+  hechos_derivados: Record<string, boolean | number>
+  version_reglas: string
+  winning_rule: string | null
+  losing_rules: string[]
+  trace: Array<Record<string, unknown>>
 }
 
 export type ApiOptimizar = {

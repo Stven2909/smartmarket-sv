@@ -6,6 +6,7 @@ import type {
   ApiCategoria,
   ApiCompararResultado,
   ApiDetalle,
+  ApiExpertRecommendation,
   ApiHistorialPrecio,
   ApiLista,
   ApiListaShow,
@@ -130,12 +131,28 @@ export type CompararResultado = {
 }
 
 export type OptimizarResultado = CompararResultado & {
-  distanciaKm: number
+  distanciaKm: number | null
   penalizacionDistancia: number
-  tiempoMinutos: number
-  costoTiempo: number
+  tiempoMinutos: number | null
+  costoTiempo: number | null
   score: number
   nivelOptimizacion: number
+  expertRecommendation: ExpertRecommendation | null
+  expertSystemAvailable: boolean
+}
+
+export type ExpertRecommendation = {
+  requestId: string
+  nivelRecomendacion: 'EXCELENTE' | 'BUENA' | 'NO_RECOMENDABLE'
+  accionSugerida: string
+  explicacion: string
+  reglasActivadas: string[]
+  prioridadAplicada: string
+  hechosDerivados: Record<string, boolean | number>
+  versionReglas: string
+  winningRule: string | null
+  losingRules: string[]
+  trace: Array<Record<string, unknown>>
 }
 
 // ---------------------------------------------------------------------------
@@ -330,6 +347,22 @@ export function compararResultadoFromApi(r: ApiCompararResultado): CompararResul
   }
 }
 
+export function expertRecommendationFromApi(r: ApiExpertRecommendation): ExpertRecommendation {
+  return {
+    requestId: r.request_id,
+    nivelRecomendacion: r.nivel_recomendacion,
+    accionSugerida: r.accion_sugerida,
+    explicacion: r.explicacion,
+    reglasActivadas: r.reglas_activadas,
+    prioridadAplicada: r.prioridad_aplicada,
+    hechosDerivados: r.hechos_derivados,
+    versionReglas: r.version_reglas,
+    winningRule: r.winning_rule,
+    losingRules: r.losing_rules,
+    trace: r.trace,
+  }
+}
+
 export function optimizarResultadoFromApi(r: ApiOptimizarResultado): OptimizarResultado {
   return {
     ...compararResultadoFromApi(r),
@@ -339,5 +372,7 @@ export function optimizarResultadoFromApi(r: ApiOptimizarResultado): OptimizarRe
     costoTiempo: r.costo_tiempo,
     score: r.score,
     nivelOptimizacion: r.nivel_optimizacion,
+    expertRecommendation: r.recommendation ? expertRecommendationFromApi(r.recommendation) : null,
+    expertSystemAvailable: r.expert_system_available,
   }
 }

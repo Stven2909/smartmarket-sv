@@ -514,7 +514,7 @@ export function ListasView({ onListasChange }: Props) {
                         <span className="recommendation-label">{r.supermercado}</span>
                         <span className="recommendation-store">{r.sucursal}</span>
                         <small>
-                          {formatMoney(r.costoTotal)} · {r.distanciaKm.toFixed(1)} km · {r.tiempoMinutos} min · ahorro promos {formatMoney(r.beneficioPromociones)}
+                          {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : '—'} · {r.tiempoMinutos != null ? `${r.tiempoMinutos} min` : '—'} · ahorro promos {formatMoney(r.beneficioPromociones)}
                         </small>
                       </div>
                       <b className="recommendation-total">Score {r.score}</b>

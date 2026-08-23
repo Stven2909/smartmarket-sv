@@ -193,7 +193,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                   <span className="stat-chip"><span>💰</span><span>Ahorras <b>{formatMoney(ahorroVsSiguiente)}</b></span></span>
                 )}
                 <span className="stat-chip"><span>🛒</span><span>{winner.todosLosEsenciales ? <b>Lista completa</b> : `${winner.esencialesDisponibles}/${winner.esencialesTotales} esenciales`}</span></span>
-                {rutaMejor && (
+                {rutaMejor && rutaMejor.tiempoMinutos != null && (
                   <span className="stat-chip"><span>📍</span><span>Ruta <b>{Math.round(rutaMejor.tiempoMinutos)} min</b></span></span>
                 )}
               </div>
@@ -353,10 +353,10 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                   </div>
                   <div className="route-hero">
                     <div className="route-primary">
-                      <span className="route-time">{Math.round(rutaMejor.tiempoMinutos)} min</span>
+                      <span className="route-time">{rutaMejor.tiempoMinutos != null ? `${Math.round(rutaMejor.tiempoMinutos)} min` : '—'}</span>
                     </div>
                     <div className="route-meta">
-                      <span>Distancia <b>≈ {rutaMejor.distanciaKm.toFixed(1)} km</b></span>
+                      <span>Distancia <b>≈ {rutaMejor.distanciaKm != null ? `${rutaMejor.distanciaKm.toFixed(1)} km` : '—'}</b></span>
                       <span>{rutaMejor.supermercado} · {rutaMejor.sucursal}</span>
                     </div>
                   </div>
@@ -371,7 +371,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                             <b>{r.supermercado}</b>
                             <small> · {r.sucursal}</small>
                           </div>
-                          <span>{Math.round(r.tiempoMinutos)} min · {r.distanciaKm.toFixed(1)} km</span>
+                          <span>{r.tiempoMinutos != null ? `${Math.round(r.tiempoMinutos)} min` : '—'} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : '—'}</span>
                         </div>
                       ))}
                     </div>
