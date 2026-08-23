@@ -190,7 +190,7 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 ## 7. Lo que queda fuera del MVP (roadmap futuro)
 
 ### v1.1 (mejoras de infraestructura, no bloquean la entrega)
-- Extractor automático de precios (antes llamado "Web Scraper"). El análisis técnico ya está hecho y documentado en `06-referencia-extractor-vtex.md`: se adopta el **patrón** (API VTEX + cortesía HTTP), no el código del proyecto hermano; requiere revisión legal de ToS por supermercado antes de ejecutar nada.
+- Extractor automático de precios (antes llamado "Web Scraper"). **EN IMPLEMENTACIÓN desde el 2026-08-22.** Análisis técnico y veredicto legal por supermercado en `06-referencia-extractor-vtex.md` (§4–§5); alcance y aceptación de riesgo académico en **ADR-10** (`07-decision-extractor-fuentes-riesgo.md`). Se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA; PriceSmart permanece con carga manual. Plan por fases (staging+config → drivers → normalización), un commit por fase.
 - Docker (para organizar mejor cómo se despliega cada servicio).
 - Documentación completa en OpenAPI.
 - Registro de actividad (logging) más detallado.
