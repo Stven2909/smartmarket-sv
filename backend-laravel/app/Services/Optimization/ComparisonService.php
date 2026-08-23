@@ -69,8 +69,10 @@ class ComparisonService
                 'sucursal_id' => $sucursalId,
                 'sucursal' => $sucursal->nombre,
                 'supermercado' => $sucursal->supermercado->nombre,
-                'latitud' => (float) $sucursal->latitud,
-                'longitud' => (float) $sucursal->longitud,
+                // ADR-11: sin coordenadas (Tienda en línea) se propaga null —
+                // castear a float inventaría la ubicación (0°, 0°).
+                'latitud' => $sucursal->latitud !== null ? (float) $sucursal->latitud : null,
+                'longitud' => $sucursal->longitud !== null ? (float) $sucursal->longitud : null,
                 'costo_total' => round($costoTotal, 2),
                 'beneficio_promociones' => round($beneficioPromociones, 2),
                 'productos_con_promocion' => $productosConPromocion,

@@ -54,6 +54,17 @@ class OptimizationService
         $comparacion = $this->comparisonService->comparar($lista);
 
         foreach ($comparacion['resultados'] as &$resultado) {
+            // ADR-11: alternativas sin coordenadas (Sucursal "Tienda en línea") no
+            // compiten en el eje físico — no tienen distancia ni tiempo de viaje.
+            // Siguen siendo válidas por su costo de compra a nivel nacional.
+            if ($resultado['latitud'] === null || $resultado['longitud'] === null) {
+                $resultado['distancia_km'] = null;
+                $resultado['tiempo_minutos'] = null;
+                $resultado['costo_tiempo'] = null;
+
+                continue;
+            }
+
             $distancia = $this->distanceService->calcularHaversine(
                 $latUsuario,
                 $lngUsuario,
@@ -71,17 +82,24 @@ class OptimizationService
         // Normalización de la distancia contra el set (PenalizacionDistancia 0–1):
         // 0 = sucursal más cercana, 1 = la más lejana. Si todas miden lo mismo
         // (o hay una sola alternativa) la penalización es 0. No se dolariza la
-        // distancia — sigue ADR-05. Ver 02-arquitectura.md §5.1.
-        $distancias = array_column($comparacion['resultados'], 'distancia_km');
-        $distanciaMin = min($distancias);
-        $distanciaMax = max($distancias);
+        // distancia — sigue ADR-05. Las alternativas sin coordenadas (ADR-11)
+        // quedan fuera del min/max. Ver 02-arquitectura.md §5.1.
+        $distancias = array_values(array_filter(
+            array_column($comparacion['resultados'], 'distancia_km'),
+            fn ($d) => $d !== null,
+        ));
+        $distanciaMin = $distancias === [] ? 0.0 : min($distancias);
+        $distanciaMax = $distancias === [] ? 0.0 : max($distancias);
         $distanciaRango = $distanciaMax - $distanciaMin;
 
         foreach ($comparacion['resultados'] as &$resultado) {
-            // Pase 2: penalización normalizada + Score.
-            $penalizacionDistancia = $distanciaRango > 0
-                ? round(($resultado['distancia_km'] - $distanciaMin) / $distanciaRango, 4)
-                : 0.0;
+            // Pase 2: penalización normalizada + Score. La tienda online no
+            // recorre distancia física ⇒ penalización 0 (ADR-11).
+            $penalizacionDistancia = $resultado['distancia_km'] === null
+                ? 0.0
+                : ($distanciaRango > 0
+                    ? round(($resultado['distancia_km'] - $distanciaMin) / $distanciaRango, 4)
+                    : 0.0);
 
             $resultado['penalizacion_distancia'] = $penalizacionDistancia;
             $resultado['score'] = $this->calcularScore(
@@ -124,8 +142,10 @@ class OptimizationService
                 'lista_compra_id' => $lista->id,
                 'score' => $mejorOpcion['score'],
                 'ahorro' => $ahorro,
+                // Nullable desde ADR-11: la mejor opción puede ser una Tienda
+                // en línea sin distancia/tiempo aplicables.
                 'distancia' => $mejorOpcion['distancia_km'],
-                'tiempo' => (int) round($mejorOpcion['tiempo_minutos']),
+                'tiempo' => $mejorOpcion['tiempo_minutos'] === null ? null : (int) round($mejorOpcion['tiempo_minutos']),
                 'supermercados' => array_map(
                     fn ($r) => ['supermercado' => $r['supermercado'], 'sucursal' => $r['sucursal'], 'score' => $r['score']],
                     $comparacion['resultados']

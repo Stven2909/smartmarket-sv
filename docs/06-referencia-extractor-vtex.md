@@ -184,7 +184,7 @@ para auditoría sin promover contenido creativo a las tablas del catálogo.
 | Fase | Entregable |
 |---|---|
 | 0 — Acta legal + ADR | Veredicto por fuente (§5) + ADR-10 |
-| 1 — Staging + config | Migraciones `producto_raw` y `sync_runs`; coordenadas nullable en `sucursales` (+ ADR sucursal online); `config/price_providers.php` con interruptor independiente por fuente |
+| 1 — Staging + config | Migraciones `producto_raw` y `sync_runs`; coordenadas nullable en `sucursales` (+ ADR-11); `config/price_providers.php` con interruptor independiente por fuente |
 | 2 — Drivers | `VtexProvider` genérico (cubre Walmart, Maxi Despensa y Don Juan parametrizado por base_url) + `SuperSelectosProvider` (HTML); `PoliteHttpClient` compartido; comando `precios:sync {--fuente=} {--dry-run}`; tests con fixtures locales (`Http::fake()` — jamás tocan red) |
 | 3 — Normalización | `StagingProcessor` + comando `precios:procesar`: alias exacto → similitud (`similar_text` ≥ 0.85 sobre texto normalizado) → crear producto+alias si es nuevo; upsert idempotente en `precios_actuales`; append siempre a `historial_precios`; Sucursal "Tienda en línea" excluida del ranking por distancia |
 

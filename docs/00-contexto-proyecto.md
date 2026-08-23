@@ -2,11 +2,11 @@
 
 > **Qué es este documento:** un resumen ejecutivo de todo lo definido hasta ahora, pensado para
 > pegarse al inicio de una nueva conversación centrada en el desarrollo (código, migraciones,
-> endpoints, etc.), sin tener que repetir todo el proceso de diseño. Los siete documentos
-> completos (`01` a `07`) ya existen y son la fuente de verdad — esto es el mapa para navegarlos
+> endpoints, etc.), sin tener que repetir todo el proceso de diseño. Los ocho documentos
+> completos (`01` a `08`) ya existen y son la fuente de verdad — esto es el mapa para navegarlos
 > rápido y no perder decisiones ya tomadas.
 
-**Estado actual:** los 7 documentos están terminados y compartidos con el equipo. El repositorio
+**Estado actual:** los 8 documentos están terminados y compartidos con el equipo. El repositorio
 de GitHub ya está creado. Lo que sigue es diseño detallado (wireframes, OpenAPI) y construcción.
 
 ---
@@ -25,7 +25,7 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 
 ---
 
-## 2. Los 7 documentos y qué contiene cada uno
+## 2. Los 8 documentos y qué contiene cada uno
 
 | Documento | Audiencia | Contenido clave |
 |---|---|---|
@@ -36,6 +36,7 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 | `05-decision-costo-combustible.md` | Todo el equipo técnico | **ADR-05**: reemplazo de `CostoCombustible ($)` por `PenalizacionDistancia` normalizada (0–1, min-max por corrida) en la fórmula del motor de optimización — evita dolarizar combustible encadenando distancia Haversine × precio citado × consumo supuesto (tres capas de imprecisión). Justificación, fórmula antes/después, migraciones, implementación backend/frontend y suite de regresión. |
 | `06-referencia-extractor-vtex.md` | Equipo técnico (extractor en curso) | Análisis de referencia del extractor automático de precios (repo hermano): fuentes y modos (HTML/VTEX/partner-feed), estrategia VTEX paso a paso, cortesía HTTP, normalización, persistencia append-only, crons; mapeo a nuestro pipeline. **§4: plan aprobado Fases 0–3; §5: veredicto legal por supermercado con citas y URLs. En implementación desde el 2026-08-22.** |
 | `07-decision-extractor-fuentes-riesgo.md` | Todo el equipo técnico | **ADR-10**: alcance de la extracción automatizada — se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA con riesgo académico aceptado e informado; PriceSmart queda en carga manual (su robots.txt prohíbe scrapers por nombre). Condiciones operativas obligatorias: UA identificable, pausas, sin evasión de controles, apagado instantáneo por config, solo datos fácticos (sin imágenes ni logos). |
+| `08-decision-sucursal-tienda-online.md` | Todo el equipo técnico | **ADR-11**: `sucursales.latitud/longitud` pasan a nullable para la Sucursal "Tienda en línea" (canal nacional sin ubicación física) — esas alternativas quedan excluidas del ranking Haversine pero siguen válidas para comparación de precios nacional; también hace nullable `distancia/tiempo` en `resultados_optimizacion` y corrige el cast `(float) null → 0.0` en `ComparisonService`. |
 
 ---
 
@@ -145,7 +146,7 @@ documento para que el campo `esencial` realmente se use en las reglas.
 **Estructura de repo ya creada:**
 ```
 smartmarket/
-├── docs/  (01 a 07 + erd_nivel1_core.png + erd_nivel2_pipeline.png)
+├── docs/  (01 a 08 + erd_nivel1_core.png + erd_nivel2_pipeline.png)
 ├── backend-laravel/
 ├── frontend-react/
 ├── expert-system/       (servicio Python)
