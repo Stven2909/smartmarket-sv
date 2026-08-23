@@ -94,6 +94,8 @@ Swagger UI: <http://127.0.0.1:8001/docs> · Demo: <http://localhost:8501>
 | `POST` | `/api/v1/recommend` | Genera recomendación con explicación y trazabilidad |
 | `POST` | `/api/v1/chat` | Explica una recomendación vía intenciones |
 
+En producción se exige el header `X-API-Key` (valor definido en la variable de entorno `SMARTMARKET_API_KEY`). Sin esa variable configurada —por ejemplo en desarrollo local— la API queda abierta. `/health` siempre es público.
+
 Ejemplo de respuesta de `/recommend`:
 
 ```json

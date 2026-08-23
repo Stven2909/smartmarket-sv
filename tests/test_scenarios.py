@@ -5,6 +5,7 @@ import requests
 
 from demo.streamlit_app import (
     ApiClientError,
+    REQUEST_TIMEOUT_SECONDS,
     ScenarioLoadError,
     call_recommendation_api,
     load_scenarios,
@@ -113,8 +114,10 @@ class FakeResponse:
 def test_ideal_scenario_can_be_sent_to_api(monkeypatch):
     captured = {}
 
-    def fake_post(url, json, timeout):
-        captured.update({"url": url, "json": json, "timeout": timeout})
+    def fake_post(url, json, timeout, headers=None):
+        captured.update(
+            {"url": url, "json": json, "timeout": timeout, "headers": headers}
+        )
         return FakeResponse(200, {"nivel_recomendacion": "EXCELENTE"})
 
     monkeypatch.setattr("demo.streamlit_app.requests.post", fake_post)
@@ -125,7 +128,7 @@ def test_ideal_scenario_can_be_sent_to_api(monkeypatch):
     assert result["nivel_recomendacion"] == "EXCELENTE"
     assert captured["url"].endswith("/api/v1/recommend")
     assert captured["json"]["request_id"] == "scenario-ideal"
-    assert captured["timeout"] == 10
+    assert captured["timeout"] == REQUEST_TIMEOUT_SECONDS
 
 
 def test_api_timeout_is_handled(monkeypatch):

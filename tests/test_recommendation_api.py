@@ -132,3 +132,49 @@ def test_endpoint_runs_without_laravel():
 
     assert response.status_code == 200
     assert response.json()["version_reglas"] == "1.0.0"
+
+
+def test_api_rejects_missing_or_wrong_key_when_configured(monkeypatch):
+    monkeypatch.setenv("SMARTMARKET_API_KEY", "test-key")
+
+    without_header = request("POST", "/api/v1/recommend", json=VALID_REQUEST)
+    wrong_key = request(
+        "POST",
+        "/api/v1/recommend",
+        json=VALID_REQUEST,
+        headers={"X-API-Key": "wrong"},
+    )
+
+    assert without_header.status_code == 401
+    assert wrong_key.status_code == 401
+
+
+def test_api_accepts_correct_key_and_keeps_health_open(monkeypatch):
+    monkeypatch.setenv("SMARTMARKET_API_KEY", "test-key")
+
+    authorized = request(
+        "POST",
+        "/api/v1/recommend",
+        json=VALID_REQUEST,
+        headers={"X-API-Key": "test-key"},
+    )
+    health = request("GET", "/health")
+
+    assert authorized.status_code == 200
+    assert health.status_code == 200
+
+
+def test_chat_also_requires_key(monkeypatch):
+    monkeypatch.setenv("SMARTMARKET_API_KEY", "test-key")
+
+    response = request(
+        "POST",
+        "/api/v1/chat",
+        json={
+            "message": "¿Por qué esta recomendación?",
+            "facts": VALID_REQUEST,
+            "recommendation": {},
+        },
+    )
+
+    assert response.status_code == 401

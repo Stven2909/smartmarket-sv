@@ -71,6 +71,18 @@ def api_base_url() -> str:
     return (configured_url or DEFAULT_API_BASE_URL).rstrip("/")
 
 
+def api_auth_headers() -> dict[str, str]:
+    key = os.getenv("SMARTMARKET_API_KEY", "").strip()
+
+    if not key:
+        try:
+            key = str(st.secrets.get("SMARTMARKET_API_KEY", "")).strip()
+        except (FileNotFoundError, KeyError):
+            key = ""
+
+    return {"X-API-Key": key} if key else {}
+
+
 def validate_payload(payload: dict[str, Any]) -> list[str]:
     """Valida localmente el formulario antes de enviarlo a FastAPI."""
 
@@ -131,7 +143,9 @@ def _response_detail(response: requests.Response) -> str:
 def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
     url = f"{(base_url or api_base_url()).rstrip('/')}/health"
     try:
-        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+        response = requests.get(
+            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
+        )
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
@@ -154,6 +168,7 @@ def _post_json(
             url,
             json=payload,
             timeout=REQUEST_TIMEOUT_SECONDS,
+            headers=api_auth_headers(),
         )
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
