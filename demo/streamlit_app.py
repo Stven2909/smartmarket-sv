@@ -8,7 +8,8 @@ import streamlit as st
 
 
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
-REQUEST_TIMEOUT_SECONDS = 10
+# ponytail: 30s porque Render free tier arranca en frío (~30-60s) tras dormir
+REQUEST_TIMEOUT_SECONDS = 30
 SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
 
 
