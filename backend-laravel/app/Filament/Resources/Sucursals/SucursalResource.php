@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class SucursalResource extends Resource
 {
@@ -23,6 +24,8 @@ class SucursalResource extends Resource
     protected static ?string $modelLabel = 'Sucursal';
 
     protected static ?string $pluralModelLabel = 'Sucursales';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Red de tiendas';
 
     protected static ?int $navigationSort = 4;
 

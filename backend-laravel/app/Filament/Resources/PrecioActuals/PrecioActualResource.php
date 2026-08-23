@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class PrecioActualResource extends Resource
 {
@@ -23,6 +24,8 @@ class PrecioActualResource extends Resource
     protected static ?string $modelLabel = 'Precio actual';
 
     protected static ?string $pluralModelLabel = 'Precios actuales';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Catálogo';
 
     protected static ?int $navigationSort = 6;
 

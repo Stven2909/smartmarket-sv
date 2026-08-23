@@ -9,6 +9,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 // Zona de curacion del Flujo 2: lo que trae el extractor se inspecciona y se
 // publica/rechaza desde aca, SIEMPRE via StagingProcessor — este recurso no
@@ -22,6 +23,8 @@ class ProductoRawResource extends Resource
     protected static ?string $modelLabel = 'Registro de staging';
 
     protected static ?string $pluralModelLabel = 'Staging del extractor';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Extractor';
 
     protected static ?int $navigationSort = 7;
 

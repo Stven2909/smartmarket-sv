@@ -9,6 +9,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 // Health Monitor visible: cada corrida de precios:sync registra sus conteos
 // aqui para compararlas contra la corrida previa de la misma fuente. Solo lectura.
@@ -20,7 +21,9 @@ class SyncRunResource extends Resource
 
     protected static ?string $modelLabel = 'Corrida de sync';
 
-    protected static ?string $pluralModelLabel = 'Corridas de sincronización';
+    protected static ?string $pluralModelLabel = 'Ciclos de sincronización';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Extractor';
 
     protected static ?int $navigationSort = 8;
 
