@@ -42,6 +42,7 @@ coordenadas con `(float) $sucursal->latitud` — con null eso produce silenciosa
 | Migración | `2026_08_22_120004_make_resultados_distancia_tiempo_nullable` |
 | `ComparisonService` | Propaga `null` cuando no hay coordenadas (antes casteaba a float) |
 | `OptimizationService` | Salta Haversine para alternativas sin coords; las excluye del min/max; penalización 0; persistencia nullable |
+| `SucursalController@index` | **No expone** las sucursales sin coordenadas en `GET /api/sucursales`: son anclas internas de precios, no lugares visitables (aclaración 2026-08-22, tras verlas aparecer en la app) |
 
 ## Consecuencias
 
