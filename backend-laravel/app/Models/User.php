@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, Notifiable;
 
@@ -29,6 +31,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /*
+     * Gate del panel /admin (Filament): solo administradores con cuenta activa.
+     * Sin este metodo, Filament permite entrar a CUALQUIER usuario autenticado
+     * en entornos locales (vendor/filament .../Middleware/Authenticate.php).
+     * 'inactivo' funciona como kill-switch: se corta el acceso sin borrar la cuenta.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->rol === 'admin' && $this->estado === 'activo';
     }
 
     //Relaciones con los demas modelos
