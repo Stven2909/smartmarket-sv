@@ -49,8 +49,6 @@ class StagingProcessor
      */
     public function procesar(?string $fuente = null, ?int $limite = null, bool $dryRun = false): array
     {
-        $this->cargarIndices();
-
         $consulta = ProductoRaw::query()
             ->where('estado', 'pendiente')
             ->orderBy('id');
@@ -63,6 +61,21 @@ class StagingProcessor
             $consulta->limit($limite);
         }
 
+        return $this->procesarFilas($consulta->cursor(), $dryRun);
+    }
+
+    /**
+     * Publica un lote CONCRETO de filas ya seleccionadas (comando artisan o
+     * acciones "Publicar" del panel Filament). Misma escalera de matching,
+     * mismos conteos y misma trazabilidad de errores que procesar().
+     *
+     * @param  iterable<ProductoRaw>  $filas
+     * @return array{procesados: int, publicados: int, nuevos_productos: int, alias_nuevos: int, errores: int}
+     */
+    public function procesarFilas(iterable $filas, bool $dryRun = false): array
+    {
+        $this->cargarIndices();
+
         $conteos = [
             'procesados' => 0,
             'publicados' => 0,
@@ -71,7 +84,7 @@ class StagingProcessor
             'errores' => 0,
         ];
 
-        foreach ($consulta->cursor() as $fila) {
+        foreach ($filas as $fila) {
             try {
                 $this->procesarFila($fila, $conteos, $dryRun);
             } catch (Throwable $e) {
