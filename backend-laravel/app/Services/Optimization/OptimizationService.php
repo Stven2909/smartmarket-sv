@@ -206,7 +206,7 @@ class OptimizationService
             $resultado['score'] = $this->calcularScore(
                 $resultado['costo_total'],
                 $penalizacionDistancia,
-                $resultado['costo_tiempo'],
+                $resultado['costo_tiempo'] ?? 0.0,
                 $resultado['beneficio_promociones'],
             );
         }

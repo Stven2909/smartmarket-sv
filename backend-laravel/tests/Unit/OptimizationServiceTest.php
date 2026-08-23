@@ -13,6 +13,7 @@ use App\Models\Sucursal;
 use App\Models\User;
 use App\Services\Optimization\OptimizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 // Pruebas de regresion del Motor de Optimizacion tras ADR-05:
@@ -142,6 +143,309 @@ class OptimizationServiceTest extends TestCase
     }
 
     // ------------------------------------------------------------------
+    // Tests de integración con Sistema Experto
+    // ------------------------------------------------------------------
+
+    public function test_ahorro_se_calcula_por_alternativa_contra_costo_referencia(): void
+    {
+        $mundo = $this->crearMundoDosSucursales();
+
+        Http::fake(['*' => Http::response(null, 200)]);
+
+        $salida = $this->optimizar($mundo['lista']);
+
+        // costo_referencia = max(costo_total) entre alternativas.
+        // La cercana cuesta 2.50, la lejana 2.00 → referencia = 2.50.
+        // Ahorro cercana = max(0, 2.50 - 2.50) = 0.
+        // Ahorro lejana = max(0, 2.50 - 2.00) = 0.50.
+        // Verificamos a través del payload enviado al expert system.
+        $payloads = [];
+        Http::assertSent(function ($request) use (&$payloads) {
+            $payloads[] = $request->data();
+            return true;
+        });
+
+        $this->assertCount(2, $payloads);
+
+        $payloadPorReqId = [];
+        foreach ($payloads as $p) {
+            $payloadPorReqId[$p['request_id']] = $p;
+        }
+
+        // La alternativa más cara (cercana) tiene ahorro 0.
+        $payloadCercana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['cercana']->id];
+        $this->assertEquals(0.0, $payloadCercana['ahorro']);
+
+        // La alternativa más barata (lejana) tiene ahorro = referencia - su costo.
+        $payloadLejana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['lejana']->id];
+        $this->assertEquals(0.50, $payloadLejana['ahorro']);
+    }
+
+    public function test_distancia_adicional_se_calcula_contra_distancia_minima(): void
+    {
+        $mundo = $this->crearMundoDosSucursales();
+
+        Http::fake(['*' => Http::response(null, 200)]);
+
+        $salida = $this->optimizar($mundo['lista']);
+
+        $payloads = [];
+        Http::assertSent(function ($request) use (&$payloads) {
+            $payloads[] = $request->data();
+            return true;
+        });
+
+        $payloadPorReqId = [];
+        foreach ($payloads as $p) {
+            $payloadPorReqId[$p['request_id']] = $p;
+        }
+
+        // La cercana (distancia ~0) tiene distancia_adicional_km = 0.
+        $payloadCercana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['cercana']->id];
+        $this->assertEquals(0.0, $payloadCercana['distancia_adicional_km']);
+
+        // La lejana tiene distancia_adicional > 0.
+        $payloadLejana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['lejana']->id];
+        $this->assertGreaterThan(0.0, $payloadLejana['distancia_adicional_km']);
+    }
+
+    public function test_presupuesto_null_omite_llamada_al_sistema_experto(): void
+    {
+        $usuario = $this->crearUsuario();
+        $producto = $this->crearProducto();
+
+        // Crear lista SIN presupuesto.
+        $lista = ListaCompra::create([
+            'usuario_id' => $usuario->id,
+            'nombre' => 'Sin presupuesto',
+            'presupuesto' => null,
+            'estado' => 'activa',
+            'fecha' => now(),
+        ]);
+
+        ListaCompraDetalles::create([
+            'lista_id' => $lista->id,
+            'producto_id' => $producto->id,
+            'cantidad' => 1,
+            'esencial' => true,
+        ]);
+
+        $this->crearSucursalConPrecio('Test Super', 'Test Suc', 13.700000, -89.200000, $producto->id, 2.00);
+
+        Http::fake();
+        $salida = $this->optimizar($lista);
+
+        // No debe enviar ninguna petición al Sistema Experto.
+        Http::assertNothingSent();
+
+        // La alternativa debe tener expert_system_available = false.
+        $this->assertFalse($salida['resultados'][0]['expert_system_available']);
+        $this->assertNull($salida['resultados'][0]['recommendation']);
+    }
+
+    public function test_distancia_null_omite_llamada_para_tienda_en_linea(): void
+    {
+        $usuario = $this->crearUsuario();
+        $producto = $this->crearProducto();
+
+        $lista = $this->crearListaConDetalle($usuario, $producto);
+
+        // Crear sucursal SIN coordenadas (tienda en línea).
+        $super = Supermercado::create(['nombre' => 'Online Store']);
+        $suc = Sucursal::create([
+            'supermercado_id' => $super->id,
+            'nombre' => 'Tienda en línea',
+            'direccion' => 'Online',
+            'latitud' => null,
+            'longitud' => null,
+        ]);
+
+        PrecioActual::create([
+            'producto_id' => $producto->id,
+            'sucursal_id' => $suc->id,
+            'precio_normal' => 2.00,
+            'precio_final' => 2.00,
+        ]);
+
+        Http::fake();
+        $salida = $this->optimizar($lista);
+
+        // Con solo una alternativa sin coordenadas, no debe llamar al expert system.
+        $this->assertFalse($salida['resultados'][0]['expert_system_available']);
+    }
+
+    public function test_fallback_no_rompe_optimizacion(): void
+    {
+        $mundo = $this->crearMundoDosSucursales();
+
+        // Simular que el Sistema Experto está apagado.
+        Http::fake(function () {
+            throw new \Illuminate\Http\Client\ConnectionException('Connection refused');
+        });
+
+        $salida = $this->optimizar($mundo['lista']);
+
+        // La optimización debe funcionar normalmente a pesar del fallo.
+        $this->assertCount(2, $salida['resultados']);
+        $this->assertNotNull($salida['mejor_opcion']);
+
+        // Todas las alternativas deben tener expert_system_available = false.
+        foreach ($salida['resultados'] as $r) {
+            $this->assertFalse($r['expert_system_available']);
+            $this->assertNull($r['recommendation']);
+        }
+    }
+
+    public function test_numero_supermercados_se_cuenta_correctamente(): void
+    {
+        $usuario = $this->crearUsuario();
+        $producto = $this->crearProducto();
+
+        // Un solo supermercado con dos sucursales.
+        $super = Supermercado::create(['nombre' => 'Mismo Super']);
+
+        $sucA = Sucursal::create([
+            'supermercado_id' => $super->id,
+            'nombre' => 'Suc A',
+            'direccion' => 'Calle A',
+            'latitud' => 13.700000,
+            'longitud' => -89.200000,
+        ]);
+
+        PrecioActual::create([
+            'producto_id' => $producto->id,
+            'sucursal_id' => $sucA->id,
+            'precio_normal' => 2.00,
+            'precio_final' => 2.00,
+        ]);
+
+        $sucB = Sucursal::create([
+            'supermercado_id' => $super->id,
+            'nombre' => 'Suc B',
+            'direccion' => 'Calle B',
+            'latitud' => 13.710000,
+            'longitud' => -89.210000,
+        ]);
+
+        PrecioActual::create([
+            'producto_id' => $producto->id,
+            'sucursal_id' => $sucB->id,
+            'precio_normal' => 2.50,
+            'precio_final' => 2.50,
+        ]);
+
+        // Lista CON presupuesto para que el expert system sea llamado.
+        $lista = ListaCompra::create([
+            'usuario_id' => $usuario->id,
+            'nombre' => 'Compra con presupuesto',
+            'presupuesto' => 50.0,
+            'estado' => 'activa',
+            'fecha' => now(),
+        ]);
+
+        ListaCompraDetalles::create([
+            'lista_id' => $lista->id,
+            'producto_id' => $producto->id,
+            'cantidad' => 1,
+            'esencial' => true,
+        ]);
+
+        Http::fake(['*' => Http::response(null, 200)]);
+        $salida = $this->optimizar($lista);
+
+        // Solo 1 supermercado único (ambas sucursales son del mismo).
+        $payloads = [];
+        Http::assertSent(function ($request) use (&$payloads) {
+            $payloads[] = $request->data();
+            return true;
+        });
+
+        $this->assertNotEmpty($payloads);
+        $this->assertEquals(1, $payloads[0]['numero_supermercados']);
+    }
+
+    public function test_productos_disponibles_mayor_que_totales_omite_alternativa(): void
+    {
+        // Este caso es teórico con ComparisonService actual (no puede producir
+        // disponibles > totales), pero validamos que debeOmitir lo detecta.
+        $service = app(OptimizationService::class);
+
+        $resultado = [
+            'distancia_km' => 2.0,
+            'tiempo_minutos' => 10.0,
+            'costo_total' => 30.0,
+            'productos_disponibles' => 12,
+            'productos_totales' => 10,
+            'productos_esenciales_disponibles' => 5,
+            'productos_esenciales_totales' => 6,
+        ];
+
+        $motivo = $service->debeOmitir($resultado, 50.0, 40.0, 1.0);
+
+        $this->assertIsString($motivo);
+        $this->assertStringContainsString('productos_disponibles', $motivo);
+    }
+
+    public function test_costo_total_null_omite_alternativa(): void
+    {
+        $service = app(OptimizationService::class);
+
+        $resultado = [
+            'distancia_km' => 2.0,
+            'tiempo_minutos' => 10.0,
+            'costo_total' => null,
+            'productos_disponibles' => 10,
+            'productos_totales' => 10,
+            'productos_esenciales_disponibles' => 6,
+            'productos_esenciales_totales' => 6,
+        ];
+
+        $motivo = $service->debeOmitir($resultado, 50.0, 40.0, 1.0);
+
+        $this->assertIsString($motivo);
+        $this->assertEquals('costo_total_null', $motivo);
+    }
+
+    public function test_esenciales_disponibles_mayor_que_totales_omite(): void
+    {
+        $service = app(OptimizationService::class);
+
+        $resultado = [
+            'distancia_km' => 2.0,
+            'tiempo_minutos' => 10.0,
+            'costo_total' => 30.0,
+            'productos_disponibles' => 10,
+            'productos_totales' => 10,
+            'productos_esenciales_disponibles' => 7,
+            'productos_esenciales_totales' => 6,
+        ];
+
+        $motivo = $service->debeOmitir($resultado, 50.0, 40.0, 1.0);
+
+        $this->assertIsString($motivo);
+        $this->assertEquals('esenciales_disponibles_mayor_que_totales', $motivo);
+    }
+
+    public function test_alternativa_valida_no_se_omite(): void
+    {
+        $service = app(OptimizationService::class);
+
+        $resultado = [
+            'distancia_km' => 2.0,
+            'tiempo_minutos' => 10.0,
+            'costo_total' => 30.0,
+            'productos_disponibles' => 10,
+            'productos_totales' => 10,
+            'productos_esenciales_disponibles' => 6,
+            'productos_esenciales_totales' => 6,
+        ];
+
+        $motivo = $service->debeOmitir($resultado, 50.0, 40.0, 1.0);
+
+        $this->assertFalse($motivo);
+    }
+
+    // ------------------------------------------------------------------
     // Datos de apoyo: dos supermercados con una sucursal cada uno. La
     // cercana esta sobre las coordenadas del usuario pero es la mas CARA,
     // para que distancia y precio no queden correlacionadas en las pruebas.
@@ -163,7 +467,7 @@ class OptimizationServiceTest extends TestCase
             $producto->id, 2.00,
         );
 
-        $lista = $this->crearListaConDetalle($usuario, $producto);
+        $lista = $this->crearListaConDetalle($usuario, $producto, 50.0);
 
         return ['cercana' => $cercana, 'lejana' => $lejana, 'lista' => $lista];
     }
@@ -219,11 +523,14 @@ class OptimizationServiceTest extends TestCase
         return $suc;
     }
 
-    private function crearListaConDetalle(User $usuario, Producto $producto): ListaCompra
+    private function crearListaConDetalle(User $usuario, Producto $producto, ?float $presupuesto = null): ListaCompra
     {
         $lista = ListaCompra::create([
             'usuario_id' => $usuario->id,
             'nombre' => 'Compra semanal',
+            'presupuesto' => $presupuesto,
+            'estado' => 'activa',
+            'fecha' => now(),
         ]);
 
         ListaCompraDetalles::create([
