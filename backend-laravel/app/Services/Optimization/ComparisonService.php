@@ -68,6 +68,7 @@ class ComparisonService
             $resultados[] = [
                 'sucursal_id' => $sucursalId,
                 'sucursal' => $sucursal->nombre,
+                'supermercado_id' => $sucursal->supermercado->id,
                 'supermercado' => $sucursal->supermercado->nombre,
                 // ADR-11: sin coordenadas (Tienda en línea) se propaga null —
                 // castear a float inventaría la ubicación (0°, 0°).
