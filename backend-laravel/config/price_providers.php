@@ -35,6 +35,9 @@ return [
             'base_url' => 'https://www.superselectos.com/',
             // Páginas de listado a recorrer; paginación profunda queda para después.
             'urls_listado' => ['https://www.superselectos.com/'],
+            // Supermercado dueño de los precios (StagingProcessor crea/reutiliza
+            // su sucursal virtual "Tienda en línea", ADR-11).
+            'supermercado' => 'Super Selectos',
             'enabled' => true,
             'notas' => 'Única cadena independiente; ToS sin cláusulas anti-extracción (doc 06 §5.1).',
         ],
@@ -42,6 +45,7 @@ return [
         'walmart' => [
             'modo' => 'vtex',
             'base_url' => 'https://www.walmart.com.sv',
+            'supermercado' => 'Walmart',
             'enabled' => true,
             'notas' => 'Operadora del Sur; ToS restrictivo — automatiza bajo ADR-10.',
         ],
@@ -49,6 +53,7 @@ return [
         'maxi-despensa' => [
             'modo' => 'vtex',
             'base_url' => 'https://www.maxidespensa.com.sv',
+            'supermercado' => 'Maxi Despensa',
             'enabled' => true,
             'notas' => 'Misma entidad que Walmart (inferencia fuerte, doc 06 §5.2).',
         ],
@@ -56,6 +61,7 @@ return [
         'don-juan' => [
             'modo' => 'vtex',
             'base_url' => 'https://www.ladespensadedonjuan.com.sv',
+            'supermercado' => 'La Despensa de Don Juan',
             'enabled' => true,
             'notas' => 'ToS verificado idéntico al de walmart.com.sv.',
         ],
@@ -64,6 +70,7 @@ return [
         // robots.txt prohíbe scrapers por nombre. Permanece como fuente manual.
         'pricesmart' => [
             'modo' => 'manual',
+            'supermercado' => 'PriceSmart',
             'enabled' => false,
             'notas' => 'robots.txt bloquea scrapers nominalmente (doc 06 §5.3) — carga manual.',
         ],
@@ -71,6 +78,7 @@ return [
         // Reservado v1.2: requiere convenio comercial + token (fuente partner-feed).
         'san-francisco' => [
             'modo' => 'partner-feed',
+            'supermercado' => 'Súper San Francisco',
             'enabled' => false,
             'notas' => 'Requiere acuerdo comercial (doc 06 §1).',
         ],

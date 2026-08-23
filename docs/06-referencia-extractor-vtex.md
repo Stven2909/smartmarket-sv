@@ -188,6 +188,17 @@ para auditoría sin promover contenido creativo a las tablas del catálogo.
 | 2 — Drivers | `VtexProvider` genérico (cubre Walmart, Maxi Despensa y Don Juan parametrizado por base_url) + `SuperSelectosProvider` (HTML); `PoliteHttpClient` compartido; comando `precios:sync {--fuente=} {--dry-run}`; tests con fixtures locales (`Http::fake()` — jamás tocan red) |
 | 3 — Normalización | `StagingProcessor` + comando `precios:procesar`: alias exacto → similitud (`similar_text` ≥ 0.85 sobre texto normalizado) → crear producto+alias si es nuevo; upsert idempotente en `precios_actuales`; append siempre a `historial_precios`; Sucursal "Tienda en línea" excluida del ranking por distancia |
 
+> **Estado de ejecución (2026-08-22):** las cuatro fases están implementadas —
+> acta legal (`a6e4559`), staging (`7b28feb`), drivers (`4f6d39c`) y normalización
+> (`StagingProcessor` + `precios:procesar`). Suite al cierre: 32 tests / 194 aserciones.
+>
+> **Nota de implementación sobre el historial:** el punto "append siempre a
+> `historial_precios`" se materializa mediante el `PrecioActualObserver` ya existente:
+> cada vez que el upsert cambia un precio, archiva automáticamente el valor ANTERIOR
+> en la tabla append-only (Regla fija #1 §6.3). Se prefirió esto a duplicar la
+> escritura dentro del procesador porque evita filas repetidas por transición y no
+> registra ruido cuando el precio re-colectado es idéntico al vigente.
+
 Detalles operativos:
 
 1. **Comando Artisan por fuente** (`php artisan precios:sync walmart --dry-run`)
