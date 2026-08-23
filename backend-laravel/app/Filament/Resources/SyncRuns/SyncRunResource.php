@@ -27,6 +27,31 @@ class SyncRunResource extends Resource
 
     protected static ?int $navigationSort = 8;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return match (static::estadoUltimaCorrida()) {
+            'exitosa' => 'OK',
+            'fallida' => 'Falló',
+            'en_proceso' => 'En curso',
+            default => null,
+        };
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return match (static::estadoUltimaCorrida()) {
+            'exitosa' => 'success',
+            'fallida' => 'danger',
+            'en_proceso' => 'info',
+            default => null,
+        };
+    }
+
+    private static function estadoUltimaCorrida(): ?string
+    {
+        return static::getModel()::orderByDesc('iniciada_en')->value('estado');
+    }
+
     public static function table(Table $table): Table
     {
         return SyncRunsTable::configure($table);

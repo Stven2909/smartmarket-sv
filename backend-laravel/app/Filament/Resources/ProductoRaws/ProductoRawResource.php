@@ -28,6 +28,18 @@ class ProductoRawResource extends Resource
 
     protected static ?int $navigationSort = 7;
 
+    public static function getNavigationBadge(): ?string
+    {
+        $pendientes = static::getModel()::where('estado', 'pendiente')->count();
+
+        return $pendientes > 0 ? (string) $pendientes : null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
+    }
+
     public static function table(Table $table): Table
     {
         return ProductoRawsTable::configure($table);
