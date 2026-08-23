@@ -194,7 +194,7 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 - Docker (para organizar mejor cómo se despliega cada servicio).
 - Documentación completa en OpenAPI.
 - Registro de actividad (logging) más detallado.
-- Historial de precios con gráficas. **EN IMPLEMENTACIÓN desde 2026-08-23.** Visualización de evolución de precios con una línea por sucursal en el dashboard. Detalle en la Fase 5 del plan de trabajo (ver sección 3). Backend: endpoint `GET /api/productos/{id}/historial` con ventana de 90 días; frontend: componente `PriceHistoryChart` (recharts) en vista `/productos/:id`. Seed de demo aislado (`HistoricoPrecioDemoSeeder`) para que la gráfica se vea con datos reales en demos/defensas.
+- Historial de precios con gráficas. **COMPLETADA el 2026-08-23.** Visualización de evolución de precios con una línea por sucursal en el dashboard usando Recharts. Backend: endpoint `GET /api/productos/{id}/historial` devuelve 90 días completos como array plano; frontend: componente `PriceHistoryChart` con líneas independientes por sucursal, eje Y formateado en USD (es-SV). Seed de demo (`HistoricoPrecioDemoSeeder`) poblado con datos reales para demos/defensas.
 
 ### v1.2
 - IA generativa opcional (explicaciones en lenguaje natural, chat).
