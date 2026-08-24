@@ -207,7 +207,12 @@
           "500": {
             "description": "Error interno no controlado del servicio."
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/api/v1/chat": {
@@ -239,7 +244,7 @@
                 "example": {
                   "request_id": "demo-001",
                   "intent": "EXPLICACION",
-                  "response": "La recomendaci\u00f3n actual es EXCELENTE porque cumple el presupuesto y las condiciones principales.",
+                  "response": "Te recomiendo esta opci\u00f3n porque la compra est\u00e1 dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
                   "supported": true
                 }
               }
@@ -264,7 +269,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     }
   },
@@ -282,15 +292,33 @@
             "type": "object",
             "title": "Facts"
           },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
           "recommendation": {
-            "$ref": "#/components/schemas/RecommendationResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecommendationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "message",
-          "recommendation"
+          "message"
         ],
         "title": "ChatRequest",
         "examples": [
@@ -372,8 +400,14 @@
       "ChatResponse": {
         "properties": {
           "request_id": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Request Id"
           },
           "intent": {
@@ -387,7 +421,11 @@
               "PRODUCTOS",
               "MEJORAR",
               "REGLAS",
-              "AYUDA"
+              "INDICE",
+              "REGLA_GANADORA",
+              "REGLAS_PERDEDORAS",
+              "AYUDA",
+              "NO_DISPONIBLE"
             ],
             "title": "Intent"
           },
@@ -404,7 +442,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "request_id",
           "intent",
           "response",
           "supported"
@@ -414,7 +451,7 @@
           {
             "intent": "EXPLICACION",
             "request_id": "demo-001",
-            "response": "La recomendaci\u00f3n actual es EXCELENTE porque cumple el presupuesto y las condiciones principales.",
+            "response": "Te recomiendo esta opci\u00f3n porque la compra est\u00e1 dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
             "supported": true
           }
         ]
@@ -746,6 +783,13 @@
             "winning_rule": "R06"
           }
         ]
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
       }
     }
   }

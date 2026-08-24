@@ -192,6 +192,11 @@ Ejemplo `422`:
 Laravel envía el mensaje, los hechos disponibles y la recomendación recibida
 en la solicitud actual. El chatbot no recalcula reglas ni inventa datos.
 
+`recommendation` debe contener la respuesta real de `POST /api/v1/recommend`
+cuando Python esté disponible. El objeto es opcional únicamente para permitir
+un fallback controlado cuando el Sistema Experto no respondió. En ese caso se
+recomienda enviar también `request_id` para conservar la trazabilidad.
+
 ```json
 {
   "message": "¿Por qué se recomienda esta alternativa?",
@@ -222,8 +227,84 @@ Response:
 {
   "request_id": "demo-001",
   "intent": "EXPLICACION",
-  "response": "La recomendación actual es EXCELENTE porque cumple el presupuesto y las condiciones principales.",
+  "response": "Te recomiendo esta opción porque la compra está dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
   "supported": true
+}
+```
+
+### Respuesta amigable y metadata técnica
+
+El campo `response` está destinado a usuarios comunes: usa lenguaje natural,
+montos con dos decimales y unidades comprensibles. No muestra nombres de
+variables, hechos derivados, prioridades internas ni códigos de reglas en las
+preguntas normales.
+
+La metadata técnica permanece disponible en la respuesta de
+`/api/v1/recommend`, incluyendo `reglas_activadas`, `winning_rule`,
+`losing_rules`, `trace`, `version_reglas`, `version_contrato` e índice de
+conveniencia. El chatbot solo muestra códigos y prioridades cuando el usuario
+pregunta explícitamente por reglas o funcionamiento técnico.
+
+Preguntas normales:
+
+- `¿Me alcanza el presupuesto?`
+- `¿Cuánto ahorraré?`
+- `¿Qué tan lejos está?`
+- `¿Qué productos están disponibles?`
+- `¿Cuál es el índice de conveniencia?`
+
+Preguntas técnicas:
+
+- `¿Qué regla ganó?`
+- `¿Qué reglas se activaron?`
+- `¿Qué reglas perdieron?`
+
+El chatbot no conoce nombres concretos de productos porque el contrato actual
+solo recibe cantidades disponibles y cantidades totales. Tampoco conserva
+historial de conversación ni utiliza modelos de Machine Learning o IA
+generativa.
+
+### Intenciones soportadas sobre la recomendación real
+
+| Pregunta | Intención | Fuente de datos |
+|---|---|---|
+| `¿Cuál es el índice de conveniencia?` | `INDICE` | `indice_conveniencia` y `clasificacion_conveniencia` |
+| `¿Cuál es la regla ganadora?` | `REGLA_GANADORA` | `winning_rule` y `prioridad_aplicada` |
+| `¿Qué reglas perdedoras se activaron?` | `REGLAS_PERDEDORAS` | `losing_rules` |
+
+Ejemplo de respuesta sobre el índice:
+
+```json
+{
+  "request_id": "demo-001",
+  "intent": "INDICE",
+  "response": "El índice de conveniencia es 82.39 y se clasifica como ALTA_CONVENIENCIA. Es información complementaria y no reemplaza las reglas críticas.",
+  "supported": true
+}
+```
+
+### Fallback sin recomendación
+
+Cuando Python no pudo generar una recomendación, Laravel puede enviar:
+
+```json
+{
+  "message": "¿Cuál es la regla ganadora?",
+  "request_id": "fallback-001",
+  "facts": {},
+  "recommendation": null
+}
+```
+
+La API responde HTTP `200` de forma controlada, con `supported: false` y sin
+inventar índice, regla ganadora ni reglas perdedoras:
+
+```json
+{
+  "request_id": "fallback-001",
+  "intent": "NO_DISPONIBLE",
+  "response": "El asistente explicativo no está disponible en este momento. La recomendación principal continúa disponible.",
+  "supported": false
 }
 ```
 

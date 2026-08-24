@@ -17,7 +17,11 @@ ChatIntent = Literal[
     "PRODUCTOS",
     "MEJORAR",
     "REGLAS",
+    "INDICE",
+    "REGLA_GANADORA",
+    "REGLAS_PERDEDORAS",
     "AYUDA",
+    "NO_DISPONIBLE",
 ]
 
 
@@ -42,8 +46,9 @@ CHAT_RESPONSE_EXAMPLE = {
     "request_id": "demo-001",
     "intent": "EXPLICACION",
     "response": (
-        "La recomendación actual es EXCELENTE porque cumple el presupuesto "
-        "y las condiciones principales."
+        "Te recomiendo esta opción porque la compra está dentro de tu "
+        "presupuesto, incluye los productos esenciales y el recorrido adicional "
+        "es corto."
     ),
     "supported": True,
 }
@@ -57,7 +62,8 @@ class ChatRequest(BaseModel):
 
     message: str = Field(min_length=1)
     facts: dict[str, Any] = Field(default_factory=dict)
-    recommendation: RecommendationResponse
+    request_id: str | None = Field(default=None, min_length=1)
+    recommendation: RecommendationResponse | None = None
 
 
 class ChatResponse(BaseModel):
@@ -66,7 +72,7 @@ class ChatResponse(BaseModel):
         json_schema_extra={"examples": [CHAT_RESPONSE_EXAMPLE]},
     )
 
-    request_id: str = Field(min_length=1)
+    request_id: str | None = None
     intent: ChatIntent
     response: str = Field(min_length=1)
     supported: bool

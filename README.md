@@ -54,6 +54,7 @@ Resolución de conflictos ──► Nivel + Acción + Explicación + Trazabilida
 
 - **Recomendación explicada**: nivel (`EXCELENTE` … `NO_RECOMENDABLE`), acción sugerida y justificación en lenguaje natural.
 - **Chatbot determinista**: responde intenciones sobre la recomendación mediante plantillas, sin IA generativa.
+- **Consultas de trazabilidad**: explica el índice de conveniencia, la regla ganadora y las reglas perdedoras usando la respuesta real de `/recommend`.
 - **Base de conocimiento declarativa**: las reglas viven en `data/rules.json`, no en código — editarlas no requiere programar.
 - **Escenarios de prueba editables**: compra ideal, presupuesto excedido, productos faltantes, compra fragmentada, promociones y más.
 - **Respuestas repetibles**: ideal para evaluación académica y pruebas automatizadas.
@@ -95,6 +96,30 @@ Swagger UI: <http://127.0.0.1:8001/docs> · Demo: <http://localhost:8501>
 | `POST` | `/api/v1/chat` | Explica una recomendación vía intenciones |
 
 En producción se exige el header `X-API-Key` (valor definido en la variable de entorno `SMARTMARKET_API_KEY`). Sin esa variable configurada —por ejemplo en desarrollo local— la API queda abierta. `/health` siempre es público.
+
+El chatbot acepta la respuesta real de `/api/v1/recommend` en el campo
+`recommendation`. Puede responder preguntas como:
+
+- `¿Cuál es el índice de conveniencia?`
+- `¿Cuál es la regla ganadora?`
+- `¿Qué reglas perdedoras se activaron?`
+- `NO_DISPONIBLE` se utiliza cuando no existe una recomendación que explicar.
+
+Si Python no pudo generar una recomendación, Laravel puede enviar
+`"recommendation": null` junto con `request_id`. El endpoint mantiene la
+respuesta HTTP `200`, informa `supported: false` y no inventa índice ni reglas.
+
+### Lenguaje del chatbot
+
+Las respuestas normales están redactadas para usuarios comunes: muestran
+presupuesto, ahorro, kilómetros, minutos, disponibilidad e índice sin exponer
+variables internas como `dentro_presupuesto` o `ahorro_alto`. Los códigos
+`R01`–`R08`, `winning_rule`, `losing_rules` y la prioridad solo aparecen si el
+usuario pregunta explícitamente por reglas o por el funcionamiento técnico.
+
+El chatbot es determinista, local y basado en plantillas. No utiliza IA
+generativa, modelos externos ni historial permanente. Como el contrato solo
+contiene cantidades, no inventa nombres de productos.
 
 Ejemplo de respuesta de `/recommend`:
 

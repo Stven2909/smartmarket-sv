@@ -1,5 +1,5 @@
 from app.chatbot.intent_detector import detect_intent_details
-from app.chatbot.response_templates import build_response
+from app.chatbot.response_templates import NO_RECOMMENDATION, build_response
 from app.schemas.chatbot import ChatRequest, ChatResponse
 
 
@@ -7,6 +7,14 @@ def chat(request: ChatRequest) -> ChatResponse:
     """Responde una pregunta usando solo el contexto recibido en la solicitud."""
 
     intent, supported = detect_intent_details(request.message)
+    if request.recommendation is None:
+        return ChatResponse(
+            request_id=request.request_id or request.facts.get("request_id"),
+            intent="NO_DISPONIBLE",
+            response=NO_RECOMMENDATION,
+            supported=False,
+        )
+
     return ChatResponse(
         request_id=request.recommendation.request_id,
         intent=intent,

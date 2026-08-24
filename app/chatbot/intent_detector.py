@@ -11,13 +11,47 @@ Intent = Literal[
     "PRODUCTOS",
     "MEJORAR",
     "REGLAS",
+    "INDICE",
+    "REGLA_GANADORA",
+    "REGLAS_PERDEDORAS",
     "AYUDA",
+    "NO_DISPONIBLE",
 ]
 
 
 # El orden es deliberado: REGLAS y otras intenciones específicas se detectan
 # antes de EXPLICACION, que también puede contener "por que".
 INTENT_KEYWORDS: tuple[tuple[Intent, tuple[str, ...]], ...] = (
+    (
+        "REGLAS_PERDEDORAS",
+        (
+            "reglas perdedoras",
+            "reglas perdedor",
+            "reglas perdieron",
+            "losing_rules",
+            "losing rules",
+        ),
+    ),
+    (
+        "REGLA_GANADORA",
+        (
+            "regla ganadora",
+            "regla que gano",
+            "que regla gano",
+            "regla gano",
+            "winning_rule",
+            "winning rule",
+        ),
+    ),
+    (
+        "INDICE",
+        (
+            "indice de conveniencia",
+            "indice auxiliar",
+            "indice",
+            "conveniencia",
+        ),
+    ),
     ("REGLAS", ("regla", "reglas", "criterio", "criterios", "decidio")),
     ("MEJORAR", ("mejorar", "cambiar", "deberia", "mejor recomendacion")),
     (

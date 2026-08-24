@@ -79,6 +79,9 @@ def make_request(message: str, **changes) -> ChatRequest:
         ("¿Qué puedo hacer para mejorar?", "MEJORAR"),
         ("¿Cómo puedo obtener una mejor recomendación?", "MEJORAR"),
         ("¿Qué reglas se activaron?", "REGLAS"),
+        ("¿Cuál es el índice de conveniencia?", "INDICE"),
+        ("¿Cuál es la regla ganadora?", "REGLA_GANADORA"),
+        ("¿Qué reglas perdedoras hubo?", "REGLAS_PERDEDORAS"),
         ("¿Qué puedes hacer?", "AYUDA"),
     ],
 )
@@ -99,7 +102,7 @@ def test_unknown_question_returns_ayuda_and_unsupported():
 
     assert response.intent == "AYUDA"
     assert response.supported is False
-    assert "Puedo explicarte" in response.response
+    assert "Puedo ayudarte" in response.response
 
 
 def test_budget_inside_limit_response():
@@ -121,7 +124,10 @@ def test_budget_exceeded_response():
         )
     )
 
-    assert "excede el presupuesto por $10.00" in response.response
+    assert response.response == (
+        "Esta compra supera tu presupuesto por $10.00. Puedes quitar productos "
+        "no esenciales o buscar una opción más económica."
+    )
 
 
 def test_savings_response():
@@ -133,14 +139,15 @@ def test_savings_response():
 def test_distance_response():
     response = chat(make_request("¿Cuál es la distancia adicional?"))
 
-    assert "10.0 km" in response.response
+    assert "10.00 km" in response.response
 
 
 def test_rules_response():
     response = chat(make_request("¿Qué reglas se activaron?"))
 
     assert "R03" in response.response
-    assert "DISTANCIA_AHORRO" in response.response
+    assert "el ahorro es pequeño" in response.response
+    assert "prioridad aplicada" in response.response
 
 
 def test_chatbot_does_not_change_recommendation():
@@ -167,9 +174,7 @@ def test_explanation_starts_lowercase_after_porque():
         )
     )
 
-    assert response.response.startswith(
-        "La recomendación actual es EXCELENTE porque cumple"
-    )
+    assert response.response.startswith("Te recomiendo esta opción porque")
 
 
 def test_missing_data_is_reported():
@@ -195,13 +200,34 @@ def test_chat_endpoint_returns_200():
     assert response.json()["supported"] is True
 
 
-def test_invalid_chat_request_returns_422():
+def test_chat_request_without_recommendation_is_valid_fallback():
     response = request(
         "POST",
         "/api/v1/chat",
         json={
             "message": "¿Cuánto ahorro?",
             "facts": FACTS,
+            "recommendation": None,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["supported"] is False
+    assert response.json()["intent"] == "NO_DISPONIBLE"
+    assert response.json()["response"] == (
+        "El asistente explicativo no está disponible en este momento. "
+        "La recomendación principal continúa disponible."
+    )
+
+
+def test_invalid_chat_request_still_returns_422_for_empty_message():
+    response = request(
+        "POST",
+        "/api/v1/chat",
+        json={
+            "message": "",
+            "facts": FACTS,
+            "recommendation": None,
         },
     )
 
