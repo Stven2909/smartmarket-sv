@@ -37,9 +37,9 @@ return [
 
     'expert_system' => [
         'url' => env('EXPERT_SYSTEM_URL', 'https://sistema-experto-fork.onrender.com'),
-        'timeout' => (int) env('EXPERT_SYSTEM_TIMEOUT', 3),
-        'retry_times' => (int) env('EXPERT_SYSTEM_RETRY_TIMES', 2),
-        'retry_sleep_ms' => (int) env('EXPERT_SYSTEM_RETRY_SLEEP_MS', 500),
+        'timeout' => (int) env('EXPERT_SYSTEM_TIMEOUT', 15),
+        'retry_times' => (int) env('EXPERT_SYSTEM_RETRY_TIMES', 3),
+        'retry_sleep_ms' => (int) env('EXPERT_SYSTEM_RETRY_SLEEP_MS', 2000),
     ],
 
 ];
