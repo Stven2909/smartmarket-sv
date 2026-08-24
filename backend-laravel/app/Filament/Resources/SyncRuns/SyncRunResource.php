@@ -19,7 +19,7 @@ class SyncRunResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPathRoundedSquare;
 
-    protected static ?string $modelLabel = 'Corrida de sync';
+    protected static ?string $modelLabel = 'Ciclo de sync';
 
     protected static ?string $pluralModelLabel = 'Ciclos de sincronización';
 

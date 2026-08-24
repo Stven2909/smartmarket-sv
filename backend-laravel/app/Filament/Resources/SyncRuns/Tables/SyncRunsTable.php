@@ -84,7 +84,7 @@ class SyncRunsTable
             ->icon('heroicon-o-code-bracket')
             ->color('gray')
             ->visible(fn (SyncRun $record): bool => $record->detalle !== null || $record->mensaje_error !== null)
-            ->modalHeading(fn (SyncRun $record): string => "Corrida #{$record->id} — {$record->fuente}")
+            ->modalHeading(fn (SyncRun $record): string => "Ciclo #{$record->id} — {$record->fuente}")
             ->modalContent(function (SyncRun $record): HtmlString {
                 $secciones = [];
 

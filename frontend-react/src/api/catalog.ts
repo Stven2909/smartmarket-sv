@@ -2,10 +2,12 @@ import { api } from './client'
 import type {
   ApiCategoria,
   ApiHistorialPrecio,
+  ApiPaginated,
   ApiProductoFull,
   ApiProductoLite,
+  ApiSucursal,
 } from '../types/api'
-import { categoryFromApi } from '../types/domain'
+import { branchFromApi, categoryFromApi } from '../types/domain'
 
 export function fetchCategorias(signal?: AbortSignal): Promise<ReturnType<typeof categoryFromApi>[]> {
   return api.get<ApiCategoria[]>('/categorias', signal).then((list) => list.map(categoryFromApi))
@@ -23,6 +25,11 @@ export function buscarProductos(q: string, page = 1, categoriaId?: number, signa
   const params = new URLSearchParams({ q, page: String(page) })
   if (categoriaId) params.set('categoriaId', String(categoriaId))
   return api.get<ApiPaginated<ApiProductoFull>>(`/productos/buscar?${params}`, signal)
+}
+
+// Obtiene todas las sucursales del catálogo.
+export function fetchSucursales(): Promise<ReturnType<typeof branchFromApi>[]> {
+  return api.get<ApiSucursal[]>('/sucursales').then((list) => list.map(branchFromApi))
 }
 
 export function fetchProducto(id: number): Promise<ApiProductoFull> {

@@ -53,7 +53,7 @@ export function ProductCard({ product, onAddToList, onViewHistorial }: Props) {
                 </div>
                 <div className="saving-price">
                   {prevPrice !== null && (
-                    {prevPrice}
+                    <s>{prevPrice}</s>
                   )}
                   <b>{formatMoney(offer.price)}</b>
                 </div>

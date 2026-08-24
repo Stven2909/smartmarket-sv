@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Categoria;
 use App\Models\HistorialPrecio;
 use App\Models\Producto;
 use App\Models\Sucursal;
@@ -12,18 +13,16 @@ class HistoricoPrecioDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        // 2 productos de demo (coherentes con DemoDataSeeder si ya corrió)
-        $productoGalletas = Producto::firstOrCreate(
-            ['nombre' => 'Galletas', 'marca' => 'Gamesa'],
-            ['activo' => true]
+        // 1. Asegurar categorías existen (tabla categorias: id, nombre, timestamps - sin activo)
+        $categoriaGalletas = Categoria::firstOrCreate(
+            ['nombre' => 'Snacks']
         );
 
-        $productoPan = Producto::firstOrCreate(
-            ['nombre' => 'Pan', 'marca' => 'Bimbo'],
-            ['activo' => true]
+        $categoriaPan = Categoria::firstOrCreate(
+            ['nombre' => 'Pan']
         );
 
-        // 1 supermercado + 2 sucursales
+        // 2. 1 supermercado + 2 sucursales
         $super = \App\Models\Supermercado::firstOrCreate(
             ['nombre' => 'Selectos'],
             ['activo' => true, 'sitio_web' => null]
@@ -41,7 +40,19 @@ class HistoricoPrecioDemoSeeder extends Seeder
 
         $ahora = Carbon::now();
 
-        // Producto: Galletas - 4 snapshots (fechas: 5d, 15d, 30d, 45d atrás)
+        // 3. Producto: Galletas - con categoría Snacks
+        $productoGalletas = Producto::firstOrCreate(
+            ['nombre' => 'Galletas', 'marca' => 'Gamesa'],
+            ['categoria_id' => $categoriaGalletas->id, 'activo' => true]
+        );
+
+        // 4. Producto: Pan - con categoría Pan
+        $productoPan = Producto::firstOrCreate(
+            ['nombre' => 'Pan', 'marca' => 'Bimbo'],
+            ['categoria_id' => $categoriaPan->id, 'activo' => true]
+        );
+
+        // 5. Historial de precios para Galletas (4 snapshots)
         HistorialPrecio::create([
             'producto_id' => $productoGalletas->id,
             'sucursal_id' => $suc1->id,
@@ -82,7 +93,7 @@ class HistoricoPrecioDemoSeeder extends Seeder
             'origen' => 'manual',
         ]);
 
-        // Producto: Pan - 4 snapshots (fechas: 3d, 20d, 50d, 75d atrás)
+        // 6. Historial de precios para Pan (4 snapshots)
         HistorialPrecio::create([
             'producto_id' => $productoPan->id,
             'sucursal_id' => $suc1->id,
