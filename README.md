@@ -50,6 +50,7 @@ Resolución de conflictos ──► Nivel + Acción + Explicación + Trazabilida
 | Servidor | Uvicorn | Servidor ASGI |
 | Interfaz | Streamlit | Demo interactiva editable |
 | Pruebas | Pytest | Cobertura de reglas, inferencia, API y chatbot |
+| Calidad | Ruff + GitHub Actions | Lint y tests automáticos en cada push |
 
 ## Características
 
