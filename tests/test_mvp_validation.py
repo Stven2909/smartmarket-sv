@@ -6,7 +6,7 @@ import requests
 from app.main import app
 from app.schemas.chatbot import ChatResponse
 from app.schemas.recommendation import RecommendationResponse
-from demo.streamlit_app import call_health_endpoint, load_scenarios
+from demo.streamlit_app import ApiClientError, call_health_endpoint, load_scenarios
 
 
 def api_request(method: str, path: str, **kwargs):
@@ -37,9 +37,7 @@ def test_all_demo_scenarios_work_through_recommendation_api():
 
 def test_all_demo_scenarios_work_through_chat_api():
     for scenario in load_scenarios():
-        recommendation_response = api_request(
-            "POST", "/api/v1/recommend", json=scenario["facts"]
-        )
+        recommendation_response = api_request("POST", "/api/v1/recommend", json=scenario["facts"])
         chat_response = api_request(
             "POST",
             "/api/v1/chat",
@@ -73,7 +71,7 @@ def test_incorrect_api_url_is_reported(monkeypatch):
 
     try:
         call_health_endpoint("http://invalid-host.test")
-    except Exception as exc:
+    except ApiClientError as exc:
         assert "No se pudo conectar" in str(exc)
     else:
         raise AssertionError("Se esperaba un error de conexión")

@@ -16,7 +16,6 @@ from app.expert_system.convenience_index import (
 from app.expert_system.inference_engine import run_inference
 from app.schemas.recommendation import RecommendationRequest
 
-
 VALID_REQUEST = {
     "request_id": "convenience-001",
     "alternativa_id": "supermercado-1",
@@ -156,15 +155,11 @@ def test_critical_index_does_not_change_r02():
     result = run_inference(make_request(productos_esenciales_disponibles=5))
 
     assert result["level"] == "NO_RECOMENDABLE"
-    assert result["action"] == (
-        "Buscar una alternativa con todos los productos esenciales."
-    )
+    assert result["action"] == ("Buscar una alternativa con todos los productos esenciales.")
 
 
 def test_critical_index_does_not_change_r03():
-    result = run_inference(
-        make_request(distancia_adicional_km=8, ahorro=2.99)
-    )
+    result = run_inference(make_request(distancia_adicional_km=8, ahorro=2.99))
 
     assert result["level"] == "NO_RECOMENDABLE"
     assert result["winning_rule"] == "R03"

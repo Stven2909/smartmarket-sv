@@ -9,7 +9,6 @@ from app.schemas.recommendation import (
 )
 from app.services.recommendation_service import recommend
 
-
 router = APIRouter(prefix="/api/v1", tags=["recommendations"])
 
 

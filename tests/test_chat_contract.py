@@ -6,7 +6,6 @@ from app.main import app
 from app.schemas.chatbot import ChatResponse
 from app.schemas.recommendation import RecommendationResponse
 
-
 RECOMMEND_REQUEST = {
     "request_id": "chat-contract-001",
     "alternativa_id": "supermercado-1",
@@ -76,23 +75,17 @@ def test_chat_uses_the_real_recommend_endpoint_response():
 
 
 def test_chat_preserves_new_recommendation_fields():
-    response, recommendation = ask_with_real_recommendation(
-        "¿Cuál es el índice de conveniencia?"
-    )
+    response, recommendation = ask_with_real_recommendation("¿Cuál es el índice de conveniencia?")
 
     assert response.status_code == 200
     assert response.json()["intent"] == "INDICE"
-    assert f"{recommendation.indice_conveniencia:.2f}" in response.json()[
-        "response"
-    ]
+    assert f"{recommendation.indice_conveniencia:.2f}" in response.json()["response"]
     assert recommendation.componentes_conveniencia
     assert recommendation.pesos_conveniencia
 
 
 def test_chat_answers_about_winning_rule_from_real_recommendation():
-    response, recommendation = ask_with_real_recommendation(
-        "¿Cuál es la regla ganadora?"
-    )
+    response, recommendation = ask_with_real_recommendation("¿Cuál es la regla ganadora?")
 
     assert response.status_code == 200
     assert response.json()["intent"] == "REGLA_GANADORA"
@@ -100,9 +93,7 @@ def test_chat_answers_about_winning_rule_from_real_recommendation():
 
 
 def test_chat_answers_about_losing_rules_from_real_recommendation():
-    response, recommendation = ask_with_real_recommendation(
-        "¿Qué reglas perdedoras se activaron?"
-    )
+    response, recommendation = ask_with_real_recommendation("¿Qué reglas perdedoras se activaron?")
 
     assert response.status_code == 200
     assert response.json()["intent"] == "REGLAS_PERDEDORAS"

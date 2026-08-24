@@ -8,7 +8,6 @@ from app.main import app
 from app.schemas.chatbot import ChatRequest
 from app.schemas.recommendation import RecommendationResponse
 
-
 IDEAL_FACTS = {
     "request_id": "language-001",
     "alternativa_id": "supermercado-1",
@@ -99,8 +98,7 @@ def test_budget_inside_response_uses_two_decimals():
     response = chat(make_chat("¿Me alcanza el presupuesto?"))
 
     assert response.response == (
-        "La compra cuesta $42.50 y tu presupuesto es de $50.00. "
-        "Te quedan $7.50 disponibles."
+        "La compra cuesta $42.50 y tu presupuesto es de $50.00. Te quedan $7.50 disponibles."
     )
 
 
@@ -144,7 +142,8 @@ def test_complete_products_response_is_clear():
     response = chat(make_chat("¿Están disponibles mis productos?"))
 
     assert response.response == (
-        "Los 10 productos de tu lista están disponibles y los 6 productos esenciales están completos."
+        "Los 10 productos de tu lista están disponibles "
+        "y los 6 productos esenciales están completos."
     )
 
 

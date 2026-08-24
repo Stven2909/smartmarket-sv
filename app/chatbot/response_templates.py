@@ -3,7 +3,6 @@ from typing import Any
 from app.schemas.chatbot import ChatIntent
 from app.schemas.recommendation import RecommendationResponse
 
-
 INSUFFICIENT_DATA = "No tengo datos suficientes para responder esa pregunta."
 NO_RECOMMENDATION = (
     "El asistente explicativo no está disponible en este momento. "
@@ -65,11 +64,9 @@ def _join_reasons(reasons: list[str]) -> str:
 
 def _friendly_reasons(recommendation: RecommendationResponse, limit: int = 3) -> list[str]:
     derived_facts = recommendation.hechos_derivados
-    return [
-        phrase
-        for fact_name, phrase in FRIENDLY_FACTS
-        if derived_facts.get(fact_name) is True
-    ][:limit]
+    return [phrase for fact_name, phrase in FRIENDLY_FACTS if derived_facts.get(fact_name) is True][
+        :limit
+    ]
 
 
 def _friendly_rule_reason(
@@ -86,8 +83,14 @@ def _friendly_rule_reason(
         "R03": "el ahorro es pequeño y el recorrido adicional es largo",
         "R04": "el ahorro es pequeño y el tiempo de traslado es alto",
         "R05": "la compra requiere visitar varias tiendas",
-        "R06": "la compra cumple las condiciones más importantes y requiere un recorrido conveniente",
-        "R07": "la compra cumple el presupuesto, incluye los esenciales y tiene promociones aplicables",
+        "R06": (
+            "la compra cumple las condiciones más importantes "
+            "y requiere un recorrido conveniente"
+        ),
+        "R07": (
+            "la compra cumple el presupuesto, incluye los esenciales "
+            "y tiene promociones aplicables"
+        ),
         "R08": "dividir la compra en dos tiendas puede justificarse por el ahorro",
     }.get(rule_id, "se cumplieron condiciones importantes de la compra")
 
@@ -123,10 +126,7 @@ def _products_response(facts: dict[str, Any]) -> str:
     total = facts.get("productos_totales")
     essential_available = facts.get("productos_esenciales_disponibles")
     essential_total = facts.get("productos_esenciales_totales")
-    if any(
-        value is None
-        for value in (available, total, essential_available, essential_total)
-    ):
+    if any(value is None for value in (available, total, essential_available, essential_total)):
         return INSUFFICIENT_DATA
 
     all_products = int(available) == int(total)
@@ -150,9 +150,7 @@ def _products_response(facts: dict[str, Any]) -> str:
 def _explanation_response(recommendation: RecommendationResponse) -> str:
     reasons = _friendly_reasons(recommendation)
     if not reasons:
-        reasons = [
-            "esta opción puede compararse con las demás alternativas antes de decidir"
-        ]
+        reasons = ["esta opción puede compararse con las demás alternativas antes de decidir"]
 
     if recommendation.nivel_recomendacion == "NO_RECOMENDABLE":
         response = f"No te recomiendo esta opción porque {_join_reasons(reasons)}."
@@ -218,7 +216,10 @@ def build_response(
         return (
             INSUFFICIENT_DATA
             if ahorro is None
-            else f"Con esta opción ahorrarías aproximadamente {_money(ahorro)} frente a la alternativa más cara."
+            else (
+                f"Con esta opción ahorrarías aproximadamente {_money(ahorro)} "
+                "frente a la alternativa más cara."
+            )
         )
 
     if intent == "DISTANCIA":

@@ -1,7 +1,6 @@
 from app.expert_system.classifiers import derive_facts
 from app.schemas.recommendation import RecommendationRequest
 
-
 VALID_REQUEST = {
     "request_id": "demo-001",
     "alternativa_id": "supermercado-1",
@@ -66,9 +65,7 @@ def test_derives_missing_essential_products():
 
 
 def test_derives_far_distance_with_low_savings():
-    facts = derive_facts(
-        make_request(distancia_adicional_km=8, ahorro=2.99)
-    )
+    facts = derive_facts(make_request(distancia_adicional_km=8, ahorro=2.99))
 
     assert facts["distancia_lejana"] is True
     assert facts["distancia_cercana"] is False

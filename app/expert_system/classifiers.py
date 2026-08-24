@@ -1,6 +1,5 @@
 from app.schemas.recommendation import RecommendationRequest
 
-
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
 # hechos resultantes, sin repetir estas comparaciones numéricas.
 THRESHOLDS_VERSION = "1.0.0"
@@ -29,68 +28,47 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
         request.productos_disponibles / request.productos_totales * 100
     )
     porcentaje_esenciales_disponibles = (
-        request.productos_esenciales_disponibles
-        / request.productos_esenciales_totales
-        * 100
+        request.productos_esenciales_disponibles / request.productos_esenciales_totales * 100
     )
 
     dentro_presupuesto = request.costo_total <= request.presupuesto
     presupuesto_ligeramente_excedido = (
         not dentro_presupuesto
-        and porcentaje_exceso_presupuesto
-        <= THRESHOLDS["presupuesto_exceso_max_pct"]
+        and porcentaje_exceso_presupuesto <= THRESHOLDS["presupuesto_exceso_max_pct"]
     )
     presupuesto_muy_excedido = (
-        porcentaje_exceso_presupuesto
-        > THRESHOLDS["presupuesto_exceso_max_pct"]
+        porcentaje_exceso_presupuesto > THRESHOLDS["presupuesto_exceso_max_pct"]
     )
 
-    todos_productos_disponibles = (
-        request.productos_disponibles == request.productos_totales
-    )
+    todos_productos_disponibles = request.productos_disponibles == request.productos_totales
     todos_esenciales_disponibles = (
-        request.productos_esenciales_disponibles
-        == request.productos_esenciales_totales
+        request.productos_esenciales_disponibles == request.productos_esenciales_totales
     )
 
     ahorro_bajo = request.ahorro < THRESHOLDS["ahorro_bajo_max"]
-    ahorro_medio = (
-        THRESHOLDS["ahorro_bajo_max"]
-        <= request.ahorro
-        < THRESHOLDS["ahorro_alto_min"]
-    )
+    ahorro_medio = THRESHOLDS["ahorro_bajo_max"] <= request.ahorro < THRESHOLDS["ahorro_alto_min"]
     ahorro_alto = request.ahorro >= THRESHOLDS["ahorro_alto_min"]
 
-    distancia_cercana = (
-        request.distancia_adicional_km
-        <= THRESHOLDS["distancia_cercana_max_km"]
-    )
+    distancia_cercana = request.distancia_adicional_km <= THRESHOLDS["distancia_cercana_max_km"]
     distancia_media = (
         THRESHOLDS["distancia_cercana_max_km"]
         < request.distancia_adicional_km
         < THRESHOLDS["distancia_media_max_km"]
     )
-    distancia_lejana = (
-        request.distancia_adicional_km >= THRESHOLDS["distancia_media_max_km"]
-    )
+    distancia_lejana = request.distancia_adicional_km >= THRESHOLDS["distancia_media_max_km"]
 
-    tiempo_bajo = (
-        request.tiempo_estimado_min <= THRESHOLDS["tiempo_bajo_max_min"]
-    )
+    tiempo_bajo = request.tiempo_estimado_min <= THRESHOLDS["tiempo_bajo_max_min"]
     tiempo_medio = (
         THRESHOLDS["tiempo_bajo_max_min"]
         < request.tiempo_estimado_min
         < THRESHOLDS["tiempo_medio_max_min"]
     )
-    tiempo_alto = (
-        request.tiempo_estimado_min >= THRESHOLDS["tiempo_medio_max_min"]
-    )
+    tiempo_alto = request.tiempo_estimado_min >= THRESHOLDS["tiempo_medio_max_min"]
 
     una_parada = request.numero_supermercados == 1
     dos_paradas = request.numero_supermercados == 2
     compra_fragmentada = (
-        request.numero_supermercados
-        >= THRESHOLDS["compra_fragmentada_min_supermercados"]
+        request.numero_supermercados >= THRESHOLDS["compra_fragmentada_min_supermercados"]
     )
 
     return {

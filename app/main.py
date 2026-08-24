@@ -4,8 +4,8 @@ import secrets
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import APIKeyHeader
 
-from app.api.health_routes import router as health_router
 from app.api.chatbot_routes import router as chatbot_router
+from app.api.health_routes import router as health_router
 from app.api.recommendation_routes import router as recommendation_router
 from app.schemas.versions import CONTRACT_VERSION
 

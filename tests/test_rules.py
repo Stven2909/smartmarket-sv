@@ -35,9 +35,7 @@ def test_recommendation_levels_are_valid():
 def test_conditions_use_existing_derived_facts():
     rules = load_rules()
 
-    assert all(
-        set(rule.conditions).issubset(DERIVED_FACT_NAMES) for rule in rules
-    )
+    assert all(set(rule.conditions).issubset(DERIVED_FACT_NAMES) for rule in rules)
 
 
 @pytest.mark.parametrize("rule_id", ["R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08"])

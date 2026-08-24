@@ -1,11 +1,12 @@
 import json
+from pathlib import Path
 
 import pytest
 import requests
 
 from demo.streamlit_app import (
-    ApiClientError,
     REQUEST_TIMEOUT_SECONDS,
+    ApiClientError,
     ScenarioLoadError,
     call_recommendation_api,
     load_scenarios,
@@ -115,9 +116,7 @@ def test_ideal_scenario_can_be_sent_to_api(monkeypatch):
     captured = {}
 
     def fake_post(url, json, timeout, headers=None):
-        captured.update(
-            {"url": url, "json": json, "timeout": timeout, "headers": headers}
-        )
+        captured.update({"url": url, "json": json, "timeout": timeout, "headers": headers})
         return FakeResponse(200, {"nivel_recomendacion": "EXCELENTE"})
 
     monkeypatch.setattr("demo.streamlit_app.requests.post", fake_post)
@@ -165,7 +164,7 @@ def test_api_500_is_handled(monkeypatch):
 
 
 def test_streamlit_uses_http_without_importing_internal_engine():
-    source = open("demo/streamlit_app.py", encoding="utf-8").read()
+    source = Path("demo/streamlit_app.py").read_text(encoding="utf-8")
 
     assert "requests.post" in source
     assert "inference_engine" not in source

@@ -5,6 +5,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-Demo-FF4B4B?logo=streamlit&logoColor=white)
 ![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)
+![CI](https://github.com/Stven2909/smartmarket-sv/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/licencia-MIT-green)
 
 Sistema Experto determinista que recomienda la mejor alternativa de compra de supermercado según **presupuesto, ahorro, disponibilidad, distancia, tiempo de traslado y cantidad de tiendas**, explicando cada recomendación de forma trazable.
@@ -69,6 +70,20 @@ Streamlit ──HTTP──► FastAPI ──► Motor de inferencia
 ```
 
 La interfaz consume todo por HTTP; toda la lógica vive en el servicio.
+
+## Responsabilidades de integración
+
+Python valida los hechos, ejecuta las reglas, calcula hechos derivados e
+índice, y responde `/api/v1/recommend` y `/api/v1/chat`. Laravel calcula los
+datos de negocio, construye el payload oficial, omite llamadas con datos
+obligatorios nulos, aplica timeout/retry y ejecuta el fallback. React consume
+únicamente Laravel: muestra la recomendación amigable, conserva el fallback y
+envía las preguntas al backend. Ninguna de las dos capas debe duplicar el
+motor de inferencia.
+
+El payload oficial usa `lista-42-sucursal-3` como `request_id` y contiene solo
+hechos validados. `score`, `penalizacion_distancia`, combustible, vehículo y
+SQL no forman parte del contrato Python.
 
 ## Inicio rápido
 
@@ -163,6 +178,11 @@ docs/                   # Contrato de API y guías
 ```
 
 Cubren esquemas, hechos derivados, reglas, motor de inferencia, endpoints, chatbot, escenarios y repetibilidad.
+
+La compatibilidad Laravel se valida adicionalmente en
+`tests/test_phase12_compatibility.py`: prueba el payload oficial, el flujo
+`/recommend` → `/chat`, índice, reglas críticas, fallback, nulos, campos
+prohibidos y resultados deterministas.
 
 ## Limitaciones del MVP
 

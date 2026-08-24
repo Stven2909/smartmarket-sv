@@ -1,8 +1,8 @@
 from typing import Any
 
 from app.expert_system.classifiers import derive_facts
-from app.expert_system.convenience_index import enrich_inference_result
 from app.expert_system.conflict_resolver import resolve_conflicts
+from app.expert_system.convenience_index import enrich_inference_result
 from app.expert_system.explanation_builder import build_inference_result
 from app.expert_system.models import ProductionRule
 from app.expert_system.rule_loader import load_rules
@@ -30,9 +30,7 @@ def _evaluate_rule_with_trace(
             continue
 
         actual_value = facts[fact_name]
-        matched = type(actual_value) is type(expected_value) and (
-            actual_value == expected_value
-        )
+        matched = type(actual_value) is type(expected_value) and (actual_value == expected_value)
         condition_trace[fact_name] = {
             "expected": expected_value,
             "actual": actual_value,
@@ -41,20 +39,15 @@ def _evaluate_rule_with_trace(
 
     if missing_facts:
         raise InferenceError(
-            f"La regla {rule.id} requiere hechos inexistentes: "
-            f"{', '.join(sorted(missing_facts))}"
+            f"La regla {rule.id} requiere hechos inexistentes: {', '.join(sorted(missing_facts))}"
         )
 
-    activated = all(
-        condition["matched"] for condition in condition_trace.values()
-    )
+    activated = all(condition["matched"] for condition in condition_trace.values())
     matched_conditions = [
         name for name, condition in condition_trace.items() if condition["matched"]
     ]
     unmatched_conditions = [
-        name
-        for name, condition in condition_trace.items()
-        if not condition["matched"]
+        name for name, condition in condition_trace.items() if not condition["matched"]
     ]
 
     trace = {
@@ -73,9 +66,7 @@ def _evaluate_rule_with_trace(
     return activated, trace
 
 
-def evaluate_rule(
-    rule: ProductionRule, facts: dict[str, bool | float]
-) -> bool:
+def evaluate_rule(rule: ProductionRule, facts: dict[str, bool | float]) -> bool:
     """Evalúa una regla con lógica AND y devuelve si se activó."""
 
     activated, _ = _evaluate_rule_with_trace(rule, facts)
@@ -109,9 +100,7 @@ def _evaluate_all_rules(
     return activated_rules, trace
 
 
-def run_inference(
-    request: RecommendationRequest, rules_path=None
-) -> dict[str, Any]:
+def run_inference(request: RecommendationRequest, rules_path=None) -> dict[str, Any]:
     """Ejecuta el flujo completo de inferencia para una solicitud validada."""
 
     facts = derive_facts(request)

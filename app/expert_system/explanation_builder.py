@@ -2,7 +2,6 @@ from typing import Any
 
 from app.expert_system.models import ProductionRule
 
-
 DEFAULT_CONCLUSION = {
     "level": "NO_RECOMENDABLE",
     "action": "Comparar con otras alternativas antes de decidir.",
@@ -34,9 +33,7 @@ def build_inference_result(
         **conclusion,
         "activated_rules": [rule.id for rule in activated_rules],
         "winning_rule": winner.id if isinstance(winner, ProductionRule) else None,
-        "priority_category": (
-            winner.category if isinstance(winner, ProductionRule) else None
-        ),
+        "priority_category": (winner.category if isinstance(winner, ProductionRule) else None),
         "losing_rules": [rule.id for rule in losers],
         "facts": facts,
         "trace": trace,

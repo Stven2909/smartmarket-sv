@@ -7,7 +7,6 @@ from app.schemas.recommendation import (
     RecommendationResponse,
 )
 
-
 ChatIntent = Literal[
     "EXPLICACION",
     "PRESUPUESTO",

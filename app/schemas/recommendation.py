@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.schemas.levels import RecommendationLevel
 from app.schemas.versions import CONTRACT_VERSION, RULES_VERSION
 
-
 RECOMMENDATION_REQUEST_EXAMPLE = {
     "request_id": "demo-001",
     "alternativa_id": "supermercado-1",
@@ -147,17 +146,11 @@ class RecommendationRequest(BaseModel):
     @model_validator(mode="after")
     def validate_product_counts(self) -> "RecommendationRequest":
         if self.productos_disponibles > self.productos_totales:
-            raise ValueError(
-                "productos_disponibles no puede superar productos_totales"
-            )
+            raise ValueError("productos_disponibles no puede superar productos_totales")
 
-        if (
-            self.productos_esenciales_disponibles
-            > self.productos_esenciales_totales
-        ):
+        if self.productos_esenciales_disponibles > self.productos_esenciales_totales:
             raise ValueError(
-                "productos_esenciales_disponibles no puede superar "
-                "productos_esenciales_totales"
+                "productos_esenciales_disponibles no puede superar productos_esenciales_totales"
             )
 
         return self

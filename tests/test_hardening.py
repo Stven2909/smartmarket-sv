@@ -10,17 +10,18 @@ from app.expert_system.classifiers import (
 )
 from app.expert_system.inference_engine import InferenceError, run_inference
 from app.expert_system.models import DERIVED_FACT_NAMES
+from app.expert_system.models import (
+    RecommendationLevel as RuleRecommendationLevel,
+)
 from app.expert_system.rule_loader import load_rules
 from app.schemas.levels import RECOMMENDATION_LEVELS
 from app.schemas.recommendation import (
     RecommendationLevel as SchemaRecommendationLevel,
+)
+from app.schemas.recommendation import (
     RecommendationRequest,
     RecommendationResponse,
 )
-from app.expert_system.models import (
-    RecommendationLevel as RuleRecommendationLevel,
-)
-
 
 VALID_REQUEST = {
     "request_id": "hardening-001",
@@ -52,9 +53,7 @@ def test_contract_rejects_null_budget_location_and_time():
         "tiempo_estimado_min",
     ):
         with pytest.raises(ValidationError):
-            RecommendationRequest.model_validate(
-                {**VALID_REQUEST, field_name: None}
-            )
+            RecommendationRequest.model_validate({**VALID_REQUEST, field_name: None})
 
 
 def test_contract_accepts_zero_and_positive_savings_but_rejects_negative():
@@ -109,9 +108,7 @@ def test_savings_boundaries(ahorro, expected):
     facts = derive_facts(make_request(ahorro=ahorro))
 
     assert facts[expected] is True
-    assert sum(
-        facts[name] for name in ("ahorro_bajo", "ahorro_medio", "ahorro_alto")
-    ) == 1
+    assert sum(facts[name] for name in ("ahorro_bajo", "ahorro_medio", "ahorro_alto")) == 1
 
 
 @pytest.mark.parametrize(
@@ -127,14 +124,17 @@ def test_distance_boundaries(distancia, expected):
     facts = derive_facts(make_request(distancia_adicional_km=distancia))
 
     assert facts[expected] is True
-    assert sum(
-        facts[name]
-        for name in (
-            "distancia_cercana",
-            "distancia_media",
-            "distancia_lejana",
+    assert (
+        sum(
+            facts[name]
+            for name in (
+                "distancia_cercana",
+                "distancia_media",
+                "distancia_lejana",
+            )
         )
-    ) == 1
+        == 1
+    )
 
 
 @pytest.mark.parametrize(
@@ -150,18 +150,12 @@ def test_time_boundaries(tiempo, expected):
     facts = derive_facts(make_request(tiempo_estimado_min=tiempo))
 
     assert facts[expected] is True
-    assert sum(
-        facts[name] for name in ("tiempo_bajo", "tiempo_medio", "tiempo_alto")
-    ) == 1
+    assert sum(facts[name] for name in ("tiempo_bajo", "tiempo_medio", "tiempo_alto")) == 1
 
 
 def test_budget_boundaries():
-    slightly_exceeded = derive_facts(
-        make_request(costo_total=110.00, presupuesto=100.00)
-    )
-    very_exceeded = derive_facts(
-        make_request(costo_total=110.01, presupuesto=100.00)
-    )
+    slightly_exceeded = derive_facts(make_request(costo_total=110.00, presupuesto=100.00))
+    very_exceeded = derive_facts(make_request(costo_total=110.01, presupuesto=100.00))
 
     assert slightly_exceeded["presupuesto_ligeramente_excedido"] is True
     assert slightly_exceeded["presupuesto_muy_excedido"] is False
@@ -187,11 +181,11 @@ def test_derived_fact_names_have_one_checked_contract():
 
 def test_recommendation_level_has_one_shared_definition():
     assert SchemaRecommendationLevel is RuleRecommendationLevel
-    assert RECOMMENDATION_LEVELS == {
+    assert {
         "EXCELENTE",
         "BUENA",
         "NO_RECOMENDABLE",
-    }
+    } == RECOMMENDATION_LEVELS
 
 
 def test_r02_wins_over_r05_and_keeps_both_rules():
@@ -271,7 +265,6 @@ def test_trace_contains_full_evaluation_information_for_every_rule():
 
 def test_missing_fact_fails_before_returning_a_partial_decision():
     rules = load_rules()
-    request = make_request()
 
     with pytest.raises(InferenceError, match="hechos inexistentes"):
         from app.expert_system.inference_engine import evaluate_rule

@@ -9,7 +9,6 @@ from app.main import app
 from app.schemas.recommendation import RecommendationResponse
 from app.schemas.versions import CONTRACT_VERSION, RULES_VERSION
 
-
 VALID_REQUEST = {
     "request_id": "contract-001",
     "alternativa_id": "supermercado-1",
@@ -107,9 +106,7 @@ CONTRACT_CASES = [
         "CONVENIENCIA_MEDIA",
         id="no-critical-rule",
     ),
-    pytest.param(
-        {}, "EXCELENTE", "R06", "ALTA_CONVENIENCIA", id="high-index"
-    ),
+    pytest.param({}, "EXCELENTE", "R06", "ALTA_CONVENIENCIA", id="high-index"),
     pytest.param(
         {
             "ahorro": 10,
@@ -218,9 +215,7 @@ def test_index_does_not_change_critical_rule_decision_fields():
     body = response.json()
 
     assert body["nivel_recomendacion"] == "NO_RECOMENDABLE"
-    assert body["accion_sugerida"] == (
-        "Replantear la lista o buscar productos sustitutos."
-    )
+    assert body["accion_sugerida"] == ("Replantear la lista o buscar productos sustitutos.")
     assert body["winning_rule"] == "R01"
     assert body["losing_rules"] == []
     assert body["reglas_activadas"] == ["R01"]
@@ -266,12 +261,8 @@ def test_openapi_contains_public_paths_models_versions_and_examples():
     recommendation_post = schema["paths"]["/api/v1/recommend"]["post"]
     assert "422" in recommendation_post["responses"]
     assert "200" in recommendation_post["responses"]
-    assert "examples" in recommendation_post["responses"]["200"]["content"][
-        "application/json"
-    ]
-    examples = recommendation_post["responses"]["200"]["content"][
-        "application/json"
-    ]["examples"]
+    assert "examples" in recommendation_post["responses"]["200"]["content"]["application/json"]
+    examples = recommendation_post["responses"]["200"]["content"]["application/json"]["examples"]
     assert {"alternativa_ideal", "regla_critica"} <= set(examples)
 
     request_schema = schema["components"]["schemas"]["RecommendationRequest"]
@@ -285,12 +276,9 @@ def test_openapi_contains_public_paths_models_versions_and_examples():
 def test_exported_openapi_and_integration_payload_files_are_valid():
     project_root = Path(__file__).resolve().parents[1]
     openapi = json.loads((project_root / "docs" / "openapi.json").read_text())
-    payloads = json.loads(
-        (project_root / "docs" / "integration-payloads.json").read_text()
-    )
+    payloads = json.loads((project_root / "docs" / "integration-payloads.json").read_text())
 
     assert openapi["info"]["version"] == CONTRACT_VERSION
     assert "/api/v1/recommend" in openapi["paths"]
     assert "requests" in payloads
     assert "responses" in payloads
-

@@ -3,12 +3,11 @@ import asyncio
 import httpx
 import pytest
 
-from app.chatbot.intent_detector import detect_intent, normalize_text
 from app.chatbot.chatbot_service import chat
+from app.chatbot.intent_detector import detect_intent, normalize_text
 from app.main import app
 from app.schemas.chatbot import ChatRequest
 from app.schemas.recommendation import RecommendationResponse
-
 
 client_transport_app = app
 

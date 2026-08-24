@@ -6,7 +6,6 @@ from typing import Any
 import requests
 import streamlit as st
 
-
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
 # ponytail: 30s porque Render free tier arranca en frío (~30-60s) tras dormir
 REQUEST_TIMEOUT_SECONDS = 30
@@ -39,9 +38,7 @@ def load_scenarios(path: Path | None = None) -> list[dict[str, Any]]:
             f"JSON de escenarios inválido: línea {exc.lineno}, columna {exc.colno}"
         ) from exc
     except OSError as exc:
-        raise ScenarioLoadError(
-            f"No se pudo leer el archivo de escenarios: {exc}"
-        ) from exc
+        raise ScenarioLoadError(f"No se pudo leer el archivo de escenarios: {exc}") from exc
 
     if not isinstance(raw_data, list) or not raw_data:
         raise ScenarioLoadError("El archivo de escenarios debe contener una lista no vacía.")
@@ -119,8 +116,7 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
         payload.get("productos_esenciales_totales", 0)
     ):
         errors.append(
-            "Productos esenciales disponibles no puede superar "
-            "productos esenciales totales."
+            "Productos esenciales disponibles no puede superar productos esenciales totales."
         )
     return errors
 
@@ -143,9 +139,7 @@ def _response_detail(response: requests.Response) -> str:
 def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
     url = f"{(base_url or api_base_url()).rstrip('/')}/health"
     try:
-        response = requests.get(
-            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
-        )
+        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers())
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
@@ -159,9 +153,7 @@ def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
     return response.json()
 
 
-def _post_json(
-    path: str, payload: dict[str, Any], base_url: str | None = None
-) -> dict[str, Any]:
+def _post_json(path: str, payload: dict[str, Any], base_url: str | None = None) -> dict[str, Any]:
     url = f"{(base_url or api_base_url()).rstrip('/')}{path}"
     try:
         response = requests.post(
@@ -183,9 +175,7 @@ def _post_json(
     return response.json()
 
 
-def call_recommendation_api(
-    payload: dict[str, Any], base_url: str | None = None
-) -> dict[str, Any]:
+def call_recommendation_api(payload: dict[str, Any], base_url: str | None = None) -> dict[str, Any]:
     return _post_json("/api/v1/recommend", payload, base_url)
 
 
@@ -222,22 +212,15 @@ def render_recommendation(result: dict[str, Any]) -> None:
     st.write(result.get("accion_sugerida", "Sin acción disponible."))
     st.subheader("Explicación")
     st.write(result.get("explicacion", "Sin explicación disponible."))
-    st.write(
-        f"**Reglas activadas:** "
-        f"{', '.join(result.get('reglas_activadas', [])) or 'ninguna'}"
-    )
+    st.write(f"**Reglas activadas:** {', '.join(result.get('reglas_activadas', [])) or 'ninguna'}")
     st.write(f"**Prioridad aplicada:** {result.get('prioridad_aplicada', 'SIN_REGLA')}")
     st.write(f"**Versión de reglas:** {result.get('version_reglas', 'desconocida')}")
     st.subheader("Hechos derivados")
     facts = result.get("hechos_derivados", {})
-    st.table(
-        [{"Hecho": name, "Valor": str(value)} for name, value in facts.items()]
-    )
+    st.table([{"Hecho": name, "Valor": str(value)} for name, value in facts.items()])
 
 
-def render_chatbot(
-    facts: dict[str, Any] | None, recommendation: dict[str, Any] | None
-) -> None:
+def render_chatbot(facts: dict[str, Any] | None, recommendation: dict[str, Any] | None) -> None:
     st.header("Chatbot explicativo")
     if facts is None or recommendation is None:
         st.info("Primero obtén una recomendación para utilizar el chatbot.")
@@ -263,18 +246,60 @@ def _render_scenario_form(scenario: dict[str, Any]) -> dict[str, Any] | None:
     with st.form("recommendation_form"):
         request_id = st.text_input("Request ID", value=defaults["request_id"])
         alternativa_id = st.text_input("Alternativa ID", value=defaults["alternativa_id"])
-        presupuesto = st.number_input("Presupuesto", min_value=0.01, value=float(defaults["presupuesto"]))
-        costo_total = st.number_input("Costo total", min_value=0.0, value=float(defaults["costo_total"]))
-        ahorro = st.number_input("Ahorro", min_value=0.0, value=float(defaults["ahorro"]), step=0.01)
-        distancia_km = st.number_input("Distancia (km)", min_value=0.0, value=float(defaults["distancia_km"]), step=0.1)
-        distancia_adicional_km = st.number_input("Distancia adicional (km)", min_value=0.0, value=float(defaults["distancia_adicional_km"]), step=0.1)
-        tiempo_estimado_min = st.number_input("Tiempo estimado (minutos)", min_value=0.0, value=float(defaults["tiempo_estimado_min"]), step=1.0)
-        productos_disponibles = st.number_input("Productos disponibles", min_value=0, step=1, value=int(defaults["productos_disponibles"]))
-        productos_totales = st.number_input("Productos totales", min_value=1, step=1, value=int(defaults["productos_totales"]))
-        productos_esenciales_disponibles = st.number_input("Productos esenciales disponibles", min_value=0, step=1, value=int(defaults["productos_esenciales_disponibles"]))
-        productos_esenciales_totales = st.number_input("Productos esenciales totales", min_value=1, step=1, value=int(defaults["productos_esenciales_totales"]))
-        numero_supermercados = st.number_input("Número de supermercados", min_value=1, step=1, value=int(defaults["numero_supermercados"]))
-        promociones_aplicables = st.checkbox("Promociones aplicables", value=bool(defaults["promociones_aplicables"]))
+        presupuesto = st.number_input(
+            "Presupuesto", min_value=0.01, value=float(defaults["presupuesto"])
+        )
+        costo_total = st.number_input(
+            "Costo total", min_value=0.0, value=float(defaults["costo_total"])
+        )
+        ahorro = st.number_input(
+            "Ahorro", min_value=0.0, value=float(defaults["ahorro"]), step=0.01
+        )
+        distancia_km = st.number_input(
+            "Distancia (km)", min_value=0.0, value=float(defaults["distancia_km"]), step=0.1
+        )
+        distancia_adicional_km = st.number_input(
+            "Distancia adicional (km)",
+            min_value=0.0,
+            value=float(defaults["distancia_adicional_km"]),
+            step=0.1,
+        )
+        tiempo_estimado_min = st.number_input(
+            "Tiempo estimado (minutos)",
+            min_value=0.0,
+            value=float(defaults["tiempo_estimado_min"]),
+            step=1.0,
+        )
+        productos_disponibles = st.number_input(
+            "Productos disponibles",
+            min_value=0,
+            step=1,
+            value=int(defaults["productos_disponibles"]),
+        )
+        productos_totales = st.number_input(
+            "Productos totales", min_value=1, step=1, value=int(defaults["productos_totales"])
+        )
+        productos_esenciales_disponibles = st.number_input(
+            "Productos esenciales disponibles",
+            min_value=0,
+            step=1,
+            value=int(defaults["productos_esenciales_disponibles"]),
+        )
+        productos_esenciales_totales = st.number_input(
+            "Productos esenciales totales",
+            min_value=1,
+            step=1,
+            value=int(defaults["productos_esenciales_totales"]),
+        )
+        numero_supermercados = st.number_input(
+            "Número de supermercados",
+            min_value=1,
+            step=1,
+            value=int(defaults["numero_supermercados"]),
+        )
+        promociones_aplicables = st.checkbox(
+            "Promociones aplicables", value=bool(defaults["promociones_aplicables"])
+        )
 
         if st.form_submit_button("Obtener recomendación"):
             return {

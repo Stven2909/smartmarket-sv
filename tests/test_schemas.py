@@ -3,7 +3,6 @@ from pydantic import ValidationError
 
 from app.schemas.recommendation import RecommendationRequest, RecommendationResponse
 
-
 VALID_REQUEST = {
     "request_id": "demo-001",
     "alternativa_id": "supermercado-1",
@@ -83,9 +82,7 @@ def test_rejects_available_essential_products_above_total():
         "productos_esenciales_disponibles": 7,
     }
 
-    with pytest.raises(
-        ValidationError, match="productos_esenciales_disponibles"
-    ):
+    with pytest.raises(ValidationError, match="productos_esenciales_disponibles"):
         RecommendationRequest.model_validate(payload)
 
 

@@ -1,4 +1,11 @@
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    model_validator,
+)
 
 from app.schemas.levels import RecommendationLevel
 
@@ -59,22 +66,15 @@ class KnowledgeBase(BaseModel):
     @model_validator(mode="after")
     def validate_rule_set(self) -> "KnowledgeBase":
         rule_ids = [rule.id for rule in self.rules]
-        duplicated_ids = sorted(
-            {rule_id for rule_id in rule_ids if rule_ids.count(rule_id) > 1}
-        )
+        duplicated_ids = sorted({rule_id for rule_id in rule_ids if rule_ids.count(rule_id) > 1})
         if duplicated_ids:
-            raise ValueError(
-                f"IDs de reglas duplicados: {', '.join(duplicated_ids)}"
-            )
+            raise ValueError(f"IDs de reglas duplicados: {', '.join(duplicated_ids)}")
 
         for rule in self.rules:
-            unknown_facts = sorted(
-                set(rule.conditions) - DERIVED_FACT_NAMES
-            )
+            unknown_facts = sorted(set(rule.conditions) - DERIVED_FACT_NAMES)
             if unknown_facts:
                 raise ValueError(
-                    f"La regla {rule.id} utiliza hechos desconocidos: "
-                    f"{', '.join(unknown_facts)}"
+                    f"La regla {rule.id} utiliza hechos desconocidos: {', '.join(unknown_facts)}"
                 )
 
         return self

@@ -7,6 +7,24 @@ El contrato generado por FastAPI está en [openapi.json](openapi.json). Laravel
 es el orquestador; Python valida hechos, deriva valores internos, evalúa
 reglas, resuelve conflictos y devuelve una explicación determinista.
 
+## Responsabilidades por capa
+
+Python es la única fuente de verdad de la recomendación experta. Se encarga
+de validar el JSON, derivar hechos, evaluar reglas, resolver conflictos,
+calcular el índice auxiliar, responder `/api/v1/recommend` y explicar el
+resultado mediante `/api/v1/chat`.
+
+Laravel se encarga de obtener los datos de negocio, calcular costo, ahorro,
+disponibilidad, distancia y tiempo, construir el payload normalizado, omitir
+la llamada cuando falten datos obligatorios, aplicar timeout y retry, ejecutar
+el fallback y pasar la respuesta al frontend. Laravel no debe duplicar las
+reglas Python.
+
+React consume únicamente la respuesta de Laravel. Debe mostrar la
+recomendación y el lenguaje amigable, ocultar la metadata técnica en la vista
+normal, mostrar el fallback cuando `recommendation` sea `null` y enviar las
+preguntas a Laravel. React no debe llamar directamente al motor Python.
+
 ## Endpoints
 
 | Método | Ruta | Uso |
@@ -47,13 +65,13 @@ Request válido:
 
 ```json
 {
-  "request_id": "demo-001",
-  "alternativa_id": "supermercado-1",
+  "request_id": "lista-42-sucursal-3",
+  "alternativa_id": "sucursal-3",
   "costo_total": 42.50,
   "presupuesto": 50.00,
   "ahorro": 11.25,
-  "distancia_km": 2.3,
-  "distancia_adicional_km": 0.8,
+  "distancia_km": 2.30,
+  "distancia_adicional_km": 0.80,
   "tiempo_estimado_min": 12,
   "productos_disponibles": 10,
   "productos_totales": 10,
@@ -164,6 +182,15 @@ Clasificaciones auxiliares:
 
 `score` pertenece al optimizador Laravel y no es usado por Python.
 
+### Compatibilidad del payload Laravel
+
+El objeto anterior es el payload oficial de compatibilidad. Python no recibe
+`score`, `penalizacion_distancia`, `costo_tiempo`, datos de combustible o
+vehículo. Esos valores pertenecen al optimizador y deben permanecer en
+Laravel. Si el presupuesto, la distancia o el tiempo son `null`, Laravel no
+debe enviar un payload parcial: debe conservar su optimización y devolver la
+recomendación experta como `null`.
+
 ### Códigos de respuesta
 
 | Código | Significado | Acción de Laravel |
@@ -264,6 +291,10 @@ solo recibe cantidades disponibles y cantidades totales. Tampoco conserva
 historial de conversación ni utiliza modelos de Machine Learning o IA
 generativa.
 
+La solicitud no requiere `history` ni `conversation_id`; cada llamada es
+stateless y debe contener únicamente el mensaje, los hechos disponibles, un
+`request_id` opcional y la recomendación actual o `null`.
+
 ### Intenciones soportadas sobre la recomendación real
 
 | Pregunta | Intención | Fuente de datos |
@@ -316,3 +347,12 @@ timeout aproximado de tres segundos, un retry limitado y una respuesta de
 respaldo. Si Python no responde, Laravel conserva costo, ahorro, score,
 distancia, tiempo, disponibilidad y sucursal; solo deja `recommendation` en
 `null` y `expert_system_available` en `false`.
+
+## Validación de compatibilidad Python
+
+La suite `tests/test_phase12_compatibility.py` prueba el payload oficial de
+Laravel y el flujo completo `/api/v1/recommend` → `/api/v1/chat`. También
+verifica los campos nuevos (`winning_rule`, `losing_rules`, `trace`, índice y
+versiones), reglas críticas, recomendación nula, valores nulos obligatorios,
+campos prohibidos y repetibilidad. Un cambio de Laravel o React debe conservar
+este contrato antes de integrarse.

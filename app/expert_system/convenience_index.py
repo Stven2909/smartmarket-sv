@@ -6,7 +6,6 @@ from app.expert_system.convenience_config import (
 )
 from app.schemas.recommendation import RecommendationRequest
 
-
 CONVENIENCE_CLASSIFICATIONS = frozenset(
     {"ALTA_CONVENIENCIA", "CONVENIENCIA_MEDIA", "BAJA_CONVENIENCIA"}
 )
@@ -87,10 +86,7 @@ def calculate_convenience_index(
         "promociones": normalize_promotions(request.promociones_aplicables),
     }
     weights = config.weights()
-    index = 100 * sum(
-        weights[name] * components[name]
-        for name in components
-    )
+    index = 100 * sum(weights[name] * components[name] for name in components)
     index = min(max(index, 0.0), 100.0)
 
     return {
@@ -112,20 +108,14 @@ def enrich_inference_result(
     enriched = {
         **result,
         "indice_conveniencia": convenience["indice_conveniencia"],
-        "clasificacion_conveniencia": convenience[
-            "clasificacion_conveniencia"
-        ],
+        "clasificacion_conveniencia": convenience["clasificacion_conveniencia"],
         "componentes_conveniencia": convenience["componentes_conveniencia"],
         "pesos_conveniencia": convenience["pesos"],
     }
 
     winning_rule = result.get("winning_rule")
     critical_rule = next(
-        (
-            rule_id
-            for rule_id in result.get("activated_rules", [])
-            if rule_id in CRITICAL_RULE_IDS
-        ),
+        (rule_id for rule_id in result.get("activated_rules", []) if rule_id in CRITICAL_RULE_IDS),
         None,
     )
     if critical_rule:

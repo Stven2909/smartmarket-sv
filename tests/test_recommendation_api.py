@@ -6,8 +6,6 @@ from app.main import app
 from app.schemas.recommendation import RecommendationResponse
 
 
-
-
 def request(method: str, url: str, **kwargs):
     async def send_request():
         transport = httpx.ASGITransport(app=app)

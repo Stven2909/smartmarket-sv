@@ -1,7 +1,6 @@
 import unicodedata
 from typing import Literal
 
-
 Intent = Literal[
     "EXPLICACION",
     "PRESUPUESTO",
@@ -71,11 +70,7 @@ def normalize_text(message: str) -> str:
     """Pasa el mensaje a minúsculas y elimina acentos."""
 
     normalized = unicodedata.normalize("NFD", message.lower())
-    return "".join(
-        character
-        for character in normalized
-        if unicodedata.category(character) != "Mn"
-    )
+    return "".join(character for character in normalized if unicodedata.category(character) != "Mn")
 
 
 def detect_intent_details(message: str) -> tuple[Intent, bool]:

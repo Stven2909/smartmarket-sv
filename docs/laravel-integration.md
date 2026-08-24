@@ -20,6 +20,50 @@ Python es el motor experto:
 
 Python no consulta Laravel, PostgreSQL ni modelos internos de Laravel.
 
+## Contrato oficial de compatibilidad
+
+Laravel debe construir este JSON por cada alternativa física que tenga los
+datos obligatorios completos y enviarlo a `POST /api/v1/recommend`:
+
+```json
+{
+  "request_id": "lista-42-sucursal-3",
+  "alternativa_id": "sucursal-3",
+  "costo_total": 42.50,
+  "presupuesto": 50.00,
+  "ahorro": 11.25,
+  "distancia_km": 2.30,
+  "distancia_adicional_km": 0.80,
+  "tiempo_estimado_min": 12,
+  "productos_disponibles": 10,
+  "productos_totales": 10,
+  "productos_esenciales_disponibles": 6,
+  "productos_esenciales_totales": 6,
+  "numero_supermercados": 1,
+  "promociones_aplicables": true
+}
+```
+
+Python responde la recomendación, los hechos derivados, las reglas activadas,
+`winning_rule`, `losing_rules`, `trace`, `version_contrato`,
+`version_reglas` y el índice de conveniencia. Laravel debe conservar esa
+respuesta y entregarla al frontend sin recalcularla.
+
+Si `presupuesto`, `distancia_km` o `tiempo_minutos` son `null`, Laravel debe
+omitir la llamada. También debe omitir alternativas sin coordenadas. En ambos
+casos la optimización continúa y se expone:
+
+```json
+{
+  "recommendation": null,
+  "expert_system_available": false
+}
+```
+
+El chatbot recibe la recomendación completa de `/api/v1/recommend` en la
+misma solicitud. No requiere `history` ni `conversation_id`; Laravel solo
+envía `message`, `facts`, `recommendation` y, opcionalmente, `request_id`.
+
 ## Mapeo con el backend actual de `Desarrollo-Experto`
 
 La versión actual de Laravel (`OptimizationService`) ya no calcula
@@ -239,6 +283,21 @@ Laravel no debe enviar:
 - Decisiones ya inventadas por Laravel.
 
 Debe enviar solo hechos necesarios y validados para la alternativa analizada.
+
+## Responsabilidad de React
+
+React debe consumir únicamente la respuesta de Laravel, no `/api/v1/recommend`
+ni `/api/v1/chat` directamente. Debe:
+
+- mostrar el nivel, la acción y la explicación amigable;
+- conservar y mostrar el fallback cuando `recommendation` sea `null`;
+- tratar como opcionales la metadata técnica y el índice;
+- enviar las preguntas del usuario a Laravel;
+- evitar recalcular reglas, hechos derivados o el índice.
+
+La vista normal no necesita mostrar `R01`–`R08`, `winning_rule`,
+`losing_rules` ni `trace`. Esos campos pueden reservarse para una vista
+técnica o de auditoría.
 
 ## Códigos HTTP y errores
 

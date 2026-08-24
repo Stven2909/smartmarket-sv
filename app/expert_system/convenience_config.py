@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from math import isclose
 
-
 CONVENIENCE_CONFIG_VERSION = "1.0.0"
 
 
@@ -50,4 +49,3 @@ class ConvenienceConfig:
 
 
 DEFAULT_CONVENIENCE_CONFIG = ConvenienceConfig()
-

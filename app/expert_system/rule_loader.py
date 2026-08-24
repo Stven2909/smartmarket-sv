@@ -5,10 +5,7 @@ from pydantic import ValidationError
 
 from app.expert_system.models import KnowledgeBase, ProductionRule
 
-
-DEFAULT_RULES_PATH = (
-    Path(__file__).resolve().parents[2] / "data" / "rules.json"
-)
+DEFAULT_RULES_PATH = Path(__file__).resolve().parents[2] / "data" / "rules.json"
 
 
 class RuleLoaderError(ValueError):
@@ -23,13 +20,10 @@ def load_rules(path: Path | None = None) -> list[ProductionRule]:
     try:
         raw_data = json.loads(rules_path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise RuleLoaderError(
-            f"No se encontró la base de conocimiento: {rules_path}"
-        ) from exc
+        raise RuleLoaderError(f"No se encontró la base de conocimiento: {rules_path}") from exc
     except json.JSONDecodeError as exc:
         raise RuleLoaderError(
-            f"JSON corrupto en {rules_path}: línea {exc.lineno}, "
-            f"columna {exc.colno}"
+            f"JSON corrupto en {rules_path}: línea {exc.lineno}, columna {exc.colno}"
         ) from exc
     except OSError as exc:
         raise RuleLoaderError(

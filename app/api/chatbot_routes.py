@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from app.chatbot.chatbot_service import chat
 from app.schemas.chatbot import CHAT_RESPONSE_EXAMPLE, ChatRequest, ChatResponse
 
-
 router = APIRouter(prefix="/api/v1", tags=["chatbot"])
 
 

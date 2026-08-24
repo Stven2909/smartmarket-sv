@@ -1,7 +1,7 @@
 import pytest
 
-from app.expert_system.conflict_resolver import resolve_conflicts
 from app.expert_system.classifiers import derive_facts
+from app.expert_system.conflict_resolver import resolve_conflicts
 from app.expert_system.inference_engine import (
     InferenceError,
     evaluate_rule,
@@ -11,7 +11,6 @@ from app.expert_system.inference_engine import (
 from app.expert_system.models import ProductionRule
 from app.expert_system.rule_loader import load_rules
 from app.schemas.recommendation import RecommendationRequest
-
 
 VALID_REQUEST = {
     "request_id": "demo-001",
@@ -57,9 +56,7 @@ def test_very_exceeded_budget_activates_r01():
 
 
 def test_missing_essentials_activates_r02():
-    result = run_inference(
-        make_request(productos_esenciales_disponibles=5)
-    )
+    result = run_inference(make_request(productos_esenciales_disponibles=5))
 
     assert "R02" in result["activated_rules"]
     assert result["level"] == "NO_RECOMENDABLE"
@@ -67,18 +64,14 @@ def test_missing_essentials_activates_r02():
 
 
 def test_far_distance_and_low_savings_activates_r03():
-    result = run_inference(
-        make_request(distancia_adicional_km=8, ahorro=2.99)
-    )
+    result = run_inference(make_request(distancia_adicional_km=8, ahorro=2.99))
 
     assert "R03" in result["activated_rules"]
     assert result["level"] == "NO_RECOMENDABLE"
 
 
 def test_high_time_and_low_savings_activates_r04():
-    result = run_inference(
-        make_request(tiempo_estimado_min=45, ahorro=2.99)
-    )
+    result = run_inference(make_request(tiempo_estimado_min=45, ahorro=2.99))
 
     assert "R04" in result["activated_rules"]
     assert result["level"] == "NO_RECOMENDABLE"
@@ -107,9 +100,7 @@ def test_promotions_activate_r07_when_no_higher_rule_wins():
 
 
 def test_two_stores_with_high_savings_activate_r08():
-    result = run_inference(
-        make_request(numero_supermercados=2, ahorro=10)
-    )
+    result = run_inference(make_request(numero_supermercados=2, ahorro=10))
 
     assert "R08" in result["activated_rules"]
     assert result["level"] == "BUENA"
