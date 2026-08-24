@@ -520,6 +520,11 @@ export function ListasView({ onListasChange }: Props) {
                         {r.expertRecommendation && (
                           <ExpertRecommendationBadge recommendation={r.expertRecommendation} />
                         )}
+                        {r.expertRecommendation?.chatbotAvailable === false && (
+                          <div style={{ marginTop: 4, fontSize: 10, color: 'var(--muted, #6b7280)', fontStyle: 'italic' }}>
+                            El asistente explicativo no está disponible temporalmente, pero la recomendación principal continúa disponible.
+                          </div>
+                        )}
                         {!r.expertSystemAvailable && (
                           <div style={{ marginTop: 6, fontSize: 11, color: 'var(--muted, #6b7280)' }}>
                             🧠 Sistema Experto no disponible

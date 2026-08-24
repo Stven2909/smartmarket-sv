@@ -146,6 +146,9 @@ export type ExpertRecommendation = {
   nivelRecomendacion: 'EXCELENTE' | 'BUENA' | 'NO_RECOMENDABLE'
   accionSugerida: string
   explicacion: string
+  indiceConveniencia: number | null
+  clasificacionConveniencia: string | null
+  chatbotAvailable: boolean | null
   reglasActivadas: string[]
   prioridadAplicada: string
   hechosDerivados: Record<string, boolean | number>
@@ -353,6 +356,9 @@ export function expertRecommendationFromApi(r: ApiExpertRecommendation): ExpertR
     nivelRecomendacion: r.nivel_recomendacion,
     accionSugerida: r.accion_sugerida,
     explicacion: r.explicacion,
+    indiceConveniencia: r.indice_conveniencia ?? null,
+    clasificacionConveniencia: r.clasificacion_conveniencia ?? null,
+    chatbotAvailable: r.chatbot_available ?? null,
     reglasActivadas: r.reglas_activadas,
     prioridadAplicada: r.prioridad_aplicada,
     hechosDerivados: r.hechos_derivados,

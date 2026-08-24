@@ -50,23 +50,18 @@ export function ExpertRecommendationBadge({ recommendation }: Props) {
         </p>
       )}
 
-      {recommendation.reglasActivadas.length > 0 && (
-        <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {recommendation.reglasActivadas.map((rule) => (
-            <span
-              key={rule}
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '2px 6px',
-                borderRadius: 4,
-                background: 'rgba(0,0,0,.06)',
-                color: 'var(--muted, #6b7280)',
-              }}
-            >
-              {rule}
+      {(recommendation.indiceConveniencia != null || recommendation.clasificacionConveniencia) && (
+        <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {recommendation.indiceConveniencia != null && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(0,0,0,.06)', color: 'var(--muted, #6b7280)' }}>
+              Índice: {recommendation.indiceConveniencia}
             </span>
-          ))}
+          )}
+          {recommendation.clasificacionConveniencia && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(0,0,0,.06)', color: 'var(--muted, #6b7280)' }}>
+              {recommendation.clasificacionConveniencia.replace(/_/g, ' ')}
+            </span>
+          )}
         </div>
       )}
     </div>

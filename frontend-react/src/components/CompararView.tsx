@@ -383,6 +383,11 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
               {rutaMejor?.expertRecommendation && (
                 <section style={{ marginTop: 18 }}>
                   <ExpertRecommendationBadge recommendation={rutaMejor.expertRecommendation} />
+                  {rutaMejor.expertRecommendation.chatbotAvailable === false && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: 'var(--muted, #6b7280)', fontStyle: 'italic' }}>
+                      El asistente explicativo no está disponible temporalmente, pero la recomendación principal continúa disponible.
+                    </div>
+                  )}
                 </section>
               )}
 

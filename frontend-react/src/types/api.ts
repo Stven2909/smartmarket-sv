@@ -157,10 +157,16 @@ export type ApiExpertRecommendation = {
   nivel_recomendacion: 'EXCELENTE' | 'BUENA' | 'NO_RECOMENDABLE'
   accion_sugerida: string
   explicacion: string
+  indice_conveniencia: number | null
+  clasificacion_conveniencia: string | null
+  componentes_conveniencia: Record<string, number> | null
+  pesos_conveniencia: Record<string, number> | null
+  chatbot_available: boolean | null
   reglas_activadas: string[]
   prioridad_aplicada: string
   hechos_derivados: Record<string, boolean | number>
   version_reglas: string
+  version_contrato: string | null
   winning_rule: string | null
   losing_rules: string[]
   trace: Array<Record<string, unknown>>
