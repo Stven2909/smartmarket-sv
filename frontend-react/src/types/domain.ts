@@ -4,6 +4,7 @@
 import { categoryIcon, supermarketColor } from '../lib/presentation'
 import type {
   ApiCategoria,
+  ApiChatResponse,
   ApiCompararResultado,
   ApiDetalle,
   ApiExpertRecommendation,
@@ -156,6 +157,14 @@ export type ExpertRecommendation = {
   winningRule: string | null
   losingRules: string[]
   trace: Array<Record<string, unknown>>
+}
+
+export type ChatResponse = {
+  requestId: string | null
+  intent: string
+  response: string
+  supported: boolean
+  chatbotAvailable: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -380,5 +389,15 @@ export function optimizarResultadoFromApi(r: ApiOptimizarResultado): OptimizarRe
     nivelOptimizacion: r.nivel_optimizacion,
     expertRecommendation: r.recommendation ? expertRecommendationFromApi(r.recommendation) : null,
     expertSystemAvailable: r.expert_system_available,
+  }
+}
+
+export function expertChatFromApi(c: ApiChatResponse): ChatResponse {
+  return {
+    requestId: c.request_id,
+    intent: c.intent,
+    response: c.response,
+    supported: c.supported,
+    chatbotAvailable: c.chatbot_available,
   }
 }

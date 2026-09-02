@@ -179,3 +179,11 @@ export type ApiOptimizar = {
   resultados: ApiOptimizarResultado[]
   resultado_optimizacion_id: number | null
 }
+
+export type ApiChatResponse = {
+  request_id: string | null
+  intent: string
+  response: string
+  supported: boolean
+  chatbot_available: boolean
+}

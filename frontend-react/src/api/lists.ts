@@ -1,5 +1,6 @@
 import { api } from './client'
 import type {
+  ApiChatResponse,
   ApiComparar,
   ApiDetalle,
   ApiLista,
@@ -10,12 +11,13 @@ import type {
 } from '../types/api'
 import {
   compararResultadoFromApi,
+  expertChatFromApi,
   listaFromApi,
   listaShowFromApi,
   optimizarResultadoFromApi,
   promotionFromApi,
 } from '../types/domain'
-import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
+import type { ChatResponse, CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 
 export type ListaDetallada = ListaSummary & { detalles: ListaDetalle[] }
 
@@ -80,12 +82,27 @@ export async function optimizarLista(
   listaId: number,
   lat: number,
   lng: number,
-): Promise<{ nombre: string; presupuesto: number | null; mejorOpcion: OptimizarResultado | null; resultados: OptimizarResultado[] }> {
+): Promise<{ nombre: string; presupuesto: number | null; mejorOpcion: OptimizarResultado | null; resultados: OptimizarResultado[]; resultadoOptimizacionId: number | null }> {
   const data = await api.get<ApiOptimizar>(`/listas/${listaId}/optimizar?lat=${lat}&lng=${lng}`)
   return {
     nombre: data.lista,
     presupuesto: data.presupuesto,
     mejorOpcion: data.mejor_opcion ? optimizarResultadoFromApi(data.mejor_opcion) : null,
     resultados: data.resultados.map(optimizarResultadoFromApi),
+    resultadoOptimizacionId: data.resultado_optimizacion_id,
   }
+}
+
+export async function chatLista(
+  listaId: number,
+  resultadoOptimizacionId: number,
+  sucursalId: number,
+  message: string,
+): Promise<ChatResponse> {
+  const data = await api.post<ApiChatResponse>(`/listas/${listaId}/chat`, {
+    resultado_optimizacion_id: resultadoOptimizacionId,
+    sucursal_id: sucursalId,
+    message,
+  })
+  return expertChatFromApi(data)
 }
