@@ -5,6 +5,7 @@ import { formatMoney } from '../lib/format'
 import { supermarketColor } from '../lib/presentation'
 import type { CompararResultado, ListaSummary, OptimizarResultado } from '../types/domain'
 import { Check, MapPin, Navigation, Plus, Trophy } from 'lucide-react'
+import { ExpertChat } from './ExpertChat'
 import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
 
 // Reverse geocoding con Nominatim/OSM (gratis, sin key). No es un dato del motor:
@@ -38,6 +39,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   const [comparacion, setComparacion] = useState<CompararResultado[] | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [optimizacion, setOptimizacion] = useState<OptimizarResultado[] | null>(null)
+  const [resultadoOptimizacionId, setResultadoOptimizacionId] = useState<number | null>(null)
   const [ubicacionLabel, setUbicacionLabel] = useState<string | null>(null)
   const [geolocating, setGeolocating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,6 +66,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     setLoading(true)
     setError(null)
     setOptimizacion(null)
+    setResultadoOptimizacionId(null)
     listsApi
       .compararLista(selectedId)
       .then((data) => {
@@ -112,6 +115,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     try {
       const data = await listsApi.optimizarLista(selectedId, lat, lng)
       setOptimizacion(data.resultados)
+      setResultadoOptimizacionId(data.resultadoOptimizacionId)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo optimizar la ruta.')
     }
@@ -388,6 +392,11 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                       El asistente explicativo no está disponible temporalmente, pero la recomendación principal continúa disponible.
                     </div>
                   )}
+                  <ExpertChat
+                    listaId={selectedId!}
+                    resultadoOptimizacionId={resultadoOptimizacionId}
+                    sucursalId={rutaMejor.sucursalId}
+                  />
                 </section>
               )}
 

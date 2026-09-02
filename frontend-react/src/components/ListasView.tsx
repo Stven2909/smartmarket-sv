@@ -8,6 +8,7 @@ import { productFromApi } from '../types/domain'
 import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
+import { ExpertChat } from './ExpertChat'
 import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
 
 type Tab = 'activa' | 'completada'
@@ -37,6 +38,7 @@ export function ListasView({ onListasChange }: Props) {
   // comparación y optimización
   const [comparacion, setComparacion] = useState<CompararResultado[] | null>(null)
   const [optimizacion, setOptimizacion] = useState<OptimizarResultado[] | null>(null)
+  const [resultadoOptimizacionId, setResultadoOptimizacionId] = useState<number | null>(null)
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [geolocating, setGeolocating] = useState(false)
@@ -64,6 +66,7 @@ export function ListasView({ onListasChange }: Props) {
     setDetalles([])
     setComparacion(null)
     setOptimizacion(null)
+    setResultadoOptimizacionId(null)
     setPromociones([])
     setPromosError(null)
     setError(null)
@@ -97,6 +100,7 @@ export function ListasView({ onListasChange }: Props) {
     setSelectedId(id)
     setComparacion(null)
     setOptimizacion(null)
+    setResultadoOptimizacionId(null)
     setPromociones([])
     setPromosError(null)
     setError(null)
@@ -214,6 +218,7 @@ export function ListasView({ onListasChange }: Props) {
     if (!selectedId) return
     setComparacion(null)
     setOptimizacion(null)
+    setResultadoOptimizacionId(null)
     setError(null)
     try {
       const data = await listsApi.compararLista(selectedId)
@@ -233,10 +238,12 @@ export function ListasView({ onListasChange }: Props) {
     }
     setComparacion(null)
     setOptimizacion(null)
+    setResultadoOptimizacionId(null)
     setError(null)
     try {
       const data = await listsApi.optimizarLista(selectedId, latValue, lngValue)
       setOptimizacion(data.resultados)
+      setResultadoOptimizacionId(data.resultadoOptimizacionId)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo optimizar.')
     }
@@ -518,7 +525,16 @@ export function ListasView({ onListasChange }: Props) {
                           {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : '—'} · {r.tiempoMinutos != null ? `${r.tiempoMinutos} min` : '—'} · ahorro promos {formatMoney(r.beneficioPromociones)}
                         </small>
                         {r.expertRecommendation && (
-                          <ExpertRecommendationBadge recommendation={r.expertRecommendation} />
+                          <>
+                            <ExpertRecommendationBadge recommendation={r.expertRecommendation} />
+                            {selectedId != null && (
+                              <ExpertChat
+                                listaId={selectedId}
+                                resultadoOptimizacionId={resultadoOptimizacionId}
+                                sucursalId={r.sucursalId}
+                              />
+                            )}
+                          </>
                         )}
                         {r.expertRecommendation?.chatbotAvailable === false && (
                           <div style={{ marginTop: 4, fontSize: 10, color: 'var(--muted, #6b7280)', fontStyle: 'italic' }}>
