@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/listas/{lista}', [ListaCompraController::class, 'destroy']);
     Route::get('/listas/{lista}/comparar', [ListaCompraController::class, 'comparar']);
     Route::get('/listas/{lista}/optimizar', [ListaCompraController::class, 'optimizar']);
+    Route::post('/listas/{lista}/chat', [ListaCompraController::class, 'chat']);
     Route::post('/listas/{lista}/productos', [ListaCompraController::class, 'agregarProducto']);
     Route::patch('/listas/{lista}/productos/{detalle}', [ListaCompraController::class, 'actualizarProducto']);
     Route::delete('/listas/{lista}/productos/{detalle}', [ListaCompraController::class, 'quitarProducto']);

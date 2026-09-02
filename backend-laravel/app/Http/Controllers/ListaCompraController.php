@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ListaCompra;
 use App\Models\ListaCompraDetalles;
+use App\Models\ResultadoOptimizacion;
+use App\Services\ExpertSystemService;
 use App\Services\Optimization\ComparisonService;
 use App\Services\Optimization\OptimizationService;
 use Illuminate\Http\Request;
@@ -13,6 +15,7 @@ class ListaCompraController extends Controller
     public function __construct(
         private ComparisonService $comparisonService,
         private OptimizationService $optimizationService,
+        private ExpertSystemService $expertSystemService,
     ) {}
 
     // Chequeo de propiedad: solo el dueño de la lista puede verla o modificarla.
@@ -175,6 +178,85 @@ class ListaCompraController extends Controller
         $resultado = $this->optimizationService->optimizar($lista, (float) $data['lat'], (float) $data['lng']);
 
         return response()->json($resultado);
+    }
+
+    // POST /api/listas/{lista}/chat
+    // Asistente explicativo del Sistema Experto. No conserva estado: el frontend
+    // repite facts + recomendación de la corrida ya guardada para que el experto
+    // pueda explicarla con el mismo contexto que generó la recomendación.
+    // Primero se verifica que esa corrida exista y pertenezca a ESTA lista; si la
+    // alternativa no tuvo recomendación, o el asistente no responde, se devuelve
+    // HTTP 200 con fallback NO_DISPONIBLE (la recomendación principal sigue viva).
+    public function chat(Request $request, ListaCompra $lista)
+    {
+        $this->verificarPropietario($lista);
+
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+            'resultado_optimizacion_id' => ['required', 'integer'],
+            'sucursal_id' => ['required', 'integer'],
+        ]);
+
+        // El resultado debe pertenecer a esta lista (misma autorización que el
+        // resto de recursos hijo: 404 si no existe dentro de la lista).
+        $resultadoOptimizacion = ResultadoOptimizacion::query()
+            ->where('lista_compra_id', $lista->id)
+            ->where('id', $data['resultado_optimizacion_id'])
+            ->first();
+
+        if (! $resultadoOptimizacion) {
+            abort(404, 'Corrida de optimización no encontrada.');
+        }
+
+        $guardado = $resultadoOptimizacion->resultado_json;
+        $resultados = $guardado['resultados'] ?? [];
+        $presupuesto = $guardado['presupuesto'] ?? null;
+
+        $alternativa = collect($resultados)->first(
+            fn ($r) => (int) ($r['sucursal_id'] ?? 0) === (int) $data['sucursal_id']
+        );
+
+        // Sin recomendación fiable → no tiene sentido preguntarle al asistente:
+        // se devuelve el fallback sin llamar a /chat.
+        $recommendation = $alternativa['recommendation'] ?? null;
+        $disponible = is_array($recommendation)
+            && ($alternativa['expert_system_available'] ?? false) === true;
+
+        if (! $disponible) {
+            return $this->chatNoDisponible();
+        }
+
+        $facts = $this->optimizationService->factsDesdeResultadoGuardado(
+            $alternativa,
+            $presupuesto,
+            $lista->id,
+            $resultados,
+        );
+
+        $respuesta = $this->expertSystemService->chat([
+            'message' => $data['message'],
+            'facts' => $facts,
+            'recommendation' => $recommendation,
+        ]);
+
+        if (! $respuesta) {
+            return $this->chatNoDisponible();
+        }
+
+        $respuesta['chatbot_available'] = true;
+
+        return response()->json($respuesta);
+    }
+
+    private function chatNoDisponible(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'request_id' => null,
+            'intent' => 'NO_DISPONIBLE',
+            'response' => 'El asistente explicativo no está disponible temporalmente. La recomendación principal continúa disponible.',
+            'supported' => false,
+            'chatbot_available' => false,
+        ]);
     }
 
     // PATCH /api/listas/{lista}/completar
