@@ -108,16 +108,16 @@ class OptimizationService
     /**
      * Construye el payload para el endpoint POST /api/v1/recommend del Sistema Experto.
      */
-    public function construirPayload(array $resultado, ListaCompra $lista, float $costoReferencia, float $distanciaMinima, int $numeroSupermercados): array
+    public function construirPayload(array $resultado, ?float $presupuesto, int $listaId, float $costoReferencia, float $distanciaMinima, int $numeroSupermercados): array
     {
         $ahorro = max(0.0, round($costoReferencia - (float) $resultado['costo_total'], 2));
         $distanciaAdicional = max(0.0, round((float) $resultado['distancia_km'] - $distanciaMinima, 2));
 
         return [
-            'request_id' => 'lista-' . $lista->id . '-sucursal-' . $resultado['sucursal_id'],
+            'request_id' => 'lista-' . $listaId . '-sucursal-' . $resultado['sucursal_id'],
             'alternativa_id' => 'sucursal-' . $resultado['sucursal_id'],
             'costo_total' => round((float) $resultado['costo_total'], 2),
-            'presupuesto' => (float) $lista->presupuesto,
+            'presupuesto' => (float) $presupuesto,
             'ahorro' => $ahorro,
             'distancia_km' => round((float) $resultado['distancia_km'], 2),
             'distancia_adicional_km' => $distanciaAdicional,
@@ -257,7 +257,7 @@ class OptimizationService
                 $resultado['recommendation'] = null;
                 $resultado['expert_system_available'] = false;
                 $resultado['expert_omission_reason'] = null;
-                $payloadsValidos[] = $this->construirPayload($resultado, $lista, $costoReferencia, $distanciaMinima, $numeroSupermercados);
+                $payloadsValidos[] = $this->construirPayload($resultado, $lista->presupuesto, $lista->id, $costoReferencia, $distanciaMinima, $numeroSupermercados);
             }
         }
         unset($resultado);
@@ -310,6 +310,32 @@ class OptimizationService
             'resultados' => $comparacion['resultados'],
             'resultado_optimizacion_id' => $resultadoGuardado?->id,
         ];
+    }
+
+    /**
+     * Reconstruye el payload de facts (contrato /recommend) para una alternativa
+     * ya persistida en un ResultadoOptimizacion. Se usa en el chat explicativo:
+     * recalcula las referencias de conjunto (costoReferencia, distanciaMinima,
+     * numeroSupermercados) desde los resultados guardados, de forma determinista,
+     * y delega en construirPayload — sin duplicar las fórmulas.
+     *
+     * @param  array<string, mixed>  $resultado  alternativa individual de resultado_json
+     * @param  array<int, array<string, mixed>>  $resultados  todas las alternativas de resultado_json
+     */
+    public function factsDesdeResultadoGuardado(array $resultado, ?float $presupuesto, int $listaId, array $resultados): array
+    {
+        $costoReferencia = $this->calcularCostoReferencia($resultados);
+        $distanciaMinima = $this->calcularDistanciaMinima($resultados);
+        $numeroSupermercados = $this->contarSupermercadosUnicos($resultados);
+
+        return $this->construirPayload(
+            $resultado,
+            $presupuesto,
+            $listaId,
+            (float) $costoReferencia,
+            (float) $distanciaMinima,
+            $numeroSupermercados,
+        );
     }
 
     /**
