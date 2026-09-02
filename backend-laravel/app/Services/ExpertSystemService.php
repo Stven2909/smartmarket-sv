@@ -64,4 +64,49 @@ class ExpertSystemService
 
         return $resultados;
     }
+
+    /**
+     * Envía una pregunta explicativa al asistente del Sistema Experto.
+     *
+     * El payload debe incluir 'message', 'facts' (los 14 campos del contrato
+     * POST /api/v1/recommend) y 'recommendation' (la respuesta completa que
+     * devolvió /recommend para la alternativa sobre la que se pregunta).
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>|null  null si el asistente no está disponible
+     */
+    public function chat(array $payload): ?array
+    {
+        $url = rtrim(config('services.expert_system.url', 'https://sistema-experto-fork.onrender.com'), '/') . '/api/v1/chat';
+
+        $timeout = (int) config('services.expert_system.timeout', 3);
+        $retryTimes = (int) config('services.expert_system.retry_times', 2);
+        $retrySleep = (int) config('services.expert_system.retry_sleep_ms', 500);
+
+        try {
+            $response = Http::acceptJson()
+                ->asJson()
+                ->timeout($timeout)
+                ->retry($retryTimes, $retrySleep, throw: false)
+                ->post($url, $payload);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            Log::warning('ExpertSystem: chat no exitoso', [
+                'status' => $response->status(),
+                'endpoint' => $url,
+            ]);
+
+            return null;
+        } catch (\Throwable $e) {
+            Log::warning('ExpertSystem: error en llamada de chat', [
+                'error' => get_class($e) . ': ' . $e->getMessage(),
+                'endpoint' => $url,
+            ]);
+
+            return null;
+        }
+    }
 }

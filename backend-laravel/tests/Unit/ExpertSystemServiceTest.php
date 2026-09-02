@@ -146,6 +146,83 @@ class ExpertSystemServiceTest extends TestCase
         $this->assertEquals('BUENA', $resultado['lista-1-sucursal-2']['nivel_recomendacion']);
     }
 
+    public function test_chat_exitoso_devuelve_respuesta(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-1-sucursal-1',
+                'intent' => 'EXPLICACION',
+                'response' => 'Esta alternativa conviene porque cumple el presupuesto y los esenciales.',
+                'supported' => true,
+            ], 200),
+        ]);
+
+        $resultado = $this->service->chat($this->crearPayloadChat());
+
+        $this->assertIsArray($resultado);
+        $this->assertTrue($resultado['supported']);
+        $this->assertEquals('EXPLICACION', $resultado['intent']);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://sistema-experto-fork.onrender.com/api/v1/chat'
+                && $request->method() === 'POST';
+        });
+    }
+
+    public function test_chat_422_devuelve_null(): void
+    {
+        Http::fake([
+            '*' => Http::response(['detail' => 'Validation error'], 422),
+        ]);
+
+        $resultado = $this->service->chat($this->crearPayloadChat());
+
+        $this->assertNull($resultado);
+    }
+
+    public function test_chat_500_devuelve_null(): void
+    {
+        Http::fake([
+            '*' => Http::response(['detail' => 'Internal server error'], 500),
+        ]);
+
+        $resultado = $this->service->chat($this->crearPayloadChat());
+
+        $this->assertNull($resultado);
+    }
+
+    public function test_chat_timeout_devuelve_null(): void
+    {
+        Http::fake(function () {
+            throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: Operation timed out');
+        });
+
+        $resultado = $this->service->chat($this->crearPayloadChat());
+
+        $this->assertNull($resultado);
+    }
+
+    private function crearPayloadChat(): array
+    {
+        return [
+            'message' => '¿Por qué conviene esta alternativa?',
+            'facts' => $this->crearPayload('lista-1-sucursal-1'),
+            'recommendation' => [
+                'request_id' => 'lista-1-sucursal-1',
+                'nivel_recomendacion' => 'EXCELENTE',
+                'accion_sugerida' => 'Comprar todo en esta alternativa.',
+                'explicacion' => 'Cumple el presupuesto y los esenciales.',
+                'reglas_activadas' => ['R06'],
+                'prioridad_aplicada' => 'CONVENIENCIA',
+                'hechos_derivados' => ['dentro_presupuesto' => true],
+                'version_reglas' => '1.0.0',
+                'winning_rule' => 'R06',
+                'losing_rules' => [],
+                'trace' => [],
+            ],
+        ];
+    }
+
     private function crearPayload(string $requestId): array
     {
         return [
