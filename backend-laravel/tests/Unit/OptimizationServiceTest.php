@@ -8,11 +8,12 @@ use App\Models\ListaCompraDetalles;
 use App\Models\PrecioActual;
 use App\Models\Producto;
 use App\Models\ResultadoOptimizacion;
-use App\Models\Supermercado;
 use App\Models\Sucursal;
+use App\Models\Supermercado;
 use App\Models\User;
 use App\Services\Optimization\OptimizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -27,6 +28,7 @@ class OptimizationServiceTest extends TestCase
     // El usuario esta parado exactamente sobre la sucursal cercana: su
     // distancia Haversine es 0 km y la penalizacion esperada es 0 sin ambiguedad.
     private const LAT_USUARIO = 13.698900;
+
     private const LNG_USUARIO = -89.191400;
 
     public function test_penalizacion_distancia_se_mantiene_entre_0_y_1(): void
@@ -162,6 +164,7 @@ class OptimizationServiceTest extends TestCase
         $payloads = [];
         Http::assertSent(function ($request) use (&$payloads) {
             $payloads[] = $request->data();
+
             return true;
         });
 
@@ -173,11 +176,11 @@ class OptimizationServiceTest extends TestCase
         }
 
         // La alternativa más cara (cercana) tiene ahorro 0.
-        $payloadCercana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['cercana']->id];
+        $payloadCercana = $payloadPorReqId['lista-'.$mundo['lista']->id.'-sucursal-'.$mundo['cercana']->id];
         $this->assertEquals(0.0, $payloadCercana['ahorro']);
 
         // La alternativa más barata (lejana) tiene ahorro = referencia - su costo.
-        $payloadLejana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['lejana']->id];
+        $payloadLejana = $payloadPorReqId['lista-'.$mundo['lista']->id.'-sucursal-'.$mundo['lejana']->id];
         $this->assertEquals(0.50, $payloadLejana['ahorro']);
     }
 
@@ -192,6 +195,7 @@ class OptimizationServiceTest extends TestCase
         $payloads = [];
         Http::assertSent(function ($request) use (&$payloads) {
             $payloads[] = $request->data();
+
             return true;
         });
 
@@ -201,11 +205,11 @@ class OptimizationServiceTest extends TestCase
         }
 
         // La cercana (distancia ~0) tiene distancia_adicional_km = 0.
-        $payloadCercana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['cercana']->id];
+        $payloadCercana = $payloadPorReqId['lista-'.$mundo['lista']->id.'-sucursal-'.$mundo['cercana']->id];
         $this->assertEquals(0.0, $payloadCercana['distancia_adicional_km']);
 
         // La lejana tiene distancia_adicional > 0.
-        $payloadLejana = $payloadPorReqId['lista-' . $mundo['lista']->id . '-sucursal-' . $mundo['lejana']->id];
+        $payloadLejana = $payloadPorReqId['lista-'.$mundo['lista']->id.'-sucursal-'.$mundo['lejana']->id];
         $this->assertGreaterThan(0.0, $payloadLejana['distancia_adicional_km']);
     }
 
@@ -280,7 +284,7 @@ class OptimizationServiceTest extends TestCase
 
         // Simular que el Sistema Experto está apagado.
         Http::fake(function () {
-            throw new \Illuminate\Http\Client\ConnectionException('Connection refused');
+            throw new ConnectionException('Connection refused');
         });
 
         $salida = $this->optimizar($mundo['lista']);
@@ -357,11 +361,64 @@ class OptimizationServiceTest extends TestCase
         $payloads = [];
         Http::assertSent(function ($request) use (&$payloads) {
             $payloads[] = $request->data();
+
             return true;
         });
 
         $this->assertNotEmpty($payloads);
         $this->assertEquals(1, $payloads[0]['numero_supermercados']);
+    }
+
+    public function test_numero_supermercados_por_alternativa_aunque_el_set_tenga_tres_supermercados(): void
+    {
+        $usuario = $this->crearUsuario();
+        $producto = $this->crearProducto();
+
+        // Regresión del bug real: tres supermercados distintos en el set
+        // (igual que "Lista Experto Test"), cada uno con su sucursal y precio.
+        $this->crearSucursalConPrecio('Super A', 'Suc A', 13.740000, -89.220000, $producto->id, 2.00);
+        $this->crearSucursalConPrecio('Super B', 'Suc B', 13.730000, -89.230000, $producto->id, 2.10);
+        $this->crearSucursalConPrecio('Super C', 'Suc C', 13.720000, -89.240000, $producto->id, 2.20);
+
+        $lista = $this->crearListaConDetalle($usuario, $producto, 50.0);
+
+        Http::fake(['*' => Http::response(null, 200)]);
+        $salida = $this->optimizar($lista);
+
+        $this->assertCount(3, $salida['resultados']);
+
+        $payloads = [];
+        Http::assertSent(function ($request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return true;
+        });
+
+        // Cada alternativa es de UNA sola tienda: aunque el conjunto comparado
+        // abarque 3 supermercados, el payload debe enviar 1 por alternativa.
+        $this->assertCount(3, $payloads);
+        foreach ($payloads as $payload) {
+            $this->assertSame(1, $payload['numero_supermercados']);
+        }
+    }
+
+    public function test_facts_desde_resultado_guardado_usa_la_alternativa_no_el_set(): void
+    {
+        // Igual forma que la corrida real del bug: 3 alternativas, cada una de
+        // un supermercado distinto, persistidas en resultado_json.
+        $alternativas = [
+            $this->resultadoGuardado('Suc A', 1, 1, 30.0),
+            $this->resultadoGuardado('Suc B', 2, 2, 25.0),
+            $this->resultadoGuardado('Suc C', 3, 3, 22.0),
+        ];
+
+        $facts = app(OptimizationService::class)
+            ->factsDesdeResultadoGuardado($alternativas[0], 50.0, 7, $alternativas);
+
+        // La alternativa consultada es de un solo supermercado: 1, no 3.
+        $this->assertSame(1, $facts['numero_supermercados']);
+        $this->assertSame('sucursal-1', $facts['alternativa_id']);
+        $this->assertSame('lista-7-sucursal-1', $facts['request_id']);
     }
 
     public function test_productos_disponibles_mayor_que_totales_omite_alternativa(): void
@@ -470,6 +527,26 @@ class OptimizationServiceTest extends TestCase
         $lista = $this->crearListaConDetalle($usuario, $producto, 50.0);
 
         return ['cercana' => $cercana, 'lejana' => $lejana, 'lista' => $lista];
+    }
+
+    private function resultadoGuardado(string $sucursal, int $sucursalId, int $supermercadoId, float $costo): array
+    {
+        return [
+            'sucursal_id' => $sucursalId,
+            'sucursal' => $sucursal,
+            'supermercado_id' => $supermercadoId,
+            'supermercado' => 'Super '.$supermercadoId,
+            'costo_total' => $costo,
+            'distancia_km' => 2.0,
+            'tiempo_minutos' => 10.0,
+            'beneficio_promociones' => 0.0,
+            'productos_disponibles' => 2,
+            'productos_totales' => 2,
+            'productos_esenciales_disponibles' => 2,
+            'productos_esenciales_totales' => 2,
+            'productos_opcionales_disponibles' => 0,
+            'productos_opcionales_totales' => 0,
+        ];
     }
 
     private function crearUsuario(): User

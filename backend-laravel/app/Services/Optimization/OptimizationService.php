@@ -114,8 +114,8 @@ class OptimizationService
         $distanciaAdicional = max(0.0, round((float) $resultado['distancia_km'] - $distanciaMinima, 2));
 
         return [
-            'request_id' => 'lista-' . $listaId . '-sucursal-' . $resultado['sucursal_id'],
-            'alternativa_id' => 'sucursal-' . $resultado['sucursal_id'],
+            'request_id' => 'lista-'.$listaId.'-sucursal-'.$resultado['sucursal_id'],
+            'alternativa_id' => 'sucursal-'.$resultado['sucursal_id'],
             'costo_total' => round((float) $resultado['costo_total'], 2),
             'presupuesto' => (float) $presupuesto,
             'ahorro' => $ahorro,
@@ -242,7 +242,6 @@ class OptimizationService
         // --- Sistema Experto: calcular referencias, validar y enviar payloads ---
         $costoReferencia = $this->calcularCostoReferencia($comparacion['resultados']);
         $distanciaMinima = $this->calcularDistanciaMinima($comparacion['resultados']);
-        $numeroSupermercados = $this->contarSupermercadosUnicos($comparacion['resultados']);
 
         $payloadsValidos = [];
 
@@ -257,7 +256,7 @@ class OptimizationService
                 $resultado['recommendation'] = null;
                 $resultado['expert_system_available'] = false;
                 $resultado['expert_omission_reason'] = null;
-                $payloadsValidos[] = $this->construirPayload($resultado, $lista->presupuesto, $lista->id, $costoReferencia, $distanciaMinima, $numeroSupermercados);
+                $payloadsValidos[] = $this->construirPayload($resultado, $lista->presupuesto, $lista->id, $costoReferencia, $distanciaMinima, $this->contarSupermercadosDeAlternativa($resultado));
             }
         }
         unset($resultado);
@@ -268,7 +267,7 @@ class OptimizationService
 
             if ($respuestas !== null) {
                 foreach ($comparacion['resultados'] as &$resultado) {
-                    $requestId = 'lista-' . $lista->id . '-sucursal-' . $resultado['sucursal_id'];
+                    $requestId = 'lista-'.$lista->id.'-sucursal-'.$resultado['sucursal_id'];
                     if (isset($respuestas[$requestId]) && is_array($respuestas[$requestId])) {
                         $resultado['recommendation'] = $respuestas[$requestId];
                         $resultado['expert_system_available'] = true;
@@ -326,7 +325,6 @@ class OptimizationService
     {
         $costoReferencia = $this->calcularCostoReferencia($resultados);
         $distanciaMinima = $this->calcularDistanciaMinima($resultados);
-        $numeroSupermercados = $this->contarSupermercadosUnicos($resultados);
 
         return $this->construirPayload(
             $resultado,
@@ -334,7 +332,7 @@ class OptimizationService
             $listaId,
             (float) $costoReferencia,
             (float) $distanciaMinima,
-            $numeroSupermercados,
+            $this->contarSupermercadosDeAlternativa($resultado),
         );
     }
 
@@ -366,12 +364,14 @@ class OptimizationService
     }
 
     /**
-     * Cuenta supermercados únicos entre las alternativas.
+     * Número de supermercados que requiere la alternativa específica para
+     * completarse. Hoy una alternativa es una única sucursal, así que siempre
+     * es 1. Cuando existan alternativas divididas (compra en múltiples paradas),
+     * esta función deberá contar los supermercados de las paradas de esa
+     * alternativa específica — jamás el total del conjunto comparado.
      */
-    private function contarSupermercadosUnicos(array $resultados): int
+    private function contarSupermercadosDeAlternativa(array $resultado): int
     {
-        $ids = array_unique(array_column($resultados, 'supermercado_id'));
-
-        return count($ids);
+        return ($resultado['supermercado_id'] ?? null) !== null ? 1 : 0;
     }
 }
