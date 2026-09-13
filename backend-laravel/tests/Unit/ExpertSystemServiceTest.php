@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\ExpertSystemService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -16,6 +17,7 @@ class ExpertSystemServiceTest extends TestCase
 
         config([
             'services.expert_system.url' => 'https://sistema-experto-fork.onrender.com',
+            'services.expert_system.api_key' => null,
             'services.expert_system.timeout' => 3,
             'services.expert_system.retry_times' => 2,
             'services.expert_system.retry_sleep_ms' => 10,
@@ -87,7 +89,7 @@ class ExpertSystemServiceTest extends TestCase
         $payload = $this->crearPayload('lista-1-sucursal-1');
 
         Http::fake(function () {
-            throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: Operation timed out');
+            throw new ConnectionException('cURL error 28: Operation timed out');
         });
 
         $resultado = $this->service->recommend([$payload]);
@@ -194,12 +196,120 @@ class ExpertSystemServiceTest extends TestCase
     public function test_chat_timeout_devuelve_null(): void
     {
         Http::fake(function () {
-            throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: Operation timed out');
+            throw new ConnectionException('cURL error 28: Operation timed out');
         });
 
         $resultado = $this->service->chat($this->crearPayloadChat());
 
         $this->assertNull($resultado);
+    }
+
+    public function test_recommend_sin_api_key_no_envia_header(): void
+    {
+        $payload = $this->crearPayload('lista-1-sucursal-1');
+
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-1-sucursal-1',
+                'nivel_recomendacion' => 'EXCELENTE',
+                'accion_sugerida' => 'Comprar todo en esta alternativa.',
+                'explicacion' => 'Cumple el presupuesto y los esenciales.',
+                'reglas_activadas' => ['R06'],
+                'prioridad_aplicada' => 'CONVENIENCIA',
+                'hechos_derivados' => [],
+                'version_reglas' => '1.0.0',
+                'winning_rule' => 'R06',
+                'losing_rules' => [],
+                'trace' => [],
+            ], 200),
+        ]);
+
+        $resultado = $this->service->recommend([$payload]);
+
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('lista-1-sucursal-1', $resultado);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://sistema-experto-fork.onrender.com/api/v1/recommend'
+                && ! $request->hasHeader('X-API-Key');
+        });
+    }
+
+    public function test_chat_sin_api_key_no_envia_header(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-1-sucursal-1',
+                'intent' => 'EXPLICACION',
+                'response' => 'Esta alternativa conviene porque cumple el presupuesto y los esenciales.',
+                'supported' => true,
+            ], 200),
+        ]);
+
+        $resultado = $this->service->chat($this->crearPayloadChat());
+
+        $this->assertIsArray($resultado);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://sistema-experto-fork.onrender.com/api/v1/chat'
+                && ! $request->hasHeader('X-API-Key');
+        });
+    }
+
+    public function test_recommend_con_api_key_envia_header(): void
+    {
+        config(['services.expert_system.api_key' => 'test-key']);
+
+        $payload = $this->crearPayload('lista-1-sucursal-1');
+
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-1-sucursal-1',
+                'nivel_recomendacion' => 'EXCELENTE',
+                'accion_sugerida' => 'Comprar todo en esta alternativa.',
+                'explicacion' => 'Cumple el presupuesto y los esenciales.',
+                'reglas_activadas' => ['R06'],
+                'prioridad_aplicada' => 'CONVENIENCIA',
+                'hechos_derivados' => [],
+                'version_reglas' => '1.0.0',
+                'winning_rule' => 'R06',
+                'losing_rules' => [],
+                'trace' => [],
+            ], 200),
+        ]);
+
+        $resultado = $this->service->recommend([$payload]);
+
+        $this->assertIsArray($resultado);
+        $this->assertArrayHasKey('lista-1-sucursal-1', $resultado);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://sistema-experto-fork.onrender.com/api/v1/recommend'
+                && $request->hasHeader('X-API-Key', 'test-key');
+        });
+    }
+
+    public function test_chat_con_api_key_envia_header(): void
+    {
+        config(['services.expert_system.api_key' => 'test-key']);
+
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-1-sucursal-1',
+                'intent' => 'EXPLICACION',
+                'response' => 'Esta alternativa conviene porque cumple el presupuesto y los esenciales.',
+                'supported' => true,
+            ], 200),
+        ]);
+
+        $resultado = $this->service->chat($this->crearPayloadChat());
+
+        $this->assertIsArray($resultado);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://sistema-experto-fork.onrender.com/api/v1/chat'
+                && $request->hasHeader('X-API-Key', 'test-key');
+        });
     }
 
     private function crearPayloadChat(): array
