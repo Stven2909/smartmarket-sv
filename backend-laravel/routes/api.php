@@ -8,9 +8,11 @@ use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\SucursalController;
 use Illuminate\Support\Facades\Route;
 
-// Rutas públicas de autenticación
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+// Rutas públicas de autenticación (limite estricto contra fuerza bruta)
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
 // Catálogo Maestro (Fase 2) — público, no requiere login para consultarse.
 // Importante: la ruta /buscar debe ir ANTES de /{producto}, si no Laravel intenta
@@ -18,7 +20,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/productos/buscar', [ProductoController::class, 'buscar']);
 Route::get('/productos/{producto}', [ProductoController::class, 'show']);
 Route::get('/productos', [ProductoController::class, 'index']);
-//nueva
+// nueva
 Route::get('/productos/{producto}/historial', [ProductoController::class, 'historial']);
 Route::get('/categorias', [CategoriaController::class, 'index']);
 
@@ -31,7 +33,7 @@ Route::get('/promociones', [PromocionController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-    //nuevas
+    // nuevas
     Route::patch('/listas/{lista}/completar', [ListaCompraController::class, 'completar']);
     Route::patch('/listas/{lista}/reactivar', [ListaCompraController::class, 'reactivar']);
     Route::get('/listas/{lista}/promociones', [ListaCompraController::class, 'promociones']);
@@ -42,8 +44,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/listas/{lista}', [ListaCompraController::class, 'show']);
     Route::delete('/listas/{lista}', [ListaCompraController::class, 'destroy']);
     Route::get('/listas/{lista}/comparar', [ListaCompraController::class, 'comparar']);
-    Route::get('/listas/{lista}/optimizar', [ListaCompraController::class, 'optimizar']);
-    Route::post('/listas/{lista}/chat', [ListaCompraController::class, 'chat']);
+    // Optimizar y chatear dependen del Sistema Experto externo: limite propio.
+    Route::get('/listas/{lista}/optimizar', [ListaCompraController::class, 'optimizar'])
+        ->middleware('throttle:expert');
+    Route::post('/listas/{lista}/chat', [ListaCompraController::class, 'chat'])
+        ->middleware('throttle:expert');
     Route::post('/listas/{lista}/productos', [ListaCompraController::class, 'agregarProducto']);
     Route::patch('/listas/{lista}/productos/{detalle}', [ListaCompraController::class, 'actualizarProducto']);
     Route::delete('/listas/{lista}/productos/{detalle}', [ListaCompraController::class, 'quitarProducto']);
