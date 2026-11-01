@@ -149,14 +149,14 @@ Laravel → (petición HTTP) → Sistema Experto (Python) → respuesta → Reac
 | 6 Sistema Experto | ✅ Terminado (R01–R08 + chat explicativo) |
 | 7 Integración Laravel ↔ Python | ✅ Terminada, con fallback si Python no responde |
 | 8 Experiencia de usuario / PWA | 🟡 PWA instalable; falta accesibilidad y pulido fino |
-| 9 Pruebas y despliegue | 🟡 86 tests de backend; frontend sin tests; solo el experto está desplegado |
+| 9 Pruebas y despliegue | 🟡 93 tests de backend; frontend sin tests; solo el experto está desplegado |
 
 **Deuda técnica priorizada (octubre 2026):**
 
 1. Desplegar backend y frontend (CI ya existe: `.github/workflows/ci.yml`).
 2. Reducir latencia del Sistema Experto (llamadas secuenciales + cold start de Render).
 3. ~~Rate limiting en auth/chat/optimizar~~ (hecho) y evaluar expiración de tokens Sanctum.
-4. Tests de auth, catálogo, buscador, listas y frontend.
+4. Completar tests de catálogo/buscador/listas y sumar pruebas de frontend (auth ya cubierto).
 5. Deep links reales (hoy la navegación es por estado). El historial con Recharts ya se carga de forma diferida.
 6. Documentar el mapa de sucursales y cerrar la vista de mapa.
 7. Mover las hojas de diseño de la mascota fuera de `public/` (hoy se excluyen del precache).

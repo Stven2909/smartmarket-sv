@@ -514,7 +514,7 @@ Plan de implementación          ██████████  Terminado
 Documento Sistema Experto        ██████████  Terminado y alineado con el contrato implementado
 Diseño detallado (wireframes)     ████████░░  UI construida; mapa de sucursales pendiente
 Construcción del MVP               █████████░  Backend + PWA + Sistema Experto integrados
-Pruebas                            ███████░░░  86 tests de backend; frontend sin tests
+Pruebas                            ███████░░░  93 tests de backend; frontend sin tests
 Despliegue                         ██░░░░░░░░  Sistema Experto en Render; falta backend/frontend
 ```
 

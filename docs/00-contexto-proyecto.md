@@ -7,7 +7,7 @@
 > rápido y no perder decisiones ya tomadas.
 
 **Estado actual (octubre 2026):** los documentos 01–09 están terminados. El MVP está construido:
-backend Laravel con 86 pruebas, PWA React y Sistema Experto desplegado e integrado. Lo que sigue
+backend Laravel con 93 pruebas, PWA React y Sistema Experto desplegado e integrado. Lo que sigue
 es el mapa de sucursales, el despliegue de backend/frontend, CI y el cierre de deuda técnica
 documentado en `03-plan-implementacion.md`.
 
