@@ -142,7 +142,7 @@ Sistema Experto (Python)         ██████████  Servicio desple
 Pruebas                          ███████░░░  Backend: 86 tests. Frontend: sin tests automatizados
 Mapa de sucursales               ░░░░░░░░░░  Pendiente (la optimización ya funciona; falta la vista de mapa)
 Despliegue                       ██░░░░░░░░  Sistema Experto en Render; backend/frontend sin desplegar
-CI/CD                            ░░░░░░░░░░  Pendiente
+CI/CD                            ████████░░  Workflow de lint + build + tests (GitHub Actions)
 ```
 
 **Siguiente paso:** desplegar backend y frontend, agregar CI, completar la vista de mapa y

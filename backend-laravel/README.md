@@ -193,6 +193,17 @@ EXPERT_SYSTEM_API_KEY=
 
 El detalle del contrato, reglas y fallback está en `docs/CONTEXTO-SISTEMA-EXPERTO.md`.
 
+### Rate limiting
+
+Los límites se definen en `AppServiceProvider` y se aplican desde `bootstrap/app.php` y
+`routes/api.php`:
+
+| Limitador | Límite | Se aplica a |
+|---|---|---|
+| `api` | 60 req/min por usuario o IP | Toda la API |
+| `auth` | 5 req/min por email + IP | `POST /login`, `POST /register` |
+| `expert` | 20 req/min por usuario o IP | `GET /listas/{lista}/optimizar`, `POST /listas/{lista}/chat` |
+
 ---
 
 ## Pipeline de precios

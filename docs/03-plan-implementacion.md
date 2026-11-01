@@ -153,11 +153,11 @@ Laravel → (petición HTTP) → Sistema Experto (Python) → respuesta → Reac
 
 **Deuda técnica priorizada (octubre 2026):**
 
-1. Desplegar backend y frontend; agregar CI (`composer test` + `npm run build`).
+1. Desplegar backend y frontend (CI ya existe: `.github/workflows/ci.yml`).
 2. Reducir latencia del Sistema Experto (llamadas secuenciales + cold start de Render).
-3. Rate limiting en auth/chat/optimizar y expiración de tokens.
+3. ~~Rate limiting en auth/chat/optimizar~~ (hecho) y evaluar expiración de tokens Sanctum.
 4. Tests de auth, catálogo, buscador, listas y frontend.
-5. Deep links reales (hoy la navegación es por estado) y code splitting del bundle.
+5. Deep links reales (hoy la navegación es por estado). El historial con Recharts ya se carga de forma diferida.
 6. Documentar el mapa de sucursales y cerrar la vista de mapa.
 7. Mover las hojas de diseño de la mascota fuera de `public/` (hoy se excluyen del precache).
 
