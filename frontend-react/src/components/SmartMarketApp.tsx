@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { fetchCategorias, fetchProductos, fetchProducto, fetchHistorialPrecios, fetchSucursales } from '../api/catalog'
 import * as listsApi from '../api/lists'
@@ -16,7 +16,11 @@ import { PerfilView } from './PerfilView'
 import { Promotions } from './Promotions'
 import { SavingsByCategory } from './SavingsByCategory'
 import { InstallPrompt } from './InstallPrompt'
-import { PriceHistoryChart } from './PriceHistoryChart'
+
+// Recharts es pesado: se carga solo cuando el usuario abre el historial de un producto.
+const PriceHistoryChart = lazy(() =>
+  import('./PriceHistoryChart').then((modulo) => ({ default: modulo.PriceHistoryChart })),
+)
 
 type View = 'inicio' | 'buscar' | 'comparar' | 'mis-listas' | 'perfil' | 'categorias' | 'promociones' | 'sucursales'
 
@@ -270,7 +274,9 @@ export function SmartMarketApp() {
                     </div>
                   )}
                   {!historialLoading && !historialError && historial.length > 0 && (
-                    <PriceHistoryChart historial={historial} />
+                    <Suspense fallback={<div className="live-loading"><i />Cargando gráfica…</div>}>
+                      <PriceHistoryChart historial={historial} />
+                    </Suspense>
                   )}
                 </div>
               </section>
