@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Pipeline de inferencia del Sistema Experto",
+    "output": "docs/evidencia/diagramas/pipeline-inferencia.html",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 580],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "default": { "label": "Etapa de proceso" },
+        "emphasis": { "label": "Nucleo de inferencia" },
+        "dashed": { "label": "Artefacto de registro" },
+        "database": { "label": "Reglas / trace persistido" }
+      }
+    }
+  },
+  "stages": [
+    { "label": "Entrada" },
+    { "label": "Preparacion" },
+    { "label": "Evaluacion" },
+    { "label": "Resolucion" },
+    { "label": "Salida" }
+  ],
+  "nodes": [
+    { "id": "payload", "type": "external", "label": "Payload /api/v1/recommend", "sublabel": "14 campos por alternativa", "stage": 0, "row": 0, "width": 152 },
+    { "id": "derive_facts", "type": "backend", "label": "derive_facts", "sublabel": "hechos_derivados (+19 flags)", "stage": 1, "row": 0, "width": 160 },
+    { "id": "load_rules", "type": "database", "label": "load_rules", "sublabel": "R01..R08 + prioridades", "stage": 1, "row": 1, "width": 150 },
+    { "id": "evaluar", "type": "backend", "label": "Evaluacion AND estricta", "sublabel": "AND estricto por condicion", "stage": 2, "row": 0, "width": 160 },
+    { "id": "trace", "type": "database", "label": "Trace por condicion", "sublabel": "matched / unmatched + reason", "stage": 2, "row": 1, "width": 150 },
+    { "id": "resolve", "type": "backend", "label": "resolve_conflicts", "sublabel": "prioridad menor gana", "stage": 3, "row": 0, "width": 150 },
+    { "id": "build", "type": "backend", "label": "build_inference_result", "sublabel": "nivel · accion · explicacion · reglas", "stage": 4, "row": 0, "width": 175 },
+    { "id": "enrich", "type": "backend", "label": "enrich_inference_result", "sublabel": "indice · componentes · versiones", "stage": 4, "row": 1, "width": 175 }
+  ],
+  "flows": [
+    { "id": "f-entry", "from": "payload", "to": "derive_facts", "label": "payload (14 campos)", "classification": "entrada", "variant": "default", "route": "straight", "fromSide": "right", "toSide": "left", "labelAt": [221, 214] },
+    { "id": "f-facts", "from": "derive_facts", "to": "evaluar", "label": "hechos", "classification": "derivado", "variant": "emphasis", "route": "straight", "fromSide": "right", "toSide": "left", "labelAt": [450, 220] },
+    { "id": "f-rules", "from": "load_rules", "to": "evaluar", "label": "R01..R08", "classification": "catalogo", "variant": "default", "fromSide": "top", "toSide": "left", "via": [[315, 214], [420, 214], [420, 157]], "labelAt": [367, 214] },
+    { "id": "f-trace", "from": "evaluar", "to": "trace", "label": "expected vs actual", "classification": "registro", "variant": "dashed", "route": "straight", "fromSide": "bottom", "toSide": "top", "labelAt": [530, 202] },
+    { "id": "f-activated", "from": "evaluar", "to": "resolve", "label": "reglas activadas", "classification": "sesion", "variant": "emphasis", "route": "straight", "fromSide": "right", "toSide": "left", "labelAt": [641, 214] },
+    { "id": "f-winner", "from": "resolve", "to": "build", "label": "winning_rule + losing", "classification": "decision", "variant": "emphasis", "route": "straight", "fromSide": "right", "toSide": "left", "labelAt": [775, 214] },
+    { "id": "f-base", "from": "build", "to": "enrich", "label": "resultado base", "classification": "salida_parcial", "variant": "default", "route": "straight", "fromSide": "bottom", "toSide": "top", "labelAt": [960, 214] }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Ciclo de inferencia",
+      "items": [
+        "El orden estricto derive_facts -> build_inference_result es obligatorio",
+        "Evaluacion y trace son el nucleo visible del lado Python",
+        "La activacion exige que TODAS las condiciones matched (AND estricto)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Contrato de decision",
+      "items": [
+        "resolve_conflicts desempata por prioridad (menor numero gana)",
+        "nivel_recomendacion: EXCELENTE | BUENA | NO_RECOMENDABLE",
+        "R02 (disponibilidad) prevalece sobre R05 (fragmentacion) cuando faltan esenciales"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Enriquecimiento no intrusivo",
+      "items": [
+        "indice_conveniencia, componentes, pesos y versiones no alteran la decision",
+        "El trace viaja dentro de la respuesta (version_reglas y version_contrato)",
+        "Persistido por el backend en resultados_optimizacion.resultado_json"
+      ]
+    }
+  ]
+}

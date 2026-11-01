@@ -66,24 +66,28 @@ composer test              # ejecuta la suite de tests
 ```
 backend-laravel/
 ├── app/
+│   ├── Filament/             # panel administrativo (productos, precios, staging, sync, usuarios)
 │   ├── Http/Controllers/     # Auth, Producto, Categoria, Sucursal, Promocion, ListaCompra
 │   ├── Models/               # Producto, Categoria, AliasProducto, Supermercado, Sucursal,
 │   │                         #   PrecioActual, HistorialPrecio, ListaCompra, ListaCompraDetalles,
-│   │                         #   ResultadoOptimizacion, User
+│   │                         #   ProductoRaw, SyncRun, ResultadoOptimizacion, User
 │   ├── Services/
 │   │   ├── NormalizadorTexto.php          # limpieza sin tildes / minúsculas (Buscador)
-│   │   └── Optimization/
-│   │       ├── ComparisonService.php      # costo total de una lista por sucursal
-│   │       ├── DistanceService.php        # Haversine + costo de combustible
-│   │       └── OptimizationService.php    # Score, ordenamiento y persistencia
+│   │   ├── ExpertSystemService.php        # cliente HTTP hacia el Sistema Experto (recommend/chat)
+│   │   ├── Optimization/
+│   │   │   ├── ComparisonService.php      # costo total de una lista por sucursal
+│   │   │   ├── DistanceService.php        # Haversine
+│   │   │   └── OptimizationService.php    # Score, ordenamiento, payloads y persistencia
+│   │   └── PriceProviders/                # extractores: Super Selectos (HTML) y tiendas VTEX
 ├── config/
 │   ├── optimization.php                   # pesos α/β/γ/δ y supuestos del MVP (configurables por env)
+│   └── services.php                       # URL/timeout/retry del Sistema Experto
 ├── database/
 │   ├── migrations/                        # ERD v1.0 (ver docs/02-arquitectura.md)
 │   └── seeders/                           # DatabaseSeeder, DemoDataSeeder, UserSeeder
 ├── routes/
 │   └── api.php                            # todas las rutas JSON
-└── tests/
+└── tests/                                 # 86 pruebas (Unit + Feature)
 ```
 
 Arquitectura por capas **Controller → Service → Model** (ADR-005): los controladores solo coordinan
@@ -103,9 +107,10 @@ Base: `http://127.0.0.1:8000/api`
 | POST | `/login` | Iniciar sesión → devuelve token Sanctum |
 | GET | `/productos` | Catálogo maestro (paginado, filtro `categoria_id`) |
 | GET | `/productos/{producto}` | Detalle con precios actuales por sucursal |
+| GET | `/productos/{producto}/historial?dias=90` | Historial de precios por sucursal (array plano) |
 | GET | `/productos/buscar?q=…` | Buscador Universal (nombre/marca/alias + relevancia) |
 | GET | `/categorias` | Categorías del catálogo |
-| GET | `/sucursales` | Sucursales de los supermercados |
+| GET | `/sucursales` | Sucursales de los supermercados (excluye la tienda en línea) |
 | GET | `/promociones` | Precios con promoción activa (filtro `categoria_id`) |
 
 ### Protegidas (header `Authorization: Bearer {token}`)
@@ -118,8 +123,12 @@ Base: `http://127.0.0.1:8000/api`
 | POST | `/listas` | Crear lista (con `productos[]` opcionales) |
 | GET | `/listas/{lista}` | Detalle de la lista |
 | DELETE | `/listas/{lista}` | Eliminar lista |
+| PATCH | `/listas/{lista}/completar` | Marcar la compra como realizada |
+| PATCH | `/listas/{lista}/reactivar` | Volver a marcarla como activa |
 | GET | `/listas/{lista}/comparar` | Comparación de precios por sucursal |
-| GET | `/listas/{lista}/optimizar?lat=…&lng=…` | Mejor alternativa con Score |
+| GET | `/listas/{lista}/promociones` | Promociones de los productos de esta lista |
+| GET | `/listas/{lista}/optimizar?lat=…&lng=…` | Mejor alternativa con Score + recomendación experta |
+| POST | `/listas/{lista}/chat` | Chat explicativo sobre una alternativa optimizada |
 | POST | `/listas/{lista}/productos` | Agregar producto |
 | PATCH | `/listas/{lista}/productos/{detalle}` | Actualizar cantidad/esencial |
 | DELETE | `/listas/{lista}/productos/{detalle}` | Quitar producto |
@@ -159,6 +168,52 @@ Score = α · CostoCompra + β · PenalizacionDistancia + γ · CostoTiempo − 
 
 ---
 
+## Sistema Experto
+
+Laravel es el único que habla con el servicio Python/FastAPI (ADR-009). El servicio vive en un
+repositorio aparte y se consume por HTTP:
+
+```dotenv
+EXPERT_SYSTEM_URL=https://sistema-experto-fork.onrender.com
+EXPERT_SYSTEM_TIMEOUT=15
+EXPERT_SYSTEM_RETRY_TIMES=3
+EXPERT_SYSTEM_RETRY_SLEEP_MS=2000
+EXPERT_SYSTEM_API_KEY=
+```
+
+- `EXPERT_SYSTEM_API_KEY` es opcional: si está vacío, no se envía el header `X-API-Key`.
+- `GET /api/listas/{lista}/optimizar` envía un payload por alternativa y adjunta
+  `recommendation` + `expert_system_available` a cada resultado.
+- `POST /api/listas/{lista}/chat` reconstruye los hechos desde `resultado_json` y llama a
+  `/api/v1/chat`.
+- Si el experto falla, la optimización sigue funcionando y el chat responde con
+  `supported=false` / `intent=NO_DISPONIBLE`.
+- **Ojo con la latencia:** Render free duerme el servicio tras un periodo de inactividad. Con el
+  timeout y reintentos actuales, la primera optimización del día puede tardar bastante.
+
+El detalle del contrato, reglas y fallback está en `docs/CONTEXTO-SISTEMA-EXPERTO.md`.
+
+---
+
+## Pipeline de precios
+
+El extractor automático (v1.1) está implementado con staging y validación:
+
+```
+Price Provider (Super Selectos HTML / VTEX)
+  → producto_raw (staging)
+  → Normalización y validación
+  → Catálogo Maestro + PrecioActual (+ HistorialPrecio)
+```
+
+- `php artisan precios:sync` recolecta hacia staging y registra la corrida en `sync_runs`.
+- `php artisan precios:procesar` publica las filas válidas y archiva el precio anterior.
+- Ambos comandos aceptan `--dry-run` y respetan el apagado por configuración.
+- PriceSmart permanece con carga manual (ADR-10).
+- Todo es administrable desde el panel Filament (staging, corridas y precios).
+
+---
+
 ## Datos demo
 
 `php artisan db:seed` carga desde `shared/demo_products.json`:
@@ -175,15 +230,24 @@ El seeder es **idempotente** (`firstOrCreate` / `updateOrCreate`). El SKU lógic
 ## Calidad
 
 ```bash
-composer test          # suite PHPUnit (usa SQLite en memoria)
+composer test          # 86 pruebas (limpia el cache de config y usa SQLite en memoria)
 ./vendor/bin/pint      # formateo de código
 ```
+
+> Si corrés `php artisan test` directamente y el proyecto tiene `bootstrap/cache/config.php`,
+> Laravel usará la configuración cacheada (PostgreSQL) e ignorará el SQLite de `phpunit.xml`.
+> En ese caso ejecutá `php artisan config:clear` o usá `composer test`.
 
 ---
 
 ## Documentación
 
 - `docs/00-contexto-proyecto.md` — resumen ejecutivo para retomar desarrollo
-- `docs/02-arquitectura.md` — arquitectura congelada (ERD v1.0, ADRs 001-009, Motor de Normalización)
+- `docs/02-arquitectura.md` — arquitectura congelada (ERD v1.0, ADRs 001-011, Motor de Normalización)
 - `docs/03-plan-implementacion.md` — roadmap, fases y Definition of Done
-- `docs/04-sistema-experto.md` — Sistema Experto (Python) que consumirá esta API
+- `docs/04-sistema-experto.md` — Sistema Experto (Python) que consume esta API
+- `docs/05-decision-costo-combustible.md` — ADR-05 (`PenalizacionDistancia`)
+- `docs/06-referencia-extractor-vtex.md` y `07-decision-extractor-fuentes-riesgo.md` — pipeline de precios y ADR-10
+- `docs/08-decision-sucursal-tienda-online.md` — ADR-11 (sucursal sin coordenadas)
+- `docs/09-preguntas-chat-experto.md` — temas que responde el chat
+- `docs/CONTEXTO-SISTEMA-EXPERTO.md` — guía de integración Laravel ↔ Python

@@ -14,10 +14,17 @@ Proyecto de emprendimiento social desarrollado para las materias de **Emprendedu
 Toda la documentación técnica y de negocio vive en `docs/`. Orden recomendado de lectura:
 
 ```
+00-contexto-proyecto.md     → resumen ejecutivo para retomar desarrollo
 01-vision-negocio.md        → el ensayo grupal (problema, impacto social, modelo de negocio)
 02-arquitectura.md          → arquitectura técnica congelada (v1.0), stack, ERD, ADRs
 03-plan-implementacion.md   → roadmap, fases, Track A / Track B, Definition of Done
 04-sistema-experto.md       → especificación del Sistema Experto (reglas, contrato JSON)
+05-decision-costo-combustible.md
+06-referencia-extractor-vtex.md
+07-decision-extractor-fuentes-riesgo.md
+08-decision-sucursal-tienda-online.md
+09-preguntas-chat-experto.md → temas que responde el chat explicativo
+CONTEXTO-SISTEMA-EXPERTO.md → guía de integración Laravel ↔ Python
 ```
 
 > `02-arquitectura.md` está **congelado**: no se cambian decisiones de fondo ahí sin pasar antes
@@ -42,14 +49,15 @@ Monorepo: todos los proyectos viven juntos en el mismo repo, cada uno en su carp
 ```
 smartmarket/
 │
-├── backend-laravel/        → API Laravel (auth, catálogo, listas, promociones, optimización)
-│   └── README.md           → instalación, endpoints, Motor de Optimización
+├── backend-laravel/        → API Laravel + Filament (auth, catálogo, listas, optimización,
+│   │                         pipeline de precios, integración con el experto)
+│   └── README.md           → instalación, endpoints, Motor de Optimización, Sistema Experto
 │
-├── frontend-react/         → PWA React + Tailwind (home, buscador, comparador, listas, perfil)
-│   └── README.md           → instalación y scripts de desarrollo
+├── frontend-react/         → PWA React + Vite + Tailwind
+│   └── README.md           → instalación, scripts, estructura y PWA
 │
-├── docs/                   → documentación técnica y de negocio
-├── shared/                 → datos compartidos (demo_products.json, contrato JSON)
+├── docs/                   → documentación técnica y de negocio (00–09 + atlas/evidencia)
+├── shared/                 → datos compartidos (demo_products.json)
 │
 ├── .github/                → workflows de CI y plantillas de issues
 ├── docker/                 → contenedores (pendiente de llenar)
@@ -100,8 +108,12 @@ main                  → rama principal (estable)
 develop               → rama de trabajo actual (backend + frontend unificados)
 backend-laravel       → rama legacy (solo backend) — pendiente de retirar
 frontend-react        → rama legacy (solo frontend) — pendiente de retirar
-expert-system-python  → placeholder del Sistema Experto (pendiente de implementar)
+expert-system-python  → rama legacy; el servicio Python vive en un repositorio aparte
 ```
+
+> **Sistema Experto:** el servicio Python/FastAPI se mantiene fuera de este monorepo.
+> Laravel lo consume por HTTP mediante `EXPERT_SYSTEM_URL`; React nunca lo llama
+> directamente. La guía de integración está en `docs/CONTEXTO-SISTEMA-EXPERTO.md`.
 
 - **Trabajo normal:** se trabaja sobre `develop` y se crean ramas de feature desde ahí
   (`git switch -c feature-x`). Cada rama derivada contiene **ambos** proyectos.
@@ -121,18 +133,20 @@ Visión de negocio (ensayo)     ██████████  Terminado
 Arquitectura                   ██████████  Terminado
 ERD                             ██████████  Terminado
 Plan de implementación          ██████████  Terminado
-Documento Sistema Experto        █████████░  Falta reflejar la nota del campo `esencial`
-MVP Fase A (backend + API)       ██████████  Hecho: auth, catálogo, buscador, listas, comparador,
-                                                        optimización, promociones, datos demo
-MVP Fase B (frontend React)      ██████████  Hecho: PWA con home, buscador, comparador, listas, perfil
-Mapa + Motor de Optimización UI  ████████░░  Motor listo en API; integración visual pendiente
-Sistema Experto (Python)         ░░░░░░░░░░  Pendiente (Track B)
-Pruebas                          ░░░░░░░░░░  Pendiente
-Despliegue                        ░░░░░░░░░░  Pendiente
+Documento Sistema Experto        ██████████  Terminado (diseño + nota de implementación)
+MVP Fase A (backend + API)       ██████████  Auth, catálogo, buscador, listas, comparador,
+                                                        optimización, promociones, historial y pipeline de precios
+MVP Fase B (frontend React)      ██████████  PWA con home, buscador, comparador, listas, perfil,
+                                                        promociones, historial y chat explicativo
+Sistema Experto (Python)         ██████████  Servicio desplegado e integrado (recommend + chat)
+Pruebas                          ███████░░░  Backend: 86 tests. Frontend: sin tests automatizados
+Mapa de sucursales               ░░░░░░░░░░  Pendiente (la optimización ya funciona; falta la vista de mapa)
+Despliegue                       ██░░░░░░░░  Sistema Experto en Render; backend/frontend sin desplegar
+CI/CD                            ░░░░░░░░░░  Pendiente
 ```
 
-**Siguiente paso:** conectar el frontend al Motor de Optimización (mapa + resultados por sucursal)
-y arrancar el Track B del Sistema Experto.
+**Siguiente paso:** desplegar backend y frontend, agregar CI, completar la vista de mapa y
+cerrar la documentación pendiente del Sistema Experto.
 
 ---
 

@@ -4,6 +4,13 @@
 > entregable para la materia de Sistemas Expertos. Se integra con SmartMarket SV mediante una
 > API, pero puede entenderse y evaluarse de forma independiente.
 
+> **Nota de implementación (octubre 2026).** Este documento conserva el diseño académico
+> original de 15 reglas (R1–R15). El servicio implementado y desplegado usa una base de
+> **8 reglas (R01–R08)** en `data/rules.json`, con FastAPI + Pydantic y un chatbot por plantillas.
+> El contrato vigente, los umbrales de los hechos derivados y la integración real con Laravel
+> están en `CONTEXTO-SISTEMA-EXPERTO.md`. Las diferencias entre ambos documentos son de diseño
+> histórico, no de comportamiento del servicio en producción.
+
 ---
 
 ## 1. Objetivo

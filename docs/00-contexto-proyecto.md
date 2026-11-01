@@ -6,8 +6,10 @@
 > completos (`01` a `08`) ya existen y son la fuente de verdad — esto es el mapa para navegarlos
 > rápido y no perder decisiones ya tomadas.
 
-**Estado actual:** los 8 documentos están terminados y compartidos con el equipo. El repositorio
-de GitHub ya está creado. Lo que sigue es diseño detallado (wireframes, OpenAPI) y construcción.
+**Estado actual (octubre 2026):** los documentos 01–09 están terminados. El MVP está construido:
+backend Laravel con 86 pruebas, PWA React y Sistema Experto desplegado e integrado. Lo que sigue
+es el mapa de sucursales, el despliegue de backend/frontend, CI y el cierre de deuda técnica
+documentado en `03-plan-implementacion.md`.
 
 ---
 
@@ -32,7 +34,7 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 | `01-vision-negocio.md` (ensayo Word) | Profesor de Emprendedurismo | Problema, contexto (datos de canasta básica/inflación con fuentes reales), objetivos, revisión de literatura (casos internacionales + teorías de Simon/Kotler/Ishikawa), causas raíz, módulos del producto, modelo de negocio, escalabilidad (V1/V2/V3), conclusiones. **No menciona microservicios, Docker, ADRs — lenguaje de negocio.** |
 | `02-arquitectura.md` | Todo el equipo técnico | Principios de arquitectura (8), stack completo, arquitectura general, **2 flujos end-to-end**, módulos clasificados (Core/Apoyo/Externos), pipeline de datos (Price Providers → Staging → Normalización → Validación → Catálogo), Motor de Normalización, Sistema Experto (resumen), seguridad, testing, **No-objetivos**, riesgos, **ADRs numerados (001-009)**, **ERD v1.0 completo con diagramas e imágenes** (`erd_nivel1_core.png`, `erd_nivel2_pipeline.png`), estado del proyecto. **Documento congelado — cualquier cambio de fondo necesita un ADR nuevo.** |
 | `03-plan-implementacion.md` | Equipo (operativo, sí puede cambiar) | Organización en Track A (Laravel/React) y Track B (Sistema Experto/Python), roadmap por fases (0A/0B → 1-9), fases del Sistema Experto (P0-P4), Definition of Done, tabla de riesgos, roadmap futuro (v1.1/v1.2), estructura de carpetas del repo. |
-| `04-sistema-experto.md` | Materia de Sistemas Expertos + equipo | Dominio, hechos primarios vs. derivados, variables de salida, **Forward Chaining** (con justificación), **política de resolución de conflictos** (jerarquía de prioridad), 15 reglas derivadas por escenario, **explicabilidad a dos niveles** (reglas activadas + explicación en lenguaje natural), contrato de API con errores (400/422/500), casos de prueba (incluyendo uno ambiguo), limitaciones. Framework de Python **todavía pendiente de confirmar** (candidatos: PyKnow, CLIPS/clipspy, Durable Rules). |
+| `04-sistema-experto.md` | Materia de Sistemas Expertos + equipo | Dominio, hechos primarios vs. derivados, variables de salida, **Forward Chaining** (con justificación), **política de resolución de conflictos** (jerarquía de prioridad), 15 reglas de diseño (la implementación usa R01–R08), **explicabilidad a dos niveles** (reglas activadas + explicación en lenguaje natural), contrato de API con errores (400/422/500), casos de prueba (incluyendo uno ambiguo), limitaciones. **Implementado** con FastAPI + Pydantic y reglas en `data/rules.json`. |
 | `05-decision-costo-combustible.md` | Todo el equipo técnico | **ADR-05**: reemplazo de `CostoCombustible ($)` por `PenalizacionDistancia` normalizada (0–1, min-max por corrida) en la fórmula del motor de optimización — evita dolarizar combustible encadenando distancia Haversine × precio citado × consumo supuesto (tres capas de imprecisión). Justificación, fórmula antes/después, migraciones, implementación backend/frontend y suite de regresión. |
 | `06-referencia-extractor-vtex.md` | Equipo técnico (extractor en curso) | Análisis de referencia del extractor automático de precios (repo hermano): fuentes y modos (HTML/VTEX/partner-feed), estrategia VTEX paso a paso, cortesía HTTP, normalización, persistencia append-only, crons; mapeo a nuestro pipeline. **§4: plan aprobado Fases 0–3; §5: veredicto legal por supermercado con citas y URLs. En implementación desde el 2026-08-22.** |
 | `07-decision-extractor-fuentes-riesgo.md` | Todo el equipo técnico | **ADR-10**: alcance de la extracción automatizada — se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA con riesgo académico aceptado e informado; PriceSmart queda en carga manual (su robots.txt prohíbe scrapers por nombre). Condiciones operativas obligatorias: UA identificable, pausas, sin evasión de controles, apagado instantáneo por config, solo datos fácticos (sin imágenes ni logos). |
@@ -112,17 +114,18 @@ Suscripciones. (Las promociones **sí** están cubiertas en v1.0 — viven como 
 - **Estrategia:** Forward Chaining (parte de hechos conocidos, no de una hipótesis).
 - **Resolución de conflictos (por prioridad):** 1) Presupuesto, 2) Disponibilidad, 3) Tiempo/distancia,
   4) Ahorro, 5) Promociones.
-- **15 reglas base** ya definidas en `04-sistema-experto.md` sección 7 (R1-R15), cubriendo
-  disponibilidad, presupuesto, distancia, promociones, división de compra, tiempo y ahorro.
+- **Reglas implementadas:** R01–R08 en el servicio Python (ver `04-sistema-experto.md` y
+  `CONTEXTO-SISTEMA-EXPERTO.md`). El diseño original de 15 reglas se redujo a las 8 que cubren el
+  MVP (presupuesto, disponibilidad, distancia/tiempo, fragmentación, conveniencia, promociones y
+  ahorro).
 - **Salida:** `nivel_recomendacion` (🟢/🟡/🔴), `explicacion` (lenguaje natural),
-  `accion_sugerida`, `reglas_activadas` (uso interno/depuración).
-- **Framework Python:** aún sin confirmar (candidatos: PyKnow, CLIPS vía `clipspy`, Durable
-  Rules). No bloquea el resto del diseño.
+  `accion_sugerida`, `reglas_activadas`, `hechos_derivados`, `winning_rule` y `trace`.
+- **Stack Python:** FastAPI + Pydantic, con reglas declaradas en `data/rules.json` y un chatbot
+  por plantillas. El servicio es *stateless* y vive en un repositorio aparte (ADR-009).
 
-**Pendiente conocido (no bloqueante):** el ERD agregó `esencial` a `ListaCompraDetalle`, pero el
-contrato JSON de `04-sistema-experto.md` todavía no separa `productos_disponibles` en
-`productos_esenciales_disponibles` / `productos_opcionales_disponibles`. Falta actualizar ese
-documento para que el campo `esencial` realmente se use en las reglas.
+**Resuelto:** el contrato actual ya separa `productos_esenciales_disponibles` /
+`productos_esenciales_totales` de los opcionales, por lo que el campo `esencial` de
+`ListaCompraDetalle` se usa en las reglas. Ver `docs/CONTEXTO-SISTEMA-EXPERTO.md` §4.
 
 ---
 
@@ -143,16 +146,20 @@ documento para que el campo `esencial` realmente se use en las reglas.
 - **Definition of Done** de una tarea: código implementado, sin errores conocidos, probado,
   documentado, revisado por otro integrante, integrado si aplica.
 
-**Estructura de repo ya creada:**
+**Estructura de repo actual:**
 ```
-smartmarket/
-├── docs/  (01 a 08 + erd_nivel1_core.png + erd_nivel2_pipeline.png)
-├── backend-laravel/
-├── frontend-react/
-├── expert-system/       (servicio Python)
-├── shared/ (openapi.yaml, demo_products.json, seeders/)
+smartmarket-sv/
+├── docs/                (00 a 09 + guía del experto + ERDs + atlas/evidencia)
+├── backend-laravel/     (API, panel Filament, motor de optimización y pipeline de precios)
+├── frontend-react/      (PWA React + Vite)
+├── shared/              (demo_products.json)
+├── docker/              (pendiente)
+├── scripts/             (pendiente)
 └── README.md
 ```
+
+El servicio Python del Sistema Experto se mantiene en un repositorio aparte y se consume por HTTP
+(ver `CONTEXTO-SISTEMA-EXPERTO.md`).
 
 ---
 

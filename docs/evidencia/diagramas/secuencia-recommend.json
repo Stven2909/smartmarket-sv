@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Llamada de recomendacion: POST /api/v1/recommend",
+    "output": "docs/evidencia/diagramas/secuencia-recommend.html",
+    "quality_profile": "showcase",
+    "viewBox": [1060, 620],
+    "column_fit": "spread"
+  },
+  "participants": [
+    { "id": "cliente", "type": "external", "label": "Cliente", "sublabel": "frontend" },
+    { "id": "backend", "type": "backend", "label": "Backend", "sublabel": "OptimizationService" },
+    { "id": "api", "type": "cloud", "label": "API Experto", "sublabel": "POST /api/v1/recommend" },
+    { "id": "motor", "type": "backend", "label": "Motor", "sublabel": "derivar y evaluar" },
+    { "id": "trace", "type": "database", "label": "Trace", "sublabel": "registro por etapa" }
+  ],
+  "segments": [
+    { "from": 148, "to": 212, "label": "Peticion" },
+    { "from": 224, "to": 382, "label": "Inferencia" },
+    { "from": 394, "to": 478, "label": "Respuesta" }
+  ],
+  "messages": [
+    { "id": "m-optimizar", "from": "cliente", "to": "backend", "y": 160, "label": "POST /api/listas/20/optimizar?lat&lng", "variant": "emphasis" },
+    { "id": "m-recommend", "from": "backend", "to": "api", "y": 185, "label": "POST /api/v1/recommend (14 campos)", "variant": "emphasis" },
+    { "id": "m-entrega", "from": "api", "to": "motor", "y": 210, "label": "payload por alternativa", "variant": "default", "note": "request_id=lista-20-sucursal-1 · numero_supermercados=1" },
+    { "id": "m-facts", "from": "motor", "to": "trace", "y": 235, "label": "derive_facts -> hechos_derivados", "variant": "default", "note": "dentro_presupuesto · faltan_esenciales · distancia · paradas" },
+    { "id": "m-rules", "from": "motor", "to": "trace", "y": 263, "label": "load_rules -> R01..R08", "variant": "default" },
+    { "id": "m-eval", "from": "motor", "to": "trace", "y": 291, "label": "loop R01..R08: AND estricto", "variant": "emphasis", "note": "expected/actual/matched por condicion · activa si TODAS matched" },
+    { "id": "m-conflicts", "from": "motor", "to": "trace", "y": 319, "label": "resolve_conflicts -> winning_rule", "variant": "default", "note": "prioridad menor gana · losing_rules se registran" },
+    { "id": "m-build", "from": "motor", "to": "trace", "y": 347, "label": "build_inference_result", "variant": "default", "note": "nivel + accion + explicacion + reglas_activadas" },
+    { "id": "m-enrich", "from": "motor", "to": "trace", "y": 375, "label": "enrich_inference_result", "variant": "default", "note": "indice_conveniencia + componentes + versiones" },
+    { "id": "m-resp95", "from": "motor", "to": "api", "y": 398, "label": "HTTP 200 JSON (trace + versiones)", "variant": "return" },
+    { "id": "m-resp34", "from": "api", "to": "backend", "y": 422, "label": "HTTP 200 por request_id", "variant": "return" },
+    { "id": "m-resp12", "from": "backend", "to": "cliente", "y": 446, "label": "resultados ordenados + recomendacion", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "backend", "from": 160, "to": 452, "type": "backend" },
+    { "participant": "api", "from": 185, "to": 426, "type": "cloud" },
+    { "participant": "motor", "from": 210, "to": 404, "type": "backend" },
+    { "participant": "trace", "from": 233, "to": 381, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Round-trip HTTP",
+      "items": [
+        "Cliente -> Backend -> API -> Motor -> respuesta",
+        "Se envia una peticion por alternativa (request_id por sucursal)",
+        "La respuesta final llega ordenada por score en el frontend"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trace y AND estricto",
+      "items": [
+        "El trace con expected/actual/matched viaja dentro del JSON",
+        "Una regla se activa solo si TODAS sus condiciones matched",
+        "resolve_conflicts desempata por prioridad (menor numero)"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Experto sin estado",
+      "items": [
+        "El /chat reenvia facts + recommendation como contexto",
+        "Enrich no altera la decision ni el winning_rule",
+        "El backend persiste resultado_json en PostgreSQL"
+      ]
+    }
+  ]
+}

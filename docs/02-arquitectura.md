@@ -473,16 +473,18 @@ el diagrama, varias tablas se relacionan entre dominios (ej. `Producto` conecta 
 |---|---|---|
 | **ProductoRaw** | `id` (PK), `origen`, `nombre_original`, `precio`, `categoria_original`, `estado` (enum), `fecha` | Zona de staging — ningún dato entra al Catálogo Maestro sin pasar antes por aquí. |
 | **ResultadoOptimizacion** | `id` (PK), `lista_compra_id` (FK), `score`, `ahorro`, `distancia`, `tiempo`, `supermercados`, `resultado_json`, `fecha` | El `resultado_json` guarda el detalle completo sin necesitar más tablas. |
-| **Recomendacion** | `id` (PK), `resultado_optimizacion_id` (FK), `nivel` (enum), `mensaje`, `reglas_activadas` (json), `fecha` | Python nunca sabe que esta tabla existe — Laravel la llena tras recibir la respuesta. |
-| **SistemaExpertoLog** | `id` (PK), `resultado_optimizacion_id` (FK), `request_json`, `response_json`, `duracion_ms`, `estado`, `fecha` | Útil para depurar por qué una regla se activó o no. |
+| **Recomendacion** | `id` (PK), `resultado_optimizacion_id` (FK), `nivel` (enum), `mensaje`, `reglas_activadas` (json), `fecha` | Python nunca sabe que esta tabla existe — Laravel la llena tras recibir la respuesta. **No implementada en v1:** la recomendación se guarda dentro de `resultado_json`. |
+| **SistemaExpertoLog** | `id` (PK), `resultado_optimizacion_id` (FK), `request_json`, `response_json`, `duracion_ms`, `estado`, `fecha` | Útil para depurar por qué una regla se activó o no. **No implementada en v1:** por ahora se registran warnings en el log de Laravel. |
 
-### 12.3 Nota pendiente hacia `04-sistema-experto.md`
+> **Nota de implementación (v1):** para no crear tablas nuevas, cada alternativa de
+> `ResultadoOptimizacion.resultado_json` guarda `recommendation` y `expert_system_available`.
+> Eso también permite que el chat reconstruya los hechos desde la corrida persistida.
 
-El campo `esencial` de `ListaCompraDetalle` es información que el Sistema Experto podría
-aprovechar, pero para que realmente se use, el contrato JSON de esa API debería separar el hecho
-`productos_disponibles` en `productos_esenciales_disponibles` y `productos_opcionales_disponibles`.
-Mientras ese documento no se actualice, el dato existe en la base de datos sin que el razonamiento
-del Sistema Experto lo use todavía.
+### 12.3 Nota hacia `04-sistema-experto.md` (resuelta)
+
+El contrato actual ya separa `productos_esenciales_disponibles` y `productos_esenciales_totales`
+de los opcionales. El campo `esencial` de `ListaCompraDetalle` se usa en las reglas R01–R08; ver
+`docs/CONTEXTO-SISTEMA-EXPERTO.md` §4.
 
 ### 12.4 Lo que queda fuera del v1.0 (a propósito)
 
@@ -506,17 +508,17 @@ El resto de lo que sí queda fuera del v1.0 porque el MVP no lo usa: `Favoritos`
 
 ```
 Visión de negocio (ensayo)     ██████████  Terminado
-Arquitectura                   ██████████  Terminado
-ERD                             ██████████  Terminado
+Arquitectura                   ██████████  Terminado (v1.0 congelada)
+ERD                             ██████████  Terminado (v1.0 + ADR-11)
 Plan de implementación          ██████████  Terminado
-Documento Sistema Experto        █████████░  Falta reflejar la nota de la sección 12.3
-Diseño detallado (wireframes)     ░░░░░░░░░░  Pendiente
-Construcción del MVP               ░░░░░░░░░░  Pendiente
-Pruebas                            ░░░░░░░░░░  Pendiente
-Despliegue                          ░░░░░░░░░░  Pendiente
+Documento Sistema Experto        ██████████  Terminado y alineado con el contrato implementado
+Diseño detallado (wireframes)     ████████░░  UI construida; mapa de sucursales pendiente
+Construcción del MVP               █████████░  Backend + PWA + Sistema Experto integrados
+Pruebas                            ███████░░░  86 tests de backend; frontend sin tests
+Despliegue                         ██░░░░░░░░  Sistema Experto en Render; falta backend/frontend
 ```
 
 Esta arquitectura ya está congelada — no deberíamos seguir cambiándola sin una razón de peso
 (y, si se cambia algo de fondo, debería documentarse como un ADR nuevo). El siguiente paso es
-avanzar al diseño detallado: wireframes de las pantallas principales, definición formal de
-endpoints (OpenAPI), y comenzar la construcción siguiendo el orden de `03-plan-implementacion.md`.
+cerrar la entrega: desplegar backend/frontend, agregar CI, completar la vista de mapa y sumar
+pruebas de frontend. Ver `03-plan-implementacion.md` §3 y §9.

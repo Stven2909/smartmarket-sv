@@ -136,6 +136,31 @@ Laravel → (petición HTTP) → Sistema Experto (Python) → respuesta → Reac
   Supabase/Neon (base de datos).
 - Ensayo completo de la demo antes de la entrega o defensa.
 
+### Estado de avance (octubre 2026)
+
+| Fase | Estado |
+|---|---|
+| 0A–0B Organización y arquitectura | ✅ Terminada |
+| 1 Base de datos y autenticación | ✅ Terminada |
+| 2 Catálogo, normalización y buscador | ✅ Terminada |
+| 3 Comparador de listas | ✅ Terminada |
+| 4 Mapa y Motor de Optimización | 🟡 Motor terminado en API y UI; **mapa pendiente** |
+| 5 Promociones e historial | ✅ Terminada (incluye historial con gráficas) |
+| 6 Sistema Experto | ✅ Terminado (R01–R08 + chat explicativo) |
+| 7 Integración Laravel ↔ Python | ✅ Terminada, con fallback si Python no responde |
+| 8 Experiencia de usuario / PWA | 🟡 PWA instalable; falta accesibilidad y pulido fino |
+| 9 Pruebas y despliegue | 🟡 86 tests de backend; frontend sin tests; solo el experto está desplegado |
+
+**Deuda técnica priorizada (octubre 2026):**
+
+1. Desplegar backend y frontend; agregar CI (`composer test` + `npm run build`).
+2. Reducir latencia del Sistema Experto (llamadas secuenciales + cold start de Render).
+3. Rate limiting en auth/chat/optimizar y expiración de tokens.
+4. Tests de auth, catálogo, buscador, listas y frontend.
+5. Deep links reales (hoy la navegación es por estado) y code splitting del bundle.
+6. Documentar el mapa de sucursales y cerrar la vista de mapa.
+7. Mover las hojas de diseño de la mascota fuera de `public/` (hoy se excluyen del precache).
+
 ---
 
 ## 4. Sobre el frontend: ¿empezar antes o después?
@@ -190,7 +215,7 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 ## 7. Lo que queda fuera del MVP (roadmap futuro)
 
 ### v1.1 (mejoras de infraestructura, no bloquean la entrega)
-- Extractor automático de precios (antes llamado "Web Scraper"). **EN IMPLEMENTACIÓN desde el 2026-08-22.** Análisis técnico y veredicto legal por supermercado en `06-referencia-extractor-vtex.md` (§4–§5); alcance y aceptación de riesgo académico en **ADR-10** (`07-decision-extractor-fuentes-riesgo.md`). Se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA; PriceSmart permanece con carga manual. Plan por fases (staging+config → drivers → normalización), un commit por fase.
+- Extractor automático de precios (antes llamado "Web Scraper"). **IMPLEMENTADO en agosto 2026.** Análisis técnico y veredicto legal por supermercado en `06-referencia-extractor-vtex.md` (§4–§5); alcance y aceptación de riesgo académico en **ADR-10** (`07-decision-extractor-fuentes-riesgo.md`). Se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA; PriceSmart permanece con carga manual. Incluye staging, normalización, comandos `precios:sync` / `precios:procesar` y panel Filament.
 - Docker (para organizar mejor cómo se despliega cada servicio).
 - Documentación completa en OpenAPI.
 - Registro de actividad (logging) más detallado.
