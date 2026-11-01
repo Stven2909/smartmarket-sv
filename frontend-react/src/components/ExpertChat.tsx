@@ -13,6 +13,18 @@ type Props = {
   sucursalId: number
 }
 
+const SUGERENCIAS = [
+  '¿Por qué me recomiendas esta alternativa?',
+  '¿Cuánto me ahorro?',
+  '¿La compra cabe en mi presupuesto?',
+  '¿Están todos los productos disponibles?',
+  '¿Qué tan lejos queda esta tienda?',
+  '¿Cuánto tiempo tardo en llegar?',
+  '¿Hay promociones aplicables?',
+]
+
+const SMARTY_URL = '/mascota/Smarty_Thinking.webp'
+
 export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Props) {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,9 +34,8 @@ export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Pro
   if (resultadoOptimizacionId == null) return null
   const roId = resultadoOptimizacionId
 
-  async function enviar(e: React.FormEvent) {
-    e.preventDefault()
-    const texto = message.trim()
+  async function enviar(textoPrevio?: string) {
+    const texto = (textoPrevio ?? message).trim()
     if (!texto || loading) return
     setLoading(true)
     setError(null)
@@ -38,61 +49,117 @@ export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Pro
     }
   }
 
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    void enviar()
+  }
+
+  const mostrarSugerencias =
+    respuesta !== null && !respuesta.supported && respuesta.intent !== 'NO_DISPONIBLE'
+
+  const avatar = (width: number, height: number, extra?: React.CSSProperties) => (
+    <img
+      src={SMARTY_URL}
+      alt="Smarty"
+      style={{
+        width,
+        height,
+        objectFit: 'contain',
+        flexShrink: 0,
+        ...extra,
+      }}
+    />
+  )
+
   return (
     <div className="expert-chat" style={{ marginTop: 10 }}>
       {respuesta && (
-        <div
-          style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            background: respuesta.supported ? 'var(--surface, #f9fafb)' : 'rgba(0,0,0,.04)',
-            border: '1px solid var(--border, #e5e7eb)',
-            fontSize: 12,
-            lineHeight: 1.45,
-            marginBottom: 8,
-            color: 'var(--text, #111827)',
-          }}
-        >
-          {respuesta.response}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+          {avatar(40, 56)}
+          <div
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: respuesta.supported ? 'var(--surface, #f9fafb)' : 'rgba(0,0,0,.04)',
+              border: '1px solid var(--border, #e5e7eb)',
+              fontSize: 12,
+              lineHeight: 1.45,
+              color: 'var(--text, #111827)',
+            }}
+          >
+            {respuesta.response}
+          </div>
         </div>
       )}
       {error && (
         <div style={{ marginBottom: 8, fontSize: 11, color: 'var(--red-700, #b91c1c)' }}>{error}</div>
       )}
-      <form onSubmit={enviar} style={{ display: 'flex', gap: 6 }}>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Preguntá por qué conviene esta alternativa…"
-          disabled={loading}
-          style={{
-            flex: 1,
-            padding: '7px 10px',
-            borderRadius: 8,
-            border: '1px solid var(--border, #e5e7eb)',
-            fontSize: 12,
-            background: 'var(--surface, #fff)',
-          }}
-        />
-        <button
-          type="submit"
-          disabled={loading || !message.trim()}
-          style={{
-            padding: '7px 12px',
-            borderRadius: 8,
-            border: 'none',
-            background: 'var(--green-700, #15803d)',
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading || !message.trim() ? 0.6 : 1,
-          }}
-        >
-          {loading ? '…' : 'Preguntar'}
-        </button>
-      </form>
+      {mostrarSugerencias && (
+        <div style={{ marginBottom: 8, paddingLeft: 48 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted, #6b7280)', marginBottom: 4 }}>
+            Podés preguntarme, por ejemplo:
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {SUGERENCIAS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => void enviar(s)}
+                disabled={loading}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: 999,
+                  border: '1px solid var(--border, #e5e7eb)',
+                  background: 'var(--surface, #fff)',
+                  fontSize: 11,
+                  color: 'var(--brand, #15803d)',
+                  cursor: loading ? 'default' : 'pointer',
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {avatar(34, 46, { opacity: 0.9 })}
+        <form onSubmit={onSubmit} style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Preguntá por qué conviene esta alternativa…"
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: '7px 10px',
+              borderRadius: 8,
+              border: '1px solid var(--border, #e5e7eb)',
+              fontSize: 12,
+              background: 'var(--surface, #fff)',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading || !message.trim()}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--green-700, #15803d)',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: loading ? 'default' : 'pointer',
+              opacity: loading || !message.trim() ? 0.6 : 1,
+            }}
+          >
+            {loading ? '…' : 'Preguntar'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
