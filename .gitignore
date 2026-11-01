@@ -3,3 +3,18 @@
 *.log
 .DS_Store
 Thumbs.db
+
+# Build de desarrollo de la PWA (se regenera con `npm run dev`)
+frontend-react/dev-dist/
+
+# Artefactos intermedios de las herramientas de diagramación
+# (se conservan el HTML/JSON/PNG final de cada diagrama)
+docs/**/*.visual-check.*
+docs/*.candidate.json
+docs/atlas-sistema-experto.html
+
+# Hojas de diseño de marca: assets de marketing que la app no sirve en runtime.
+# La PWA consume las versiones .webp y favicon-64.png.
+frontend-react/public/mascota/*.png
+!frontend-react/public/mascota/favicon-64.png
+!frontend-react/public/mascota/Smarty_favicon-sinfondo.png
