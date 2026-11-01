@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ListaCompra;
 use App\Models\ListaCompraDetalles;
 use App\Models\ResultadoOptimizacion;
+use App\Services\ChatIntentNormalizer;
 use App\Services\ExpertSystemService;
 use App\Services\Optimization\ComparisonService;
 use App\Services\Optimization\OptimizationService;
@@ -16,6 +17,7 @@ class ListaCompraController extends Controller
         private ComparisonService $comparisonService,
         private OptimizationService $optimizationService,
         private ExpertSystemService $expertSystemService,
+        private ChatIntentNormalizer $chatIntentNormalizer,
     ) {}
 
     // Chequeo de propiedad: solo el dueño de la lista puede verla o modificarla.
@@ -233,8 +235,19 @@ class ListaCompraController extends Controller
             $resultados,
         );
 
+        // El clasificador del experto es sensible a la redacción y no tiene una
+        // intención para promociones. Se normaliza el tema antes de llamarlo.
+        $pregunta = $this->chatIntentNormalizer->normalizar($data['message']);
+
+        if ($pregunta['intent'] === 'PROMOCIONES') {
+            return response()->json($this->respuestaPromociones(
+                $facts,
+                $alternativa['beneficio_promociones'] ?? 0,
+            ));
+        }
+
         $respuesta = $this->expertSystemService->chat([
-            'message' => $data['message'],
+            'message' => $pregunta['message'],
             'facts' => $facts,
             'recommendation' => $recommendation,
         ]);
@@ -246,6 +259,37 @@ class ListaCompraController extends Controller
         $respuesta['chatbot_available'] = true;
 
         return response()->json($respuesta);
+    }
+
+    /**
+     * Respuesta determinista para el tema de promociones. Se usa mientras el
+     * servicio Python no exponga esa intención (hoy responde AYUDA). No
+     * inventa datos: solo interpreta los facts y la recomendación persistidos.
+     *
+     * @param  array<string, mixed>  $facts
+     * @return array<string, mixed>
+     */
+    private function respuestaPromociones(array $facts, mixed $beneficioPromociones): array
+    {
+        $beneficio = is_numeric($beneficioPromociones) ? max(0, (float) $beneficioPromociones) : 0.0;
+
+        if ($beneficio > 0) {
+            $monto = '$'.number_format($beneficio, 2, '.', ',');
+            $mensaje = 'Sí: esta sucursal tiene promociones aplicables a productos de tu lista. '
+                .'El costo total ya refleja los precios promocionales; frente a los precios normales, '
+                .'el beneficio registrado es de '.$monto.'.';
+        } else {
+            $mensaje = 'No se registraron promociones aplicables de los productos de tu lista en esta sucursal. '
+                .'El costo mostrado no incluye descuentos por promoción.';
+        }
+
+        return [
+            'request_id' => $facts['request_id'] ?? null,
+            'intent' => 'PROMOCIONES',
+            'response' => $mensaje,
+            'supported' => true,
+            'chatbot_available' => true,
+        ];
     }
 
     private function chatNoDisponible(): \Illuminate\Http\JsonResponse

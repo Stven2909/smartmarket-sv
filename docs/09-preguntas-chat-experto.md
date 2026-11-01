@@ -10,10 +10,12 @@
 1. El usuario escribe una pregunta en `ExpertChat.tsx`.
 2. Laravel reconstruye los facts desde la corrida de optimización persistida
    (`resultado_json`) y llama a `POST /api/v1/chat` en el Sistema Experto (Python).
-3. Python clasifica la **intención** (`intent`) y devuelve una respuesta con
-   `supported: true/false`.
-4. Si `supported: false` → se muestran **sugerencias de preguntas** en la UI
-   (chips clicables) en vez del texto de ayuda genérico.
+3. Laravel normaliza las siete intenciones conocidas a frases compatibles
+   con el clasificador Python. Las preguntas de promociones se responden en
+   Laravel con el beneficio guardado en la corrida; las demás se envían a Python.
+4. Las siete preguntas guía están disponibles como chips desde que se abre el
+   chat. Si Python devuelve `supported: false`, también se muestra su respuesta
+   de ayuda junto con los chips.
 5. Si el experto no responde (timeout/conexión) → fallback `NO_DISPONIBLE`
    con un mensaje controlado.
 
@@ -21,9 +23,9 @@
 
 ## 7 temas que el chat SÍ puede responder
 
-Cada tema tiene un `intent` asociado en Python. Las preguntas deben referirse
-a la **alternativa que se está mostrando** (la que tiene el badge del Sistema
-Experto).
+Las preguntas deben referirse a la **alternativa que se está mostrando** (la
+que tiene el badge del Sistema Experto). Python responde seis temas; Laravel
+responde promociones con los datos de la corrida guardada.
 
 ### 1. Recomendación (`EXPLICACION`)
 
@@ -80,7 +82,8 @@ Devuelve el tiempo estimado de traslado en minutos.
 > "¿Me conviene por las promociones?"
 > "¿Qué promociones puedo usar?"
 
-Devuelve si hay promociones aplicables y su impacto en el ahorro.
+Devuelve si hay promociones aplicables y el beneficio registrado frente a los
+precios normales. El costo total ya usa los precios finales promocionales.
 
 ---
 
@@ -94,8 +97,8 @@ Ejemplos de preguntas que devuelven texto de ayuda genérico:
 
 - "¿Cuál es el mejor supermercado?" (demasiado vago)
 - "¿Cuánto gasté el mes pasado?" (no tiene historial)
-- "¿Qué productos me faltan?" (los facts ya incluyen esta info; mejor
-  preguntar "¿Todos los productos están disponibles?")
+- "¿Qué productos específicos me faltan?" (el chat conoce el conteo de
+  disponibilidad, pero no enumera los nombres de los productos ausentes)
 - "¿Me conviene ir caminando?" (no calcula rutas alternativas)
 - "¿Hay otro supermercado mejor?" (el chat solo comenta la alternativa
   seleccionada)
@@ -104,8 +107,7 @@ Ejemplos de preguntas que devuelven texto de ayuda genérico:
 
 ## Sugerencias para la UI
 
-Cuando `supported: false` y no es fallback `NO_DISPONIBLE`, mostrar estos
-chips clicables en `ExpertChat.tsx`:
+En `ExpertChat.tsx`, mantener disponibles estos chips clicables:
 
 ```text
 ¿Por qué me recomiendas esto?
@@ -113,6 +115,8 @@ chips clicables en `ExpertChat.tsx`:
 ¿Cabe en mi presupuesto?
 ¿Están todos los productos?
 ¿Qué tan lejos queda?
+¿Cuánto tiempo tardo en llegar?
+¿Hay promociones aplicables?
 ```
 
 Cada chip, al hacer clic, envía la pregunta correspondiente al chat.

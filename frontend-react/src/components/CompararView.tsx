@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, friendlyError } from '../api/client'
 import * as listsApi from '../api/lists'
 import { formatMoney } from '../lib/format'
@@ -7,6 +7,7 @@ import type { CompararResultado, ListaSummary, OptimizarResultado } from '../typ
 import { Check, MapPin, Navigation, Plus, Trophy } from 'lucide-react'
 import { ExpertChat } from './ExpertChat'
 import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
+import { LocationConsentDialog } from './LocationConsentDialog'
 
 // Reverse geocoding con Nominatim/OSM (gratis, sin key). No es un dato del motor:
 // solo le da nombre humano a la ubicación del usuario. Si falla, se muestra
@@ -42,8 +43,15 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   const [resultadoOptimizacionId, setResultadoOptimizacionId] = useState<number | null>(null)
   const [ubicacionLabel, setUbicacionLabel] = useState<string | null>(null)
   const [geolocating, setGeolocating] = useState(false)
+  const [locationConsentOpen, setLocationConsentOpen] = useState(false)
+  const [locationNotice, setLocationNotice] = useState<string | null>(null)
+  const locationNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => () => {
+    if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
+  }, [])
 
   const refreshListas = useCallback(async () => {
     const data = await listsApi.fetchListas('activa')
@@ -109,32 +117,47 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     return r ? r.nivelOptimizacion : null
   }, [winner, optimizacion])
 
-  async function runOptimizar(lat: number, lng: number) {
-    if (!selectedId) return
+  async function runOptimizar(lat: number, lng: number): Promise<boolean> {
+    if (!selectedId) return false
     setError(null)
     try {
       const data = await listsApi.optimizarLista(selectedId, lat, lng)
       setOptimizacion(data.resultados)
       setResultadoOptimizacionId(data.resultadoOptimizacionId)
+      return true
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo optimizar la ruta.')
+      return false
     }
   }
 
   function useGeolocation() {
+    setLocationConsentOpen(true)
+  }
+
+  function confirmUseGeolocation() {
+    setLocationConsentOpen(false)
     if (!('geolocation' in navigator)) {
       setError('Tu navegador no soporta geolocalización.')
       return
     }
     setGeolocating(true)
     setError(null)
+    setLocationNotice(null)
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
-        setUbicacionLabel((await reverseGeocode(lat, lng)) ?? 'Tu ubicación actual')
-        await runOptimizar(lat, lng)
-        setGeolocating(false)
+        const labelPromise = reverseGeocode(lat, lng)
+        void labelPromise.then((label) => setUbicacionLabel(label ?? 'Tu ubicación actual'))
+
+        void runOptimizar(lat, lng).then((success) => {
+          setGeolocating(false)
+          if (!success) return
+          setLocationNotice('Ahora el sistema está usando tu ubicación para calcular la mejor alternativa.')
+          if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
+          locationNoticeTimer.current = setTimeout(() => setLocationNotice(null), 4500)
+        })
       },
       () => {
         setGeolocating(false)
@@ -148,6 +171,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     setSelectedId(id)
     setDetailOpen(false)
     setUbicacionLabel(null)
+    setLocationNotice(null)
   }
 
   return (
@@ -158,6 +182,14 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
       </div>
 
       {error && <div className="live-error"><b>Aviso</b><span>{error}</span></div>}
+
+      {locationConsentOpen && (
+        <LocationConsentDialog
+          description="SmartMarket usará tus coordenadas para calcular distancias y tiempos. También las enviará a OpenStreetMap para mostrar el nombre de la zona. No guardamos las coordenadas en tu cuenta. Tu navegador te pedirá permiso."
+          onCancel={() => setLocationConsentOpen(false)}
+          onConfirm={confirmUseGeolocation}
+        />
+      )}
 
       {listas.length === 0 ? (
         <div className="empty-state">
@@ -202,6 +234,37 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                   <span className="stat-chip"><span>📍</span><span>Ruta <b>{Math.round(rutaMejor.tiempoMinutos)} min</b></span></span>
                 )}
               </div>
+
+              {rutaMejor && (
+                <section className="expert-decision-panel" aria-label="Recomendación del Sistema Experto">
+                  <div className="expert-decision-heading">
+                    <span aria-hidden="true">🧠</span>
+                    <div>
+                      <span className="eyebrow">ANÁLISIS DEL SISTEMA EXPERTO</span>
+                      <h2>Qué piensa el experto de la mejor alternativa</h2>
+                      <p>{rutaMejor.supermercado} · {rutaMejor.sucursal}</p>
+                    </div>
+                  </div>
+                  <p className="expert-decision-context">El optimizador ordena las opciones por costo, distancia y tiempo. El experto explica la conveniencia de cada alternativa con sus reglas.</p>
+                  {rutaMejor.expertRecommendation ? (
+                    <>
+                      <ExpertRecommendationBadge recommendation={rutaMejor.expertRecommendation} />
+                      {rutaMejor.expertRecommendation.chatbotAvailable === false && (
+                        <p className="expert-unavailable-note">El asistente explicativo no está disponible temporalmente; los datos de precio y ruta siguen disponibles.</p>
+                      )}
+                      <ExpertChat
+                        listaId={selectedId!}
+                        resultadoOptimizacionId={resultadoOptimizacionId}
+                        sucursalId={rutaMejor.sucursalId}
+                      />
+                    </>
+                  ) : (
+                    <div className="expert-unavailable-note">
+                      El Sistema Experto no está disponible. La alternativa se ordenó con los datos de costo, distancia y promociones.
+                    </div>
+                  )}
+                </section>
+              )}
 
               <section className="podium-panel">
                 <div className="podium-heading">
@@ -345,6 +408,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                     <MapPin size={16} /> {geolocating ? 'Obteniendo ubicación…' : 'Optimizar según mi ubicación'}
                   </button>
                 )}
+                {locationNotice && <div className="location-status-toast" role="status">📍 {locationNotice}</div>}
               </section>
 
               {rutaMejor && (
@@ -384,27 +448,6 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 </section>
               )}
 
-              {rutaMejor?.expertRecommendation && (
-                <section style={{ marginTop: 18 }}>
-                  <ExpertRecommendationBadge recommendation={rutaMejor.expertRecommendation} />
-                  {rutaMejor.expertRecommendation.chatbotAvailable === false && (
-                    <div style={{ marginTop: 6, fontSize: 11, color: 'var(--muted, #6b7280)', fontStyle: 'italic' }}>
-                      El asistente explicativo no está disponible temporalmente, pero la recomendación principal continúa disponible.
-                    </div>
-                  )}
-                  <ExpertChat
-                    listaId={selectedId!}
-                    resultadoOptimizacionId={resultadoOptimizacionId}
-                    sucursalId={rutaMejor.sucursalId}
-                  />
-                </section>
-              )}
-
-              {!rutaMejor?.expertSystemAvailable && rutaMejor != null && (
-                <div style={{ marginTop: 14, padding: '8px 12px', borderRadius: 8, background: 'var(--surface, #f9fafb)', border: '1px solid var(--border, #e5e7eb)', fontSize: 12, color: 'var(--muted, #6b7280)' }}>
-                  🧠 Sistema Experto no disponible — la recomendación se basa únicamente en costo, distancia y promociones.
-                </div>
-              )}
             </div>
           )}
         </>

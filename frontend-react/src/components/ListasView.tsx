@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import * as listsApi from '../api/lists'
@@ -10,6 +10,7 @@ import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
 import { ExpertChat } from './ExpertChat'
 import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
+import { LocationConsentDialog } from './LocationConsentDialog'
 
 type Tab = 'activa' | 'completada'
 
@@ -42,6 +43,15 @@ export function ListasView({ onListasChange }: Props) {
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [geolocating, setGeolocating] = useState(false)
+  const [locationConsentOpen, setLocationConsentOpen] = useState(false)
+  const [locationNotice, setLocationNotice] = useState<string | null>(null)
+  const [locationError, setLocationError] = useState<string | null>(null)
+  const [locationSource, setLocationSource] = useState<'device' | 'manual' | null>(null)
+  const locationNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
+  }, [])
 
   // promociones de la lista activa (Fase 5)
   const [promociones, setPromociones] = useState<Promotion[]>([])
@@ -233,42 +243,58 @@ export function ListasView({ onListasChange }: Props) {
     const latValue = Number(lat)
     const lngValue = Number(lng)
     if (!latValue || !lngValue) {
-      setError('Necesitas latitud y longitud para optimizar.')
+      setLocationError('Agrega las coordenadas o usa tu ubicación para calcular la mejor alternativa.')
       return
     }
+    setLocationError(null)
     setComparacion(null)
     setOptimizacion(null)
     setResultadoOptimizacionId(null)
     setError(null)
+    setLocationNotice(null)
     try {
       const data = await listsApi.optimizarLista(selectedId, latValue, lngValue)
       setOptimizacion(data.resultados)
       setResultadoOptimizacionId(data.resultadoOptimizacionId)
+      if (locationSource === 'device') {
+        setLocationNotice('Ahora el sistema está usando tu ubicación para calcular la mejor alternativa.')
+        if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
+        locationNoticeTimer.current = setTimeout(() => setLocationNotice(null), 4500)
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo optimizar.')
     }
   }
 
   function useGeolocation() {
+    setLocationConsentOpen(true)
+  }
+
+  function confirmUseGeolocation() {
+    setLocationConsentOpen(false)
     if (!('geolocation' in navigator)) {
-      setError('Tu navegador no soporta geolocalización.')
+      setLocationError('Tu navegador no admite ubicación. Puedes ingresar las coordenadas manualmente.')
       return
     }
     setGeolocating(true)
+    setLocationError(null)
+    setError(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLat(pos.coords.latitude.toFixed(6))
         setLng(pos.coords.longitude.toFixed(6))
+        setLocationSource('device')
         setGeolocating(false)
       },
       () => {
         setGeolocating(false)
-        setError('No pudimos obtener tu ubicación.')
+        setLocationError('No pudimos obtener tu ubicación. Revisa el permiso o ingresa las coordenadas manualmente.')
       },
     )
   }
 
   const isActiveTab = tab === 'activa'
+  const selectedList = listas.find((lista) => lista.id === selectedId)
 
   return (
     <section className="real-basket-panel">
@@ -289,6 +315,14 @@ export function ListasView({ onListasChange }: Props) {
       </div>
 
       {error && <div className="live-error"><b>Aviso</b><span>{error}</span></div>}
+
+      {locationConsentOpen && (
+        <LocationConsentDialog
+          description="SmartMarket usará tus coordenadas para calcular distancias y tiempos de viaje. No las guardamos en tu cuenta. Tu navegador también te pedirá permiso."
+          onCancel={() => setLocationConsentOpen(false)}
+          onConfirm={confirmUseGeolocation}
+        />
+      )}
 
       <form className="auth-form" onSubmit={handleCreate}>
         <div className="category-filters">
@@ -327,15 +361,21 @@ export function ListasView({ onListasChange }: Props) {
       )}
 
       {listas.length > 0 && (
-        <div className="category-filters">
+        <div className="list-select-grid" role="group" aria-label="Seleccionar lista de compras">
           {listas.map((lista) => (
             <button
               key={lista.id}
               type="button"
-              className={selectedId === lista.id ? 'active' : ''}
+              className={`list-select-card${selectedId === lista.id ? ' active' : ''}`}
+              aria-pressed={selectedId === lista.id}
               onClick={() => selectLista(lista.id)}
             >
-              {tab === 'completada' ? '✓ ' : ''}{lista.nombre} · {lista.detallesCount}
+              <span className="list-select-status">{tab === 'completada' ? '✓ Compra completada' : 'Lista activa'}</span>
+              <strong>{lista.nombre}</strong>
+              <span className="list-select-meta">
+                {lista.detallesCount} {lista.detallesCount === 1 ? 'producto' : 'productos'}
+                {lista.presupuesto != null && ` · Presupuesto ${formatMoney(lista.presupuesto)}`}
+              </span>
             </button>
           ))}
         </div>
@@ -343,6 +383,17 @@ export function ListasView({ onListasChange }: Props) {
 
       {selectedId !== null && (
         <>
+          {selectedList && (
+            <div className="selected-list-heading">
+              <div>
+                <span className="eyebrow">{tab === 'completada' ? 'COMPRA DEL HISTORIAL' : 'TU LISTA'}</span>
+                <h2>{selectedList.nombre}</h2>
+              </div>
+              <span className="selected-list-count">
+                {selectedList.detallesCount} {selectedList.detallesCount === 1 ? 'producto' : 'productos'}
+              </span>
+            </div>
+          )}
           <div className="real-basket-layout">
             <div className="real-basket-items">
               {detalles.length === 0 && (
@@ -390,13 +441,34 @@ export function ListasView({ onListasChange }: Props) {
 
               {isActiveTab && (
                 <>
-                  <div className="category-filters">
+                  <div className="category-filters list-primary-actions">
                     <button type="button" className="add-button" onClick={runComparar}>Comparar precios</button>
-                    <button type="button" className="add-button" onClick={runOptimizar}>Optimizar compra</button>
+                    <div className="tooltip-anchor">
+                      <button
+                        type="button"
+                        className="add-button optimize-action"
+                        onClick={runOptimizar}
+                        aria-describedby="optimize-purchase-tooltip"
+                      >
+                        Optimizar compra
+                      </button>
+                      <span id="optimize-purchase-tooltip" role="tooltip" className="action-tooltip">
+                        Compara costo, distancia, tiempo y promociones; muestra la evaluación del Sistema Experto. Usa tu ubicación o coordenadas manuales.
+                      </span>
+                    </div>
                     <button type="button" className="load-more-button" onClick={runCompletar} disabled={busy}>
                       Marcar como completada
                     </button>
                   </div>
+                  {locationError && (
+                    <div className="location-inline-error" role="alert">
+                      <span aria-hidden="true">!</span>
+                      <div>
+                        <b>No se pudo optimizar</b>
+                        <p>{locationError}</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="basket-location-panel">
                     <span>UBICACIÓN OPCIONAL</span>
@@ -405,19 +477,20 @@ export function ListasView({ onListasChange }: Props) {
                       <input
                         type="text"
                         value={lat}
-                        onChange={(e) => setLat(e.target.value)}
+                        onChange={(e) => { setLat(e.target.value); setLocationSource('manual'); setLocationError(null) }}
                         placeholder="Latitud (ej. 13.6989)"
                       />
                       <input
                         type="text"
                         value={lng}
-                        onChange={(e) => setLng(e.target.value)}
+                        onChange={(e) => { setLng(e.target.value); setLocationSource('manual'); setLocationError(null) }}
                         placeholder="Longitud (ej. -89.1914)"
                       />
                       <button type="button" className="add-button" onClick={useGeolocation} disabled={geolocating}>
                         {geolocating ? 'Obteniendo…' : 'Usar mi ubicación'}
                       </button>
                     </div>
+                    {locationNotice && <div className="location-status-toast" role="status">📍 {locationNotice}</div>}
                   </div>
 
                   {(promosLoading || promociones.length > 0 || promosError) && (
@@ -510,10 +583,11 @@ export function ListasView({ onListasChange }: Props) {
               {optimizacion !== null && optimizacion.length > 0 && (
                 <div className="optimizer-panel">
                   <div className="optimizer-head">
-                    <span className="spark-icon">🎯</span>
+                    <span className="spark-icon">🧠</span>
                     <div>
-                      <span>MEJOR ALTERNATIVA (SCORE)</span>
-                      <h2>Menor score = mejor compra</h2>
+                      <span>ANÁLISIS DEL SISTEMA EXPERTO</span>
+                      <h2>Alternativas recomendadas</h2>
+                      <p>El optimizador ordena las opciones; el experto explica sus ventajas y condiciones.</p>
                     </div>
                   </div>
                   {optimizacion.map((r) => (

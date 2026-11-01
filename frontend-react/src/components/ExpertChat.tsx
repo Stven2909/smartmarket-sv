@@ -39,6 +39,7 @@ export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Pro
     if (!texto || loading) return
     setLoading(true)
     setError(null)
+    setRespuesta(null)
     try {
       setRespuesta(await chatLista(listaId, roId, sucursalId, texto))
       setMessage('')
@@ -54,8 +55,9 @@ export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Pro
     void enviar()
   }
 
-  const mostrarSugerencias =
-    respuesta !== null && !respuesta.supported && respuesta.intent !== 'NO_DISPONIBLE'
+  // Las preguntas guía están siempre disponibles para que el usuario pueda
+  // recorrer los 7 temas; se ocultan solo mientras se espera una respuesta.
+  const mostrarSugerencias = !loading
 
   const avatar = (width: number, height: number, extra?: React.CSSProperties) => (
     <img
@@ -73,22 +75,22 @@ export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Pro
 
   return (
     <div className="expert-chat" style={{ marginTop: 10 }}>
-      {respuesta && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+      {(respuesta || loading) && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }} aria-live="polite">
           {avatar(40, 56)}
           <div
             style={{
               flex: 1,
               padding: '8px 12px',
               borderRadius: 8,
-              background: respuesta.supported ? 'var(--surface, #f9fafb)' : 'rgba(0,0,0,.04)',
+              background: respuesta?.supported ? 'var(--surface, #f9fafb)' : 'rgba(0,0,0,.04)',
               border: '1px solid var(--border, #e5e7eb)',
               fontSize: 12,
               lineHeight: 1.45,
               color: 'var(--text, #111827)',
             }}
           >
-            {respuesta.response}
+            {loading ? 'Estoy revisando los datos de esta alternativa…' : respuesta?.response}
           </div>
         </div>
       )}
@@ -128,6 +130,7 @@ export function ExpertChat({ listaId, resultadoOptimizacionId, sucursalId }: Pro
         <form onSubmit={onSubmit} style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
           <input
             type="text"
+            aria-label="Pregunta para Smarty"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Preguntá por qué conviene esta alternativa…"

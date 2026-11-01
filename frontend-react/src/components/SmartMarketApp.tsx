@@ -23,6 +23,18 @@ const PriceHistoryChart = lazy(() =>
 )
 
 type View = 'inicio' | 'buscar' | 'comparar' | 'mis-listas' | 'perfil' | 'categorias' | 'promociones' | 'sucursales'
+const VIEW_KEY = 'smartmarket_view'
+const VIEW_IDS: ReadonlyArray<string> = ['inicio', 'buscar', 'comparar', 'mis-listas', 'perfil', 'categorias', 'promociones', 'sucursales']
+
+function initialView(): View {
+  try {
+    const savedView = window.sessionStorage.getItem(VIEW_KEY)
+    if (savedView && VIEW_IDS.includes(savedView)) return savedView as View
+  } catch {
+    // La app sigue funcionando si el navegador bloquea el almacenamiento de sesión.
+  }
+  return 'inicio'
+}
 
 const NAV: Array<{ id: View; label: string; icon: typeof Home }> = [
   { id: 'inicio', label: 'Inicio', icon: Home },
@@ -40,7 +52,16 @@ const NAV_ACTIVE_PARENT: Partial<Record<View, View>> = {
 
 export function SmartMarketApp() {
   const { user } = useAuth()
-  const [view, setView] = useState<View>('inicio')
+  const [view, setViewState] = useState<View>(initialView)
+
+  function setView(nextView: View) {
+    setViewState(nextView)
+    try {
+      window.sessionStorage.setItem(VIEW_KEY, nextView)
+    } catch {
+      // La navegación no depende de que sessionStorage esté disponible.
+    }
+  }
 
   // La invitación de instalación no aparece en el primer render: solo cuando el
   // usuario ya interactuó con la app (salió de Inicio) o pasaron 30 segundos.

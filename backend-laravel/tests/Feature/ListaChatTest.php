@@ -54,7 +54,7 @@ class ListaChatTest extends TestCase
             }
 
             $data = $request->data();
-            $this->assertSame('¿Por qué conviene esta alternativa?', $data['message']);
+            $this->assertSame('¿Por qué me recomiendas esta alternativa?', $data['message']);
             $this->assertSame('lista-' . $lista->id . '-sucursal-7', $data['facts']['request_id']);
             $this->assertSame('sucursal-7', $data['facts']['alternativa_id']);
             $this->assertSame('lista-' . $lista->id . '-sucursal-7', $data['recommendation']['request_id']);
@@ -168,6 +168,107 @@ class ListaChatTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_distancia_se_normaliza_antes_de_llamar_al_experto(): void
+    {
+        $usuario = $this->crearUsuario('a@test.sv');
+        $lista = $this->crearLista($usuario->id);
+        $ro = $this->crearRun($lista->id, 7, $this->recommendation(), true);
+
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-' . $lista->id . '-sucursal-7',
+                'intent' => 'DISTANCIA',
+                'response' => 'La distancia total es de 2.00 km.',
+                'supported' => true,
+            ], 200),
+        ]);
+
+        $this->actingAs($usuario)->postJson("/api/listas/{$lista->id}/chat", [
+            'message' => '¿Qué tan lejos queda esta tienda?',
+            'resultado_optimizacion_id' => $ro->id,
+            'sucursal_id' => 7,
+        ])->assertOk()->assertJson(['intent' => 'DISTANCIA', 'supported' => true]);
+
+        Http::assertSent(function ($request) {
+            return $request->data()['message'] === '¿Cuál es la distancia?';
+        });
+    }
+
+    public function test_promociones_se_responden_con_los_facts_sin_llamar_al_experto(): void
+    {
+        $usuario = $this->crearUsuario('a@test.sv');
+        $lista = $this->crearLista($usuario->id);
+        $ro = $this->crearRun($lista->id, 7, $this->recommendation(), true, 3.0);
+
+        Http::fake();
+
+        $respuesta = $this->actingAs($usuario)->postJson("/api/listas/{$lista->id}/chat", [
+            'message' => '¿Hay promociones aplicables?',
+            'resultado_optimizacion_id' => $ro->id,
+            'sucursal_id' => 7,
+        ]);
+
+        $respuesta->assertOk()->assertJson([
+            'intent' => 'PROMOCIONES',
+            'supported' => true,
+            'chatbot_available' => true,
+        ]);
+
+        $this->assertStringContainsString('promociones aplicables', $respuesta->json('response'));
+        $this->assertStringContainsString('$3.00', $respuesta->json('response'));
+        $this->assertStringNotContainsString('R07', $respuesta->json('response'));
+
+        // El tema lo resuelve Laravel con los facts persistidos: no hace falta
+        // exponer al experto a una pregunta que hoy responde AYUDA.
+        Http::assertNothingSent();
+    }
+
+    public function test_sin_promociones_la_respuesta_lo_indica_sin_llamar_al_experto(): void
+    {
+        $usuario = $this->crearUsuario('a@test.sv');
+        $lista = $this->crearLista($usuario->id);
+        $ro = $this->crearRun($lista->id, 7, $this->recommendation(), true, 0.0);
+
+        Http::fake();
+
+        $respuesta = $this->actingAs($usuario)->postJson("/api/listas/{$lista->id}/chat", [
+            'message' => '¿Qué promociones puedo usar?',
+            'resultado_optimizacion_id' => $ro->id,
+            'sucursal_id' => 7,
+        ]);
+
+        $respuesta->assertOk()->assertJson(['intent' => 'PROMOCIONES', 'supported' => true]);
+        $this->assertStringContainsString('No se registraron promociones', $respuesta->json('response'));
+
+        Http::assertNothingSent();
+    }
+
+    public function test_pregunta_fuera_de_alcance_se_envia_sin_reescribir(): void
+    {
+        $usuario = $this->crearUsuario('a@test.sv');
+        $lista = $this->crearLista($usuario->id);
+        $ro = $this->crearRun($lista->id, 7, $this->recommendation(), true);
+
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-' . $lista->id . '-sucursal-7',
+                'intent' => 'AYUDA',
+                'response' => 'Solo puedo explicar la alternativa actual.',
+                'supported' => false,
+            ], 200),
+        ]);
+
+        $this->actingAs($usuario)->postJson("/api/listas/{$lista->id}/chat", [
+            'message' => '¿Cuál es el mejor supermercado?',
+            'resultado_optimizacion_id' => $ro->id,
+            'sucursal_id' => 7,
+        ])->assertOk()->assertJson(['intent' => 'AYUDA', 'supported' => false]);
+
+        Http::assertSent(function ($request) {
+            return $request->data()['message'] === '¿Cuál es el mejor supermercado?';
+        });
+    }
+
     private function recommendation(): array
     {
         return [
@@ -185,7 +286,7 @@ class ListaChatTest extends TestCase
         ];
     }
 
-    private function crearRun(int $listaId, int $sucursalId, ?array $recommendation, bool $available): ResultadoOptimizacion
+    private function crearRun(int $listaId, int $sucursalId, ?array $recommendation, bool $available, float $beneficioPromociones = 3.0): ResultadoOptimizacion
     {
         $resultado = [
             'sucursal_id' => $sucursalId,
@@ -195,7 +296,7 @@ class ListaChatTest extends TestCase
             'costo_total' => 40.0,
             'distancia_km' => 2.0,
             'tiempo_minutos' => 10.0,
-            'beneficio_promociones' => 3.0,
+            'beneficio_promociones' => $beneficioPromociones,
             'productos_esenciales_disponibles' => 2,
             'productos_esenciales_totales' => 2,
             'productos_opcionales_disponibles' => 1,
