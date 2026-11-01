@@ -23,6 +23,8 @@ return [
 
     'allowed_origins' => [
         'http://localhost:5173', // Vite dev (frontend-react)
+        'http://frontend-react.test:8080', // Laragon .test (frontend build)
+        'http://127.0.0.1:8080', // Laragon .test sin resolucion DNS
     ],
 
     'allowed_origins_patterns' => [],
