@@ -21,7 +21,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-09 | Rechazar hechos inconsistentes y valores inválidos | Alta | Implementada |
 | HU-10 | Proteger rutas y comprobar la integración HTTP | Alta | Implementada |
 | HU-11 | Detectar automáticamente contradicciones al revisar reglas | Media | Implementada |
-| HU-12 | Exportar un informe completo de decisiones y pruebas | Media | Propuesta |
+| HU-12 | Exportar un informe completo de decisiones y pruebas | Media | Implementada |
 | HU-13 | Comparar resultados históricos de dos versiones de reglas | Media | Propuesta |
 
 ## Historias y criterios de aceptación
@@ -161,9 +161,23 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Evidencia:** `tests/test_rule_auditor.py`, [metodología de auditoría](auditoria-consistencia-reglas.md).
 
-## Historias propuestas para otras iteraciones
+## HU-12 — Informe académico de evidencias descargable
 
-**HU-12 — Informe académico descargable.** Como expositor, quiero exportar resultados, matriz, parámetros, versiones y pruebas ejecutadas para presentar evidencias. **Aceptación:** el documento identifica escenarios sintéticos, incluye fecha/versiones y no declara precisión comercial inexistente.
+**Como** expositor o investigador, **quiero** exportar un informe completo en PDF **para** conservar y presentar las decisiones, trazas y comprobaciones técnicas de una misma selección de escenarios.
+
+**Criterios de aceptación:**
+- El endpoint `POST /api/v1/evidence-report` acepta de 2 a 10 escenarios con IDs únicos y presupuesto compartido.
+- Genera un PDF paginado con fecha UTC, versiones, cobertura, ranking, trazas R01–R08, pesos, umbrales, auditoría y sensibilidad por alternativa.
+- El reporte declara si los casos fueron etiquetados como sintéticos o su procedencia no está verificada.
+- La respuesta es `application/pdf`, con descarga HTTP y `Cache-Control: no-store`; no se persiste en servidor.
+- La ruta requiere `X-API-Key` cuando la protección de la API está configurada.
+- Streamlit ofrece generar y descargar el PDF desde la pestaña Base de conocimiento.
+- La nueva ruta no modifica `/recommend`, sus 14 hechos de entrada, 16 campos de salida ni las reglas vigentes.
+- Las pruebas abren el PDF, extraen texto, inspeccionan las secciones y verifican errores y seguridad.
+
+**Evidencia:** `tests/test_evidence_report.py` y [manual del informe](informe-academico.md).
+
+## Historias propuestas para otras iteraciones
 
 **HU-13 — Comparación de versiones.** Como mantenedor, quiero ejecutar los mismos escenarios frente a dos bases de reglas versionadas para detectar regresiones. **Aceptación:** compara dictámenes y reglas ganadoras; muestra diferencias y conserva los contratos públicos; requiere aportar ambas versiones.
 

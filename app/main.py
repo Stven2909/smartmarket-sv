@@ -7,6 +7,7 @@ from fastapi.security import APIKeyHeader
 from app.api.chatbot_routes import router as chatbot_router
 from app.api.comparison_routes import router as comparison_router
 from app.api.diagnosis_routes import router as diagnosis_router
+from app.api.evidence_report_routes import router as evidence_report_router
 from app.api.health_routes import router as health_router
 from app.api.knowledge_routes import router as knowledge_router
 from app.api.recommendation_routes import router as recommendation_router
@@ -45,6 +46,7 @@ app.include_router(recommendation_router, dependencies=[Security(require_api_key
 app.include_router(chatbot_router, dependencies=[Security(require_api_key)])
 app.include_router(comparison_router, dependencies=[Security(require_api_key)])
 app.include_router(diagnosis_router, dependencies=[Security(require_api_key)])
+app.include_router(evidence_report_router, dependencies=[Security(require_api_key)])
 app.include_router(knowledge_router, dependencies=[Security(require_api_key)])
 app.include_router(rule_audit_router, dependencies=[Security(require_api_key)])
 app.include_router(sensitivity_router, dependencies=[Security(require_api_key)])
