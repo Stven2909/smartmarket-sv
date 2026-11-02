@@ -129,6 +129,7 @@ def diagnose(request: DiagnosisRequest) -> DiagnosisResponse:
         advertencias=[
             "Los requisitos se derivan de reglas actuales, no de predicciones ni precios reales.",
             "Las condiciones son lógicas y no constituyen una optimización automática.",
+            "El orden refleja requisitos pendientes, no costos ni viabilidad real.",
             "No se modifican los hechos enviados por el backend.",
         ],
     )
