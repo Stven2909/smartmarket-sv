@@ -669,8 +669,8 @@ def render_knowledge_tab(base_url: str) -> None:
         use_container_width=True,
     )
     st.caption(
-        "Los umbrales y pesos son supuestos configurados del prototipo. "
-        "Su elección requiere justificación y validación académica externa."
+        "Los umbrales y pesos son parámetros del prototipo. "
+        "Su coherencia se evalúa con casos de prueba y análisis de sensibilidad."
     )
 
 
