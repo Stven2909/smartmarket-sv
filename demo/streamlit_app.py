@@ -633,6 +633,7 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         uploaded = st.file_uploader(
             "Cargar alternativas (CSV o JSON, hasta 2 MB y 750 filas)",
             type=["csv", "json"],
+            max_upload_size=2,
             key="comparison_upload",
         )
         if uploaded is None:
