@@ -76,6 +76,25 @@ def test_separate_deployment_dependencies_are_minimal():
     assert "pip install -r requirements-dev.txt ruff" in workflow
 
 
+def test_streamlit_makes_no_background_requests_before_user_interaction(monkeypatch):
+    """Abrir la demo no debe despertar Render por una consulta automática."""
+
+    import requests
+
+    calls = []
+
+    def accidental_call(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("No debe solicitar la API al iniciar Streamlit.")
+
+    monkeypatch.setattr(requests, "get", accidental_call)
+    monkeypatch.setattr(requests, "post", accidental_call)
+    app = AppTest.from_file(str(ROOT / "demo" / "streamlit_app.py"))
+    app.run(timeout=20)
+    assert not app.exception
+    assert calls == []
+
+
 def test_inactive_tabs_do_not_construct_hidden_controls():
     script = ROOT / "demo" / "streamlit_app.py"
     app = AppTest.from_file(str(script)).run(timeout=20)
