@@ -24,6 +24,8 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-12 | Exportar un informe completo de decisiones y pruebas | Media | Implementada |
 | HU-13 | Detectar regresiones entre dos snapshots de reglas | Alta | Implementada |
 | HU-14 | Ejecutar regresiones automáticamente en PR que cambian reglas | Alta | Implementada |
+| HU-15 | Importar alternativas CSV/JSON con procedencia | Alta | Implementada |
+| HU-16 | Ejecutar propiedades e invariantes del motor con Hypothesis | Alta | Implementada |
 
 ## Historias y criterios de aceptación
 
@@ -209,6 +211,34 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 - Documenta que exigir CI aprobado para fusionar es una configuración independiente de protección de la rama principal.
 
 **Evidencia:** `tests/test_rule_change_gate.py`, `scripts/check_rule_regression.py`, `.github/workflows/ci.yml` y [guía de control](ci-regresion-reglas.md).
+
+## HU-15 — Importación de alternativas manuales
+
+**Como** expositor, **quiero** cargar cientos de alternativas con procedencia explícita **para** comparar datos preparados por nuestro equipo sin añadir tareas al backend Laravel.
+
+**Criterios de aceptación:**
+- La pestaña Comparador permite seleccionar CSV/JSON con los 14 hechos y metadatos opcionales de nombre, procedencia, fecha, URL y tienda.
+- Valida UTF-8, máximo de 2 MB y 750 filas, enteros y conteos coherentes, ID único, números finitos y campos obligatorios.
+- Los metadatos no forman parte del JSON enviado a `/api/v1/compare`.
+- Se pueden seleccionar de 2 a 10 casos del mismo presupuesto.
+- El archivo completo se rechaza ante filas corruptas; no realiza llamadas HTTP al cargarlo ni afirma autenticidad de datos `manual_real`.
+- Incluye [300 alternativas sintéticas y 61 observaciones de precios públicos](importacion-datos-y-propiedades.md), explícitamente diferenciadas.
+
+**Pruebas:** `tests/test_manual_dataset.py` y `tests/test_expo_datasets.py`.
+
+## HU-16 — Pruebas basadas en propiedades
+
+**Como** mantenedor, **quiero** generar muchas alternativas consistentes y comprobar propiedades del motor **para** detectar fallos que los ejemplos fijos podrían pasar por alto.
+
+**Criterios de aceptación:**
+- Hypothesis genera alternativas válidas y comprueba que las mismas entradas dan las mismas explicaciones y reglas ganadoras.
+- Las regiones booleanas de presupuesto, ahorro, distancia, tiempo y disponibilidad son mutuamente excluyentes.
+- Una regla crítica activada jamás permite una conclusión favorable.
+- Reordenar las reglas no altera el dictamen ni la ganadora; aumentar distancia no mejora el índice, y aumentar ahorro no lo empeora.
+- La suite verifica los umbrales R01/R02 y el round-trip JSON.
+- Hypothesis solo se instala en el entorno de desarrollo/CI, no en Render ni Streamlit.
+
+**Pruebas:** `tests/test_property_invariants.py`.
 
 ## Historias propuestas para otras iteraciones
 
