@@ -32,6 +32,15 @@ EXCLUSIVE_PARTITIONS = (
 )
 
 # Relaciones garantizadas por validación de conteos y por derive_facts.
+NUMERIC_FACTS = frozenset(
+    {
+        "diferencia_presupuesto",
+        "porcentaje_exceso_presupuesto",
+        "porcentaje_productos_disponibles",
+        "porcentaje_esenciales_disponibles",
+    }
+)
+
 IMPLICATIONS = (
     ("todos_productos_disponibles", "todos_esenciales_disponibles"),
     ("faltan_esenciales", "faltan_productos"),
@@ -120,6 +129,17 @@ def audit_rules(rules: list[ProductionRule] | None = None) -> RuleAuditResponse:
 
     findings: list[RuleFinding] = []
     for rule in checked:
+        for name in sorted(set(rule.conditions) & NUMERIC_FACTS):
+            findings.append(
+                RuleFinding(
+                    tipo="HECHO_NO_BOOLEANO",
+                    reglas=[rule.id],
+                    detalle=(
+                        f"El hecho {name} es numérico y no puede compararse con "
+                        "true/false mediante este motor de condiciones."
+                    ),
+                )
+            )
         for description in _impossible_conditions(rule):
             findings.append(
                 RuleFinding(
