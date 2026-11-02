@@ -147,7 +147,8 @@ def test_endpoint_returns_pdf_headers_and_preserves_original_contract():
     assert "R01" in content
     spec = call_api("GET", "/openapi.json").json()
     assert "/api/v1/evidence-report" in spec["paths"]
-    assert "application/pdf" in spec["paths"]["/api/v1/evidence-report"]["post"]["responses"]["200"]["content"]
+    media_types = spec["paths"]["/api/v1/evidence-report"]["post"]["responses"]["200"]["content"]
+    assert "application/pdf" in media_types
     models = spec["components"]["schemas"]
     assert len(models["RecommendationRequest"]["properties"]) == 14
     assert len(models["RecommendationResponse"]["properties"]) == 16
