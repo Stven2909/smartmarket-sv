@@ -7,7 +7,6 @@ from app.expert_system.inference_engine import run_inference
 from app.schemas.recommendation import RecommendationRequest
 from app.services.recommendation_service import recommend
 
-
 BASE = {
     "request_id": "audit-001",
     "alternativa_id": "sucursal-1",
