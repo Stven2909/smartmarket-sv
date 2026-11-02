@@ -44,6 +44,8 @@ Content-Type: application/json
 
 Todos los campos son obligatorios. Las unidades y restricciones son:
 
+Los esenciales disponibles no pueden superar el total disponible, los esenciales totales no pueden superar el total global y los opcionales disponibles no pueden superar los opcionales totales. Con cero esenciales, su cobertura es por definición 100 %, pero no implica disponibilidad completa de opcionales.
+
 | Campo | Tipo | Unidad o rango |
 |---|---|---|
 | `request_id` | string | No vacío |
@@ -57,7 +59,7 @@ Todos los campos son obligatorios. Las unidades y restricciones son:
 | `productos_disponibles` | integer | `>= 0`, no mayor que el total |
 | `productos_totales` | integer | `> 0` |
 | `productos_esenciales_disponibles` | integer | `>= 0`, no mayor que el total esencial |
-| `productos_esenciales_totales` | integer | `> 0` |
+| `productos_esenciales_totales` | integer | `>= 0`; admite listas sin esenciales |
 | `numero_supermercados` | integer | `>= 1`; actualmente `1` |
 | `promociones_aplicables` | boolean | `true` o `false` |
 
@@ -130,7 +132,7 @@ La respuesta combina la decisión del motor con información auxiliar:
 {
   "request_id": "demo-001",
   "nivel_recomendacion": "EXCELENTE",
-  "accion_sugerida": "Comprar todo en esta alternativa.",
+  "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
   "explicacion": "Cumple el presupuesto y las condiciones principales.",
   "reglas_activadas": ["R06", "R07"],
   "prioridad_aplicada": "CONVENIENCIA",
@@ -237,7 +239,7 @@ recomienda enviar también `request_id` para conservar la trazabilidad.
   "recommendation": {
     "request_id": "demo-001",
     "nivel_recomendacion": "EXCELENTE",
-    "accion_sugerida": "Comprar todo en esta alternativa.",
+    "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
     "explicacion": "Cumple el presupuesto y las condiciones principales.",
     "reglas_activadas": ["R06", "R07"],
     "prioridad_aplicada": "CONVENIENCIA",
