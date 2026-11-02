@@ -6,7 +6,14 @@ from typing import Any
 import requests
 import streamlit as st
 
-from demo.manual_dataset import import_dataset
+# Streamlit Cloud ejecuta este archivo desde demo/ y puede no incluir
+# la raíz del repositorio en sys.path. Los tests lo importan como paquete.
+try:
+    from demo.manual_dataset import import_dataset
+except ModuleNotFoundError as exc:
+    if exc.name != "demo":
+        raise
+    from manual_dataset import import_dataset
 
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
 # Espera pasiva ante un posible arranque en frío; no realiza peticiones periódicas.
