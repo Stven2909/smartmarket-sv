@@ -16,6 +16,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 ## Funcionalidades
 
 - **Evaluación de alternativas:** clasifica una compra como `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
+- **Despliegue ligero:** Streamlit instala solo las dependencias de la interfaz y calcula únicamente la pestaña activa; Render difiere el motor PDF y cachea las reglas estáticas y la auditoría bajo demanda.
 - **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
 - **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
@@ -267,13 +268,14 @@ tests/                  # Pruebas automatizadas
 ## Pruebas y calidad de código
 
 ```bash
+python -m pip install -r requirements-dev.txt ruff
 python -m pytest -q
 ruff check app demo scripts tests
 ```
 
 La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, comparación de versiones y detección de regresiones, generación y lectura de informes PDF, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
 
-[Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta lint, pruebas y, en solicitudes de cambio que modifican `data/rules.json`, el [control automático de regresiones](docs/ci-regresion-reglas.md). Para exigir que un PR con CI fallido no pueda fusionarse, se debe configurar la protección de rama en GitHub.
+[Guía de optimización y reposo](docs/optimizacion-reposo.md). [Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta lint, pruebas y, en solicitudes de cambio que modifican `data/rules.json`, el [control automático de regresiones](docs/ci-regresion-reglas.md). Para exigir que un PR con CI fallido no pueda fusionarse, se debe configurar la protección de rama en GitHub.
 
 ## Alcance
 
