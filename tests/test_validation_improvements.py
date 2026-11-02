@@ -1,4 +1,5 @@
 """Regresiones de validación y coherencia semántica de SmartMarket SV."""
+
 import pytest
 from pydantic import ValidationError
 
