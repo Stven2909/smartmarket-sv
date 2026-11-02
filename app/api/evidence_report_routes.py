@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Response
 
 from app.schemas.evidence_report import EvidenceReportRequest
-from app.services.evidence_report_service import generate_evidence_pdf
 
 router = APIRouter(prefix="/api/v1", tags=["evidence"])
 
@@ -20,6 +19,9 @@ router = APIRouter(prefix="/api/v1", tags=["evidence"])
     },
 )
 def create_evidence_report(request: EvidenceReportRequest) -> Response:
+    # ReportLab se importa solo cuando alguien genera un PDF.
+    from app.services.evidence_report_service import generate_evidence_pdf
+
     pdf = generate_evidence_pdf(request)
     return Response(
         content=pdf,
