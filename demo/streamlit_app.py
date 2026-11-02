@@ -6,6 +6,8 @@ from typing import Any
 import requests
 import streamlit as st
 
+from demo.manual_dataset import import_dataset
+
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
 # Espera pasiva ante un posible arranque en frío; no realiza peticiones periódicas.
 REQUEST_TIMEOUT_SECONDS = 90
@@ -614,12 +616,69 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         "Selecciona al menos dos escenarios. Python ejecutará el mismo motor experto "
         "en cada uno y explicará el orden de preferencia."
     )
-    by_name = {scenario["name"]: scenario for scenario in scenarios}
+    origin = st.radio(
+        "Origen de las alternativas",
+        ["Escenarios incluidos", "Archivo CSV/JSON"],
+        horizontal=True,
+        key="comparison_source",
+    )
+    if origin == "Archivo CSV/JSON":
+        uploaded = st.file_uploader(
+            "Cargar alternativas (CSV o JSON, hasta 2 MB y 750 filas)",
+            type=["csv", "json"],
+            key="comparison_upload",
+        )
+        if uploaded is None:
+            st.info("Selecciona un CSV o JSON con los 14 hechos y su procedencia.")
+            return
+        imported = import_dataset(uploaded.getvalue(), uploaded.name)
+        if imported.errors:
+            st.error(
+                f"No se importó el archivo. Revisa sus {len(imported.errors)} "
+                "observaciones antes de usarlo."
+            )
+            for issue in imported.errors:
+                st.write(issue)
+            return
+        scenarios = imported.scenarios
+        kinds = {}
+        for item in scenarios:
+            provenance = item["metadata"]["procedencia"]
+            kinds[provenance] = kinds.get(provenance, 0) + 1
+        st.success(f"Archivo validado: {len(scenarios)} alternativas.")
+        st.caption(
+            "Procedencia declarada: "
+            + ", ".join(f"{kind} ({count})" for kind, count in sorted(kinds.items()))
+        )
+        for warning in imported.warnings:
+            st.warning(warning)
+        with st.expander("Revisar alternativas y fuentes"):
+            st.dataframe(
+                [
+                    {
+                        "Nombre": item["name"],
+                        "ID": item["facts"]["alternativa_id"],
+                        "Costo": item["facts"]["costo_total"],
+                        "Presupuesto": item["facts"]["presupuesto"],
+                        "Procedencia": item["metadata"]["procedencia"],
+                        "Fuente": item["metadata"]["fuente_url"],
+                    }
+                    for item in scenarios
+                ],
+                hide_index=True,
+                use_container_width=True,
+            )
+    # Identificar por ID evita colisiones entre nombres repetidos de tiendas.
+    by_name = {
+        f"{item['name']} · {item['facts']['alternativa_id']}": item
+        for item in scenarios
+    }
     names = list(by_name)
     selected = st.multiselect(
         "Alternativas para comparar",
         names,
         default=names[:3],
+        max_selections=10,
         key="comparison_selection",
     )
     include_custom = False
