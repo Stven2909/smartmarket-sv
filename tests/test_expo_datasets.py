@@ -81,3 +81,18 @@ def test_synthetic_cost_notes_are_explicit_and_not_misleading():
     assert all("ESCENARIO SINTETICO" in row["notas"] for row in data)
     assert all("no observados" in row["notas"] for row in data)
     assert all("simulada" in row["tienda"].lower() for row in data)
+
+
+def test_selected_public_prices_are_matched_to_the_correct_product():
+    with CATALOG.open("r", encoding="utf-8", newline="") as file:
+        catalog = {row["producto_publicado"]: row for row in csv.DictReader(file)}
+    reference_prices = {
+        "2 Pack Arroz Blanco Selectos 454 g": 1.10,
+        "2 Pack Arroz Precocido Selectos 454 g": 1.15,
+        "2 Pack Frijol Seda Omoa 1816 g": 11.30,
+        "Arroz Salvaje Nomen 250 g": 13.95,
+        "Detergente Liquido Rendidor 2 Litros": 4.30,
+        "Huevo Mediano Marron Fresco 30 unidades": 5.65,
+    }
+    for product, price in reference_prices.items():
+        assert float(catalog[product]["precio_mostrado_usd"]) == price
