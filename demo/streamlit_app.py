@@ -421,6 +421,13 @@ def render_diagnosis_panel(base_url: str, facts: dict[str, Any] | None) -> None:
                     st.write(f"**{missing['hecho']}:** {missing['orientacion']}")
     for notice in report.get("advertencias", []):
         st.caption(notice)
+    st.download_button(
+        "Descargar diagnóstico JSON",
+        data=json.dumps(report, ensure_ascii=False, indent=2),
+        file_name="smartmarket-diagnostico.json",
+        mime="application/json",
+        key="download_diagnosis",
+    )
 
 
 def render_chatbot(facts: dict[str, Any] | None, recommendation: dict[str, Any] | None) -> None:
