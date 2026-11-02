@@ -26,6 +26,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Diagnóstico experto:** identifica riesgos críticos y condiciones pendientes de las reglas favorables, sin modificar los hechos recibidos.
 - **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 2430 escenarios sintéticos.
 - **Comparador de versiones (HU-13):** identifica cambios de dictamen, ganador, activaciones y explicación entre dos bases de reglas sin modificar la versión publicada.
+- **Control de regresiones en CI (HU-14):** revisa propuestas de cambio en `data/rules.json` sobre 2439 casos sintéticos y falla cuando detecta pérdidas de protección crítica o nuevas anomalías estructurales.
 - **Informe académico PDF (HU-12):** integra ranking, trazas de las ocho reglas, sensibilidad, versiones y auditoría en un documento descargable.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
@@ -267,12 +268,12 @@ tests/                  # Pruebas automatizadas
 
 ```bash
 python -m pytest -q
-ruff check app demo tests
+ruff check app demo scripts tests
 ```
 
 La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, comparación de versiones y detección de regresiones, generación y lectura de informes PDF, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
 
-[Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta las verificaciones de lint y pruebas.
+[Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta lint, pruebas y, en solicitudes de cambio que modifican `data/rules.json`, el [control automático de regresiones](docs/ci-regresion-reglas.md). Para exigir que un PR con CI fallido no pueda fusionarse, se debe configurar la protección de rama en GitHub.
 
 ## Alcance
 

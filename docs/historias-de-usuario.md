@@ -23,6 +23,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-11 | Detectar automáticamente contradicciones al revisar reglas | Media | Implementada |
 | HU-12 | Exportar un informe completo de decisiones y pruebas | Media | Implementada |
 | HU-13 | Detectar regresiones entre dos snapshots de reglas | Alta | Implementada |
+| HU-14 | Ejecutar regresiones automáticamente en PR que cambian reglas | Alta | Implementada |
 
 ## Historias y criterios de aceptación
 
@@ -193,9 +194,25 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Evidencia:** `tests/test_rule_regression.py` y [guía técnica](comparador-versiones-reglas.md).
 
+## HU-14 — Puerta de regresión automática de reglas
+
+**Como** mantenedor, **quiero** comprobar automáticamente propuestas de cambios a `data/rules.json` **para** detectar fallos críticos antes de aceptar versiones nuevas.
+
+**Criterios de aceptación:**
+- El workflow CI ejecuta la comparación automáticamente en pull requests si cambia `data/rules.json`.
+- Compara el archivo real del commit base del PR contra la propuesta utilizando los nueve casos de demostración y 2430 escenarios sintéticos representativos.
+- Marca el job de CI como fallido cuando una compra antes rechazada por R01–R05 pasa a favorable o cuando se pierde la activación de una regla crítica.
+- Rechaza anomalías estructurales nuevas, JSON inválido y snapshots inconsistentes.
+- Permite cambios no críticos e informa diferencias sin bloquearlos injustificadamente.
+- Publica métricas y ejemplos en GitHub Actions Job Summary.
+- No escribe `rules.json`, no publica reglas ni modifica los contratos HTTP existentes.
+- Documenta que exigir CI aprobado para fusionar es una configuración independiente de protección de la rama principal.
+
+**Evidencia:** `tests/test_rule_change_gate.py`, `scripts/check_rule_regression.py`, `.github/workflows/ci.yml` y [guía de control](ci-regresion-reglas.md).
+
 ## Historias propuestas para otras iteraciones
 
-**Pendientes posibles:** ampliar en el futuro los escenarios de regresión con más combinaciones de hechos y revisar automáticamente cambios propuestos en PR, sin alterar la integración existente.
+**Pendientes posibles:** añadir nuevas clases de entrada cuando se introduzcan clasificadores, umbrales o hechos derivados distintos.
 
 ### Definición de terminado
 
