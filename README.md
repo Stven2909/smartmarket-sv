@@ -268,7 +268,7 @@ tests/                  # Pruebas automatizadas
 
 ```bash
 python -m pytest -q
-ruff check app demo tests
+ruff check app demo scripts tests
 ```
 
 La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, comparación de versiones y detección de regresiones, generación y lectura de informes PDF, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
