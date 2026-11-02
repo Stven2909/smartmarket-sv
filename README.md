@@ -1,215 +1,256 @@
-# SmartMarket SV — Sistema Experto
+# SmartMarket SV · Sistema Experto
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-Demo-FF4B4B?logo=streamlit&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-Interfaz-FF4B4B?logo=streamlit&logoColor=white)
 ![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)
-![CI](https://github.com/Stven2909/smartmarket-sv/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/badge/licencia-MIT-green)
-![Deploy](https://img.shields.io/badge/demo-Streamlit%20Cloud-FF4B4B?logo=streamlit&logoColor=white)
+[![CI](https://github.com/HenryBo06/Sistema-experto-fork/actions/workflows/ci.yml/badge.svg)](https://github.com/HenryBo06/Sistema-experto-fork/actions/workflows/ci.yml)
+[![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-green)](LICENSE)
 
-Sistema Experto determinista que recomienda la mejor alternativa de compra de supermercado según **presupuesto, ahorro, disponibilidad, distancia, tiempo de traslado y cantidad de tiendas**, explicando cada recomendación de forma trazable.
+**SmartMarket SV** es un sistema experto basado en reglas de producción para evaluar y comparar alternativas de compra en supermercados. Analiza presupuesto, ahorro, disponibilidad de productos, distancia, tiempo estimado, promociones y cantidad de establecimientos.
 
-> Proyecto académico para las materias de **Emprendedurismo** y **Sistemas Expertos** — parte del ecosistema [SmartMarket SV](https://github.com/Stven2909/smartmarket-sv).
+Cada recomendación incluye su conclusión, una acción sugerida y la explicación de las reglas utilizadas. El motor es **determinista y explicable**: no utiliza aprendizaje automático ni modelos generativos para decidir.
 
-## 🚀 Demo en vivo
+**[Abrir demostración en Streamlit](https://sistema-experto-fork.streamlit.app)**
 
-La interfaz está desplegada en Streamlit Community Cloud y disponible públicamente:
+## Funcionalidades
 
-**[sistema-experto-fork.streamlit.app](https://sistema-experto-fork.streamlit.app)**
-
----
-
-## Laboratorio explicable y comparación (fase 2)
-
-La versión de desarrollo incorpora tres pantallas en Streamlit: **Laboratorio**, **Comparador** y **Base de conocimiento**. Permiten seguir las ocho reglas, inspeccionar la contribución de cada peso y comparar de 2 a 10 alternativas por nivel experto e índice auxiliar.
-
-**Endpoints opcionales:** `POST /api/v1/compare` y `GET /api/v1/knowledge`. Los endpoints `/api/v1/recommend` y `/api/v1/chat` y su contrato previo no cambian.
-
-La demostración y las pruebas se ejecutan enteramente en Python, **sin instalar Laravel, React ni una base de datos**. La nueva interfaz se mostrará en Streamlit Cloud solo cuando se despliegue esta versión.
-
-[Guía de exposición y de puesta en marcha](docs/demo-experto-fase2.md).
-
-## ¿Qué es?
-
-Un motor de inferencia clásico basado en **reglas de producción**. No es Machine Learning: no entrena modelos ni genera salidas probabilísticas. Cada conclusión se construye con hechos, hechos derivados y reglas priorizadas, por lo que **la misma entrada siempre produce la misma salida y la misma explicación**.
-
-```text
-Entrada (alternativa de compra)
-        │
-        ▼
-┌─────────────────────┐
-│  Hechos base        │  presupuesto, ahorro, distancia, tiempo…
-│  Hechos derivados   │  dentro_presupuesto, ahorro_alto, distancia_cercana…
-│  Reglas R01–R08     │  condiciones + prioridad + acción
-└─────────────────────┘
-        │
-        ▼
-Resolución de conflictos ──► Nivel + Acción + Explicación + Trazabilidad
-```
-
-## Cómo funciona
-
-1. **Clasificación de hechos**: los valores numéricos se convierten en categorías (ahorro alto, distancia lejana, tiempo medio, etc.) mediante umbrales centralizados y versionados.
-2. **Evaluación de producción en una pasada**: el motor evalúa las reglas contra los hechos derivados. No genera hechos nuevos a partir de las conclusiones de otras reglas; por ello no es un encadenamiento iterativo.
-3. **Resolución de conflictos**: cuando varias reglas aplican, gana la de mayor prioridad; en empate decide el ID de regla. Determinista siempre.
-4. **Explicación trazable**: para cada regla se conserva qué condiciones cumplió, cuáles no y por qué se activó o rechazó.
-5. **Índice de conveniencia** *(capa complementaria)*: un puntaje ponderado de 0 a 100 (ahorro, disponibilidad, distancia, tiempo y promociones) que enriquece la respuesta sin alterar jamás una conclusión crítica de las reglas R01–R05.
-
-## Tecnologías
-
-| Capa | Tecnología | Rol |
-|---|---|---|
-| Motor | Python 3.12+ | Lógica puro, sin dependencias externas |
-| Conocimiento | JSON | Base de reglas y escenarios versionados |
-| API | FastAPI + Pydantic v2 | Contrato validado y documentación automática |
-| Servidor | Uvicorn | Servidor ASGI |
-| Interfaz | Streamlit | Demo interactiva editable |
-| Pruebas | Pytest | Cobertura de reglas, inferencia, API y chatbot |
-| Calidad | Ruff + GitHub Actions | Lint y tests automáticos en cada push |
-
-## Características
-
-- **Recomendación explicada**: nivel (`EXCELENTE` … `NO_RECOMENDABLE`), acción sugerida y justificación en lenguaje natural.
-- **Chatbot determinista**: responde intenciones sobre la recomendación mediante plantillas, sin IA generativa.
-- **Consultas de trazabilidad**: explica el índice de conveniencia, la regla ganadora y las reglas perdedoras usando la respuesta real de `/recommend`.
-- **Base de conocimiento declarativa**: las reglas viven en `data/rules.json`, no en código — editarlas no requiere programar.
-- **Escenarios de prueba editables**: compra ideal, presupuesto excedido, productos faltantes, compra fragmentada, promociones y más.
-- **Respuestas repetibles**: ideal para evaluación académica y pruebas automatizadas.
+- **Evaluación de alternativas:** clasifica una compra como `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
+- **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
+- **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
+- **Trazabilidad:** conserva los hechos derivados y la evaluación de cada condición.
+- **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
+- **Comparación de alternativas:** ordena de 2 a 10 opciones y explica sus posiciones.
+- **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
+- **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
+- **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
 
 ## Arquitectura
 
 ```text
-Streamlit ──HTTP──► FastAPI ──► Motor de inferencia
-                        │
-                        ├── Base de conocimiento (data/rules.json)
-                        └── Chatbot determinista
+                    ┌───────────────────────────┐
+                    │   Interfaz Streamlit      │
+                    │  Laboratorio / Comparador │
+                    └─────────────┬─────────────┘
+                                  │ HTTP / JSON
+                    ┌─────────────▼─────────────┐
+                    │          FastAPI          │
+                    │  Validación con Pydantic  │
+                    └─────────────┬─────────────┘
+                                  │
+             ┌────────────────────┼─────────────────────┐
+             │                    │                     │
+    ┌────────▼────────┐  ┌────────▼────────┐  ┌─────────▼────────┐
+    │ Motor experto   │  │ Comparador      │  │ Chatbot          │
+    │ R01–R08         │  │ determinista    │  │ explicativo      │
+    └────────┬────────┘  └─────────────────┘  └──────────────────┘
+             │
+    ┌────────▼──────────────────────────────────────┐
+    │ Base de conocimiento JSON · Hechos derivados  │
+    │ Índice ponderado · Traza de inferencia         │
+    └───────────────────────────────────────────────┘
 ```
 
-La interfaz consume todo por HTTP; toda la lógica de inferencia vive en el servicio. La vista de parámetros también consulta la API por HTTP.
+### Proceso de inferencia
 
-## Responsabilidades de integración
+1. **Validación:** se comprueban tipos, valores y consistencia de los conteos de productos.
+2. **Derivación de hechos:** se calculan indicadores como `dentro_presupuesto`, `ahorro_alto` y `distancia_cercana`.
+3. **Evaluación de reglas:** cada regla se comprueba mediante condiciones unidas por `AND`.
+4. **Resolución de conflictos:** entre las reglas activadas gana la de menor número de prioridad; los empates se resuelven por ID.
+5. **Explicación:** se genera una conclusión junto con la regla ganadora, las reglas restantes y la traza de condiciones.
+6. **Índice auxiliar:** se calcula una puntuación ponderada que complementa, pero no reemplaza, la decisión experta.
 
-Python valida los hechos, ejecuta las reglas, calcula hechos derivados e
-índice, y responde `/api/v1/recommend` y `/api/v1/chat`. Laravel calcula los
-datos de negocio, construye el payload oficial, omite llamadas con datos
-obligatorios nulos, aplica timeout/retry y ejecuta el fallback. React consume
-únicamente Laravel: muestra la recomendación amigable, conserva el fallback y
-envía las preguntas al backend. Ninguna de las dos capas debe duplicar el
-motor de inferencia.
+El motor evalúa las reglas en **una sola pasada**; no realiza encadenamiento iterativo de nuevas conclusiones.
 
-El payload oficial usa `lista-42-sucursal-3` como `request_id` y contiene solo
-hechos validados. `score`, `penalizacion_distancia`, combustible, vehículo y
-SQL no forman parte del contrato Python.
+### Base de reglas
 
-## Inicio rápido
+Las ocho reglas se almacenan en [`data/rules.json`](data/rules.json).
 
-```powershell
-# 1. Entorno virtual
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-
-# 2. API (terminal 1)
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
-
-# 3. Demo web (terminal 2)
-.\.venv\Scripts\python.exe -m streamlit run demo/streamlit_app.py
-```
-
-Swagger UI: <http://127.0.0.1:8001/docs> · Demo: <http://localhost:8501>
-
-## API
-
-| Método | Endpoint | Descripción |
+| Regla | Criterio principal | Resultado |
 |---|---|---|
-| `GET` | `/health` | Disponibilidad del servicio |
-| `POST` | `/api/v1/recommend` | Genera recomendación con explicación y trazabilidad |
-| `POST` | `/api/v1/chat` | Explica una recomendación vía intenciones |
+| R01 | Presupuesto excedido en más del 10 % | `NO_RECOMENDABLE` |
+| R02 | Faltan productos esenciales | `NO_RECOMENDABLE` |
+| R03 | Distancia adicional elevada con ahorro bajo | `NO_RECOMENDABLE` |
+| R04 | Tiempo elevado con ahorro bajo | `NO_RECOMENDABLE` |
+| R05 | Compra distribuida entre tres o más supermercados | `NO_RECOMENDABLE` |
+| R06 | Presupuesto, esenciales, distancia, tiempo y una parada favorables | `EXCELENTE` |
+| R07 | Presupuesto y esenciales cubiertos con promociones aplicables | `BUENA` |
+| R08 | Dos supermercados con ahorro alto y presupuesto respetado | `BUENA` |
 
-En producción se exige el header `X-API-Key` (valor definido en la variable de entorno `SMARTMARKET_API_KEY`). Sin esa variable configurada —por ejemplo en desarrollo local— la API queda abierta. `/health` siempre es público.
+Si ninguna regla se activa, el sistema devuelve provisionalmente `NO_RECOMENDABLE` e indica que se requiere comparar otras opciones. La regla R06 no presupone que todos los productos opcionales estén disponibles.
 
-El chatbot acepta la respuesta real de `/api/v1/recommend` en el campo
-`recommendation`. Puede responder preguntas como:
+### Índice de conveniencia
 
-- `¿Cuál es el índice de conveniencia?`
-- `¿Cuál es la regla ganadora?`
-- `¿Qué reglas perdedoras se activaron?`
-- `NO_DISPONIBLE` se utiliza cuando no existe una recomendación que explicar.
+El índice utiliza cinco componentes normalizados y ponderados:
 
-Si Python no pudo generar una recomendación, Laravel puede enviar
-`"recommendation": null` junto con `request_id`. El endpoint mantiene la
-respuesta HTTP `200`, informa `supported: false` y no inventa índice ni reglas.
+| Componente | Peso |
+|---|---:|
+| Ahorro | 35 % |
+| Disponibilidad de productos | 25 % |
+| Distancia adicional | 20 % |
+| Tiempo estimado | 15 % |
+| Promociones | 5 % |
+| **Total** | **100 %** |
 
-### Lenguaje del chatbot
+La clasificación del índice es `ALTA_CONVENIENCIA` (desde 75), `CONVENIENCIA_MEDIA` (desde 50) o `BAJA_CONVENIENCIA` (menos de 50). **No representa una probabilidad ni la confianza de un modelo estadístico.** Las reglas críticas tienen precedencia sobre el índice.
 
-Las respuestas normales están redactadas para usuarios comunes: muestran
-presupuesto, ahorro, kilómetros, minutos, disponibilidad e índice sin exponer
-variables internas como `dentro_presupuesto` o `ahorro_alto`. Los códigos
-`R01`–`R08`, `winning_rule`, `losing_rules` y la prioridad solo aparecen si el
-usuario pregunta explícitamente por reglas o por el funcionamiento técnico.
+## Tecnologías
 
-El chatbot es determinista, local y basado en plantillas. No utiliza IA
-generativa, modelos externos ni historial permanente. Como el contrato solo
-contiene cantidades, no inventa nombres de productos.
+| Tecnología | Uso |
+|---|---|
+| Python 3.12+ | Implementación del motor y los servicios |
+| FastAPI | Endpoints REST y esquema OpenAPI |
+| Pydantic v2 | Contratos y validación de datos |
+| Streamlit | Interfaz web interactiva |
+| JSON | Reglas y escenarios de demostración |
+| Pytest + HTTPX | Pruebas unitarias y de API |
+| Ruff + GitHub Actions | Análisis estático e integración continua |
 
-Ejemplo de respuesta de `/recommend`:
+## Instalación y ejecución local
+
+**Requisitos:** Python 3.12 o superior y `pip`.
+
+```bash
+git clone https://github.com/HenryBo06/Sistema-experto-fork.git
+cd Sistema-experto-fork
+python -m venv .venv
+```
+
+Activa el entorno virtual:
+
+- **Windows (PowerShell):** ` .\.venv\Scripts\Activate.ps1 `
+- **Linux/macOS:** `source .venv/bin/activate`
+
+Instala las dependencias:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Inicia la API:
+
+```bash
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+```
+
+En otra terminal, con el entorno activado, inicia Streamlit:
+
+```bash
+python -m streamlit run demo/streamlit_app.py
+```
+
+- **API:** http://127.0.0.1:8001
+- **Swagger UI:** http://127.0.0.1:8001/docs
+- **Interfaz:** http://localhost:8501
+
+La documentación Swagger/OpenAPI está disponible cuando no se configura una clave de API.
+
+## API REST
+
+| Método | Ruta | Función |
+|---|---|---|
+| `GET` | `/health` | Comprueba la disponibilidad del servicio |
+| `POST` | `/api/v1/recommend` | Evalúa una alternativa y devuelve una recomendación explicable |
+| `POST` | `/api/v1/compare` | Compara entre 2 y 10 alternativas |
+| `GET` | `/api/v1/knowledge` | Consulta reglas, umbrales, pesos y versiones |
+| `POST` | `/api/v1/chat` | Explica una recomendación existente |
+
+### Ejemplo de recomendación
+
+Envía un JSON al endpoint `POST /api/v1/recommend`:
 
 ```json
 {
-  "request_id": "scenario-ideal",
-  "nivel_recomendacion": "EXCELENTE",
-  "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
-  "explicacion": "Cumple el presupuesto, incluye los esenciales y requiere un recorrido conveniente.",
-  "reglas_activadas": ["R06", "R07"],
-  "hechos_derivados": {
-    "dentro_presupuesto": true,
-    "ahorro_alto": true,
-    "distancia_cercana": true
-  },
-  "version_reglas": "1.0.0"
+  "request_id": "compra-001",
+  "alternativa_id": "supermercado-a",
+  "costo_total": 42.50,
+  "presupuesto": 50.0,
+  "ahorro": 11.25,
+  "distancia_km": 2.3,
+  "distancia_adicional_km": 0.8,
+  "tiempo_estimado_min": 12,
+  "productos_disponibles": 10,
+  "productos_totales": 10,
+  "productos_esenciales_disponibles": 6,
+  "productos_esenciales_totales": 6,
+  "numero_supermercados": 1,
+  "promociones_aplicables": true
 }
 ```
 
-## Estructura del proyecto
+El resultado contiene, entre otros campos:
+
+| Campo | Descripción |
+|---|---|
+| `nivel_recomendacion` | Conclusión experta |
+| `accion_sugerida` | Acción propuesta para la alternativa |
+| `explicacion` | Justificación textual |
+| `reglas_activadas` | Reglas cuyas condiciones se cumplieron |
+| `winning_rule` / `losing_rules` | Regla ganadora y restantes |
+| `hechos_derivados` | Indicadores calculados a partir de la solicitud |
+| `trace` | Evaluación detallada de las condiciones |
+| `indice_conveniencia` | Índice auxiliar entre 0 y 100 |
+| `componentes_conveniencia` / `pesos_conveniencia` | Desglose del cálculo |
+| `version_reglas` / `version_contrato` | Versiones de la lógica y del contrato |
+
+Las solicitudes inválidas o inconsistentes reciben `HTTP 422`. Los productos esenciales pueden tener total cero si no existen elementos marcados como esenciales; los conteos globales, esenciales y opcionales deben ser coherentes.
+
+### Comparación de alternativas
+
+`POST /api/v1/compare` recibe un objeto con la propiedad `alternativas`, que contiene entre 2 y 10 solicitudes del mismo formato anterior. Los IDs de alternativa deben ser únicos y todas deben compartir presupuesto.
+
+El comparador evalúa individualmente cada alternativa y ordena por conclusión experta, índice auxiliar, menor costo y finalmente ID. La respuesta incluye un `ranking`, la mejor alternativa relativa y advertencias cuando corresponda. Una primera posición no implica que una alternativa sea recomendable si todas presentan condiciones desfavorables.
+
+### Consulta del conocimiento y chatbot
+
+`GET /api/v1/knowledge` permite inspeccionar la base de reglas y sus parámetros vigentes sin modificarlos.
+
+`POST /api/v1/chat` recibe `message`, `facts` y la respuesta previa en `recommendation`. Las respuestas son deterministas y se basan en los hechos y la recomendación suministrados, sin generar nuevas conclusiones.
+
+Para los contratos completos consulta [la documentación de la API](docs/api-contract.md) y [los ejemplos de integración](docs/laravel-integration.md).
+
+## Configuración
+
+| Variable | Uso |
+|---|---|
+| `SMARTMARKET_API_URL` | Dirección base del servicio FastAPI utilizada por Streamlit |
+| `SMARTMARKET_API_KEY` | Clave opcional para proteger los endpoints de recomendación, comparación, conocimiento y chatbot |
+
+Streamlit utiliza `http://127.0.0.1:8001` por defecto. Cuando `SMARTMARKET_API_KEY` está definida en el servidor, los endpoints protegidos requieren la cabecera `X-API-Key`. El endpoint `/health` permanece público.
+
+No incluyas claves reales en el código, el README ni archivos versionados.
+
+## Estructura del repositorio
 
 ```text
 app/
-├── expert_system/      # Motor: reglas, inferencia, clasificadores, índice
-├── api/                # Endpoints FastAPI
-├── chatbot/            # Detector de intenciones y plantillas
-├── schemas/            # Modelos Pydantic del contrato
-└── services/           # Orquestación
+├── api/                # Rutas HTTP
+├── chatbot/            # Detección de intenciones y respuestas
+├── expert_system/      # Reglas, clasificadores, inferencia y ponderaciones
+├── schemas/            # Modelos de entrada y salida
+└── services/           # Servicios de recomendación y comparación
 data/
-├── rules.json          # Base de conocimiento (R01–R08)
-└── scenarios.json      # Escenarios de demostración
-demo/streamlit_app.py   # Interfaz web
-tests/                  # Suite Pytest
-docs/                   # Contrato de API y guías
+├── rules.json          # Base de conocimiento
+└── scenarios.json      # Escenarios de prueba y demostración
+demo/
+└── streamlit_app.py    # Laboratorio y comparador visual
+docs/                   # Contratos y documentación técnica
+tests/                  # Pruebas automatizadas
 ```
 
-## Pruebas
+## Pruebas y calidad de código
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
+```bash
+python -m pytest -q
+ruff check app demo tests
 ```
 
-Cubren esquemas, hechos derivados, reglas, motor de inferencia, endpoints, chatbot, escenarios y repetibilidad.
+La suite comprueba reglas, clasificaciones, resolución de conflictos, validación HTTP, trazabilidad, índice de conveniencia, comparación, chatbot y renderizado básico de Streamlit. El flujo de integración continua ejecuta las verificaciones de lint y pruebas.
 
-La compatibilidad Laravel se valida adicionalmente en
-`tests/test_phase12_compatibility.py`: prueba el payload oficial, el flujo
-`/recommend` → `/chat`, índice, reglas críticas, fallback, nulos, campos
-prohibidos y resultados deterministas.
+## Alcance
 
-Las listas sin productos esenciales son válidas. R06 no garantiza que todos los productos opcionales estén disponibles; se validan los conteos cruzados.
-
-## Limitaciones del MVP
-
-- Datos simulados almacenados en JSON (sin base de datos).
-- Sin autenticación ni historial permanente de conversaciones.
-- Sin scraping ni integración con supermercados reales.
+El proyecto trabaja con hechos proporcionados en las solicitudes y escenarios de ejemplo. No consulta automáticamente inventarios o precios reales de supermercados y no utiliza una base de datos propia para la inferencia. Sus reglas y pesos son configurables, pero deben validarse con datos del dominio para aplicarlos a decisiones reales.
 
 ## Licencia
 
-[MIT](LICENSE)
+Distribuido bajo la [licencia MIT](LICENSE).
