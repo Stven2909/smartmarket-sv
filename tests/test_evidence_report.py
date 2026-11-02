@@ -180,7 +180,9 @@ def test_streamlit_pdf_generation_and_download_button(monkeypatch):
 
     monkeypatch.setattr(requests, "post", fake_post)
     script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
-    at = AppTest.from_file(str(script)).run(timeout=20)
+    at = AppTest.from_file(str(script))
+    at.session_state["active_tab"] = "Base de conocimiento"
+    at.run(timeout=20)
     assert not at.exception
     assert len(at.tabs) == 4
     button = next(
