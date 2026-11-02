@@ -14,6 +14,7 @@ ChatIntent = Literal[
     "DISTANCIA",
     "TIEMPO",
     "PRODUCTOS",
+    "PROMOCIONES",
     "MEJORAR",
     "REGLAS",
     "INDICE",

@@ -120,6 +120,7 @@ class RecommendationRequest(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
+        allow_inf_nan=False,
         json_schema_extra={"examples": [RECOMMENDATION_REQUEST_EXAMPLE]},
     )
 
