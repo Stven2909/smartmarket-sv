@@ -176,3 +176,39 @@ def test_demo_has_three_views_and_comparison_selection():
     assert at.selectbox
     assert at.multiselect
     assert len(at.multiselect[0].value) >= 2
+
+
+
+def test_knowledge_endpoint_exposes_current_rules_and_parameters():
+    response = api_request("GET", "/api/v1/knowledge")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["rules"]) == 8
+    assert {rule["id"] for rule in body["rules"]} == {
+        "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08"
+    }
+    assert sum(body["weights"].values()) == pytest.approx(1.0)
+    assert body["thresholds"]["presupuesto_exceso_max_pct"] == 10.0
+    assert body["rules_version"]
+    assert body["convenience_version"]
+
+
+def test_knowledge_endpoint_honors_existing_api_key(monkeypatch):
+    monkeypatch.setenv("SMARTMARKET_API_KEY", "solo-pruebas")
+    assert api_request("GET", "/api/v1/knowledge").status_code == 401
+    response = api_request(
+        "GET", "/api/v1/knowledge",
+        headers={"X-API-Key": "solo-pruebas"},
+    )
+    assert response.status_code == 200
+
+
+def test_streamlit_comparison_with_same_request_id_does_not_duplicate_widgets():
+    script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
+    report = compare_alternatives(
+        ComparisonRequest(alternativas=[option("primera"), option("segunda")])
+    )
+    at = AppTest.from_file(str(script))
+    at.session_state["latest_comparison"] = report.model_dump(mode="json")
+    at.run(timeout=20)
+    assert not at.exception
