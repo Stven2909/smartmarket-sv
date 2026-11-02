@@ -153,7 +153,14 @@ def _explanation_response(recommendation: RecommendationResponse) -> str:
         reasons = ["esta opción puede compararse con las demás alternativas antes de decidir"]
 
     if recommendation.nivel_recomendacion == "NO_RECOMENDABLE":
-        response = f"No te recomiendo esta opción porque {_join_reasons(reasons)}."
+        if recommendation.winning_rule:
+            reason = _friendly_rule_reason(recommendation.winning_rule, recommendation)
+            response = f"No te recomiendo esta opción porque {reason}."
+        else:
+            response = (
+                "No hay una regla favorable que permita recomendar "
+                "esta alternativa de forma concluyente."
+            )
         return f"{response} Te sugiero: {recommendation.accion_sugerida}"
 
     response = f"Te recomiendo esta opción porque {_join_reasons(reasons)}."
@@ -246,6 +253,17 @@ def build_response(
 
     if intent == "PRODUCTOS":
         return _products_response(facts)
+
+    if intent == "PROMOCIONES":
+        promotions = facts.get("promociones_aplicables")
+        if not isinstance(promotions, bool):
+            return INSUFFICIENT_DATA
+        if promotions:
+            return (
+                "Sí, hay promociones aplicables en esta alternativa. "
+                "No dispongo del detalle ni del importe de cada promoción."
+            )
+        return "No se identificaron promociones aplicables en esta alternativa."
 
     if intent == "MEJORAR":
         return (
