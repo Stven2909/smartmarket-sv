@@ -69,7 +69,7 @@ def test_zero_essential_products_are_supported_by_public_response():
     [
         {"productos_esenciales_totales": 11},
         {"productos_disponibles": 5, "productos_esenciales_disponibles": 6},
-        {"productos_disponibles": 9, "productos_esenciales_disponibles": 5,
+        {"productos_disponibles": 10, "productos_esenciales_disponibles": 5,
          "productos_esenciales_totales": 6},
         {"productos_esenciales_totales": -1},
         {"productos_esenciales_totales": 0, "productos_esenciales_disponibles": 1},
