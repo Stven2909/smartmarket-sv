@@ -1278,7 +1278,7 @@ def main() -> None:
             selected_name = st.selectbox("Escenario", list(scenario_by_name))
             selected = scenario_by_name[selected_name]
             st.caption("Escenario de prueba · " + selected["description"])
-    
+
             payload = _render_scenario_form(selected)
             if payload is not None:
                 errors = validate_payload(payload)
@@ -1292,7 +1292,7 @@ def main() -> None:
                         st.session_state["latest_facts"] = payload
                     except ApiClientError as exc:
                         st.error(str(exc))
-    
+
             latest_result = st.session_state.get("latest_recommendation")
             latest_facts = st.session_state.get("latest_facts")
             if latest_result is not None:
@@ -1300,7 +1300,7 @@ def main() -> None:
                 render_recommendation(latest_result)
                 render_diagnosis_panel(base_url, latest_facts)
             render_chatbot(latest_facts, latest_result)
-    
+
     if comparison_tab.open:
         with comparison_tab:
             render_comparison_tab(scenarios, base_url)
