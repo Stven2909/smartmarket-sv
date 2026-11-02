@@ -183,11 +183,16 @@ def _winning_rule_response(recommendation: RecommendationResponse) -> str:
     if recommendation.winning_rule is None:
         return "No se activó una regla principal para esta alternativa."
     reason = _friendly_rule_reason(recommendation.winning_rule, recommendation)
+    if recommendation.nivel_recomendacion == "NO_RECOMENDABLE":
+        return (
+            f"La regla determinante es {recommendation.winning_rule}: {reason}. "
+            f"Por ese motivo, esta alternativa no se recomienda. "
+            f"Categoría de prioridad: {recommendation.prioridad_aplicada}."
+        )
     return (
-        "La recomendación principal se debe a que esta opción cumple las "
-        f"condiciones más importantes de compra. Para fines técnicos, se activó "
-        f"{recommendation.winning_rule}: {reason}. "
-        f"La prioridad aplicada fue {recommendation.prioridad_aplicada}."
+        f"La regla ganadora es {recommendation.winning_rule}: {reason}. "
+        f"El resultado es {recommendation.nivel_recomendacion}. "
+        f"Categoría de prioridad: {recommendation.prioridad_aplicada}."
     )
 
 
