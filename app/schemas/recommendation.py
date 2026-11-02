@@ -25,7 +25,7 @@ RECOMMENDATION_REQUEST_EXAMPLE = {
 RECOMMENDATION_RESPONSE_EXAMPLE = {
     "request_id": "demo-001",
     "nivel_recomendacion": "EXCELENTE",
-    "accion_sugerida": "Comprar todo en esta alternativa.",
+    "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
     "explicacion": "Cumple el presupuesto y las condiciones principales.",
     "reglas_activadas": ["R06", "R07"],
     "prioridad_aplicada": "CONVENIENCIA",
@@ -132,7 +132,7 @@ class RecommendationRequest(BaseModel):
     productos_disponibles: int = Field(ge=0)
     productos_totales: int = Field(gt=0)
     productos_esenciales_disponibles: int = Field(ge=0)
-    productos_esenciales_totales: int = Field(gt=0)
+    productos_esenciales_totales: int = Field(ge=0)
     numero_supermercados: int = Field(ge=1)
     promociones_aplicables: bool
 
@@ -153,6 +153,14 @@ class RecommendationRequest(BaseModel):
                 "productos_esenciales_disponibles no puede superar productos_esenciales_totales"
             )
 
+        if self.productos_esenciales_totales > self.productos_totales:
+            raise ValueError("productos_esenciales_totales no puede superar productos_totales")
+        if self.productos_esenciales_disponibles > self.productos_disponibles:
+            raise ValueError("productos_esenciales_disponibles no puede superar productos_disponibles")
+        opcionales_totales = self.productos_totales - self.productos_esenciales_totales
+        opcionales_disponibles = self.productos_disponibles - self.productos_esenciales_disponibles
+        if opcionales_disponibles > opcionales_totales:
+            raise ValueError("productos opcionales disponibles no pueden superar su total")
         return self
 
 
