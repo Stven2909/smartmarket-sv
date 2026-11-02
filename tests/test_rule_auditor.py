@@ -221,7 +221,9 @@ def test_streamlit_audit_button_fetches_real_asgi_report(monkeypatch):
 
     monkeypatch.setattr(requests, "get", fake_get)
     path = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
-    at = AppTest.from_file(str(path)).run(timeout=20)
+    at = AppTest.from_file(str(path))
+    at.session_state["active_tab"] = "Base de conocimiento"
+    at.run(timeout=20)
     assert not at.exception
     button = next(
         item for item in at.button if item.label == "Auditar base de conocimiento"
