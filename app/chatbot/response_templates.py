@@ -229,8 +229,9 @@ def build_response(
             INSUFFICIENT_DATA
             if ahorro is None
             else (
-                f"Con esta opción ahorrarías aproximadamente {_money(ahorro)} "
-                "frente a la alternativa más cara."
+                f"El ahorro informado para esta alternativa es {_money(ahorro)}. "
+                "La referencia de comparación proviene de los datos recibidos."
+
             )
         )
 

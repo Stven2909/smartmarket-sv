@@ -120,7 +120,8 @@ def test_savings_response_is_natural():
     response = chat(make_chat("¿Cuánto ahorro?"))
 
     assert response.response == (
-        "Con esta opción ahorrarías aproximadamente $11.25 frente a la alternativa más cara."
+        "El ahorro informado para esta alternativa es $11.25. "
+        "La referencia de comparación proviene de los datos recibidos."
     )
 
 

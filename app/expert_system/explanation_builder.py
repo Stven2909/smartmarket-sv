@@ -28,6 +28,18 @@ def build_inference_result(
 
     if isinstance(winner, ProductionRule):
         conclusion = winner.result.model_dump()
+    elif facts.get("presupuesto_ligeramente_excedido") is True:
+        # La política de clasificación pública no cambia: sigue siendo
+        # provisional y no se fabrica una regla ganadora.
+        conclusion = {
+            "level": "NO_RECOMENDABLE",
+            "action": "Ajustar la lista o el presupuesto y comparar otras alternativas.",
+            "explanation": (
+                "Ninguna regla se activó. El costo supera ligeramente el "
+                "presupuesto y no hay un criterio favorable concluyente. "
+                "La clasificación NO_RECOMENDABLE es provisional."
+            ),
+        }
 
     return {
         **conclusion,
