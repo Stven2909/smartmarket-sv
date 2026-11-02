@@ -87,7 +87,7 @@ backend-laravel/
 │   └── seeders/                           # DatabaseSeeder, DemoDataSeeder, UserSeeder
 ├── routes/
 │   └── api.php                            # todas las rutas JSON
-└── tests/                                 # 93 pruebas (Unit + Feature)
+└── tests/                                 # 117 pruebas (Unit + Feature)
 ```
 
 Arquitectura por capas **Controller → Service → Model** (ADR-005): los controladores solo coordinan
@@ -241,7 +241,7 @@ El seeder es **idempotente** (`firstOrCreate` / `updateOrCreate`). El SKU lógic
 ## Calidad
 
 ```bash
-composer test          # 93 pruebas (limpia el cache de config y usa SQLite en memoria)
+composer test          # 117 pruebas (limpia el cache de config y usa SQLite en memoria)
 ./vendor/bin/pint      # formateo de código
 ```
 

@@ -59,7 +59,7 @@ smartmarket/
 ├── docs/                   → documentación técnica y de negocio (00–09 + atlas/evidencia)
 ├── shared/                 → datos compartidos (demo_products.json)
 │
-├── .github/                → workflows de CI y plantillas de issues
+├── .github/                → workflows de CI (`.github/workflows/ci.yml`)
 ├── docker/                 → contenedores (pendiente de llenar)
 ├── scripts/                → utilidades del repo (pendiente de llenar)
 │
@@ -139,14 +139,15 @@ MVP Fase A (backend + API)       ██████████  Auth, catálogo
 MVP Fase B (frontend React)      ██████████  PWA con home, buscador, comparador, listas, perfil,
                                                         promociones, historial y chat explicativo
 Sistema Experto (Python)         ██████████  Servicio desplegado e integrado (recommend + chat)
-Pruebas                          ███████░░░  Backend: 93 tests. Frontend: sin tests automatizados
+Pruebas                          ███████░░░  Backend: 117 tests. Frontend: sin tests automatizados
 Mapa de sucursales               ░░░░░░░░░░  Pendiente (la optimización ya funciona; falta la vista de mapa)
-Despliegue                       ██░░░░░░░░  Sistema Experto en Render; backend/frontend sin desplegar
-CI/CD                            ████████░░  Workflow de lint + build + tests (GitHub Actions)
+Despliegue                       ██████████  Backend/frontend en local; Sistema Experto en Render
+CI/CD                            ██████████  Workflow de lint + build + tests en verde (GitHub Actions)
 ```
 
-**Siguiente paso:** desplegar backend y frontend, agregar CI, completar la vista de mapa y
-cerrar la documentación pendiente del Sistema Experto.
+**Siguiente paso:** completar la vista de mapa y cerrar la deuda técnica documentada en
+`docs/03-plan-implementacion.md`. El backend y el frontend se quedan en local; solo el Sistema
+Experto se despliega en Render.
 
 ---
 

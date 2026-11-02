@@ -1,12 +1,12 @@
 # Referencia técnica: Extractor automático de precios (v1.1)
 
-> **Estado: EN IMPLEMENTACIÓN — Fases 0–3 aprobadas el 2026-08-22 (ADR-10).**
+> **Estado: IMPLEMENTADO — Fases 0–3 aprobadas el 2026-08-22 (ADR-10) y cerradas.**
 >
 > Este documento conserva: (a) el análisis técnico del extractor que ya resolvió un
 > proyecto hermano (repo privado `IsaacRenderos2109/smartmarket-sv`, clonado y analizado
 > el 2026-08-22) y (b) la revisión legal por supermercado con el plan aprobado
-> (secciones 5 y 4). El roadmap (`03-plan-implementacion.md`, sección 7) mantiene el
-> extractor como mejora v1.1 que no bloquea la entrega.
+> (secciones 5 y 4). El roadmap (`03-plan-implementacion.md`, sección 7) lo ubicaba como
+> mejora v1.1; se adelantó y quedó implementado sin bloquear la entrega.
 >
 > - ✅ **Se adopta:** los *patrones* (estrategia VTEX, cortesía HTTP, pipeline de datos).
 > - ❌ **No se adopta:** el código Python/Node literal ni su stack externo

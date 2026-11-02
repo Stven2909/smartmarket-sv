@@ -90,14 +90,14 @@ Esta decisión respeta las reglas ya establecidas para el proyecto:
 
 ## 6. Tareas derivadas (a registrar como issues de GitHub)
 
-- [ ] `OptimizationService`: reemplazar término `CostoCombustible` ($) por `PenalizacionDistancia` (normalizada, sin unidad monetaria).
-- [ ] Recalibrar/renombrar peso `β` en `config/optimization.php` para el nuevo término.
-- [ ] Eliminar `km_por_litro` y `precio_por_litro` de `config/optimization.php` (o dejarlos comentados con nota de "reservado para v2 — ver ADR-05").
-- [ ] `ComparisonService` / `ResultadoOptimizacion`: quitar el campo de combustible en dólares del payload de respuesta; agregar/confirmar campo de distancia en km si no existe ya.
-- [ ] Frontend: quitar la línea "Combustible (estimado): $Y.YY" del desglose de resultado; mostrar distancia en km en su lugar.
-- [ ] Frontend: eliminar cualquier pantalla/flujo de "Parámetros de ahorro" / configuración de vehículo si ya se había empezado.
-- [ ] Revisar `04-sistema-experto.md` y cualquier contrato de API del microservicio Python por si documentan `CostoCombustible` en dólares — actualizar a `PenalizacionDistancia`.
-- [ ] Correr suite de tests de Fase 4/5 (`DistanceService`, `OptimizationService`, `ComparisonService`) tras el cambio y confirmar que no truena nada relacionado a comparador ni historial de resultados.
+- [x] `OptimizationService`: reemplazar término `CostoCombustible` ($) por `PenalizacionDistancia` (normalizada, sin unidad monetaria).
+- [x] Recalibrar/renombrar peso `β` en `config/optimization.php` para el nuevo término.
+- [x] Eliminar `km_por_litro` y `precio_por_litro` de `config/optimization.php` (o dejarlos comentados con nota de "reservado para v2 — ver ADR-05").
+- [x] `ComparisonService` / `ResultadoOptimizacion`: quitar el campo de combustible en dólares del payload de respuesta; agregar/confirmar campo de distancia en km si no existe ya.
+- [x] Frontend: quitar la línea "Combustible (estimado): $Y.YY" del desglose de resultado; mostrar distancia en km en su lugar.
+- [x] Frontend: eliminar cualquier pantalla/flujo de "Parámetros de ahorro" / configuración de vehículo si ya se había empezado.
+- [x] Revisar `04-sistema-experto.md` y cualquier contrato de API del microservicio Python por si documentan `CostoCombustible` en dólares — actualizar a `PenalizacionDistancia`.
+- [x] Correr suite de tests de Fase 4/5 (`DistanceService`, `OptimizationService`, `ComparisonService`) tras el cambio y confirmar que no truena nada relacionado a comparador ni historial de resultados.
 - [ ] (v2 / backlog, no implementar ahora) Evaluar Google Maps Distance Matrix/Routes API para ruta real + dolarización de combustible como feature premium.
 
 ## 7. Fuentes

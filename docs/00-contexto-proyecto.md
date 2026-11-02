@@ -2,14 +2,15 @@
 
 > **Qué es este documento:** un resumen ejecutivo de todo lo definido hasta ahora, pensado para
 > pegarse al inicio de una nueva conversación centrada en el desarrollo (código, migraciones,
-> endpoints, etc.), sin tener que repetir todo el proceso de diseño. Los ocho documentos
-> completos (`01` a `08`) ya existen y son la fuente de verdad — esto es el mapa para navegarlos
-> rápido y no perder decisiones ya tomadas.
+> endpoints, etc.), sin tener que repetir todo el proceso de diseño. Los documentos `00` a `09`
+> ya existen y son la fuente de verdad — esto es el mapa para navegarlos rápido y no perder
+> decisiones ya tomadas.
 
-**Estado actual (octubre 2026):** los documentos 01–09 están terminados. El MVP está construido:
-backend Laravel con 93 pruebas, PWA React y Sistema Experto desplegado e integrado. Lo que sigue
-es el mapa de sucursales, el despliegue de backend/frontend, CI y el cierre de deuda técnica
-documentado en `03-plan-implementacion.md`.
+**Estado actual (noviembre 2026):** los documentos `00`–`09` están terminados. El MVP está
+construido y verificado: backend Laravel con 117 pruebas, PWA React con build correcto, CI en
+verde y Sistema Experto desplegado en Render e integrado. El backend y el frontend se mantienen
+en local **por decisión del equipo**; solo el Sistema Experto se despliega. Lo que sigue es la
+vista de mapa y el cierre de deuda técnica documentado en `03-plan-implementacion.md`.
 
 ---
 
@@ -22,23 +23,25 @@ algoritmos propios y un Sistema Experto de reglas — sin depender de IA generat
 **Por qué existe:** el costo de la Canasta Básica Alimentaria en El Salvador ha subido de forma
 sostenida (de ~$200 en 2019 a más de $256 en 2026), y no existe una herramienta local que
 centralice precios entre supermercados como sí existe en Chile (Carriapp), Argentina
-(Tu-Alacena) o España (FindIt/OCU Market). Detalle completo, fuentes y cifras en
-`01-vision-negocio.md` (el ensayo de Emprendedurismo).
+(Tu-Alacena) o España (FindIt/OCU Market). El detalle ampliado está en
+`01-vision-negocio.md` (el documento base del ensayo de Emprendedurismo); la cita oficial de la
+CBA debe adjuntarse en la entrega final.
 
 ---
 
-## 2. Los 8 documentos y qué contiene cada uno
+## 2. Los documentos y qué contiene cada uno
 
 | Documento | Audiencia | Contenido clave |
 |---|---|---|
-| `01-vision-negocio.md` (ensayo Word) | Profesor de Emprendedurismo | Problema, contexto (datos de canasta básica/inflación con fuentes reales), objetivos, revisión de literatura (casos internacionales + teorías de Simon/Kotler/Ishikawa), causas raíz, módulos del producto, modelo de negocio, escalabilidad (V1/V2/V3), conclusiones. **No menciona microservicios, Docker, ADRs — lenguaje de negocio.** |
-| `02-arquitectura.md` | Todo el equipo técnico | Principios de arquitectura (8), stack completo, arquitectura general, **2 flujos end-to-end**, módulos clasificados (Core/Apoyo/Externos), pipeline de datos (Price Providers → Staging → Normalización → Validación → Catálogo), Motor de Normalización, Sistema Experto (resumen), seguridad, testing, **No-objetivos**, riesgos, **ADRs numerados (001-009)**, **ERD v1.0 completo con diagramas e imágenes** (`erd_nivel1_core.png`, `erd_nivel2_pipeline.png`), estado del proyecto. **Documento congelado — cualquier cambio de fondo necesita un ADR nuevo.** |
+| `01-vision-negocio.md` (base del ensayo) | Profesor de Emprendedurismo | Problema, contexto (canasta básica e inflación; la cita oficial se adjunta en la entrega), objetivos, revisión de literatura (casos internacionales + teorías de Simon/Kotler/Ishikawa), causas raíz, módulos del producto, modelo de negocio, escalabilidad (V1/V2/V3), conclusiones. **No menciona microservicios, Docker ni ADRs — lenguaje de negocio.** |
+| `02-arquitectura.md` | Todo el equipo técnico | Principios de arquitectura (8), stack completo, arquitectura general, **2 flujos end-to-end**, módulos clasificados (Core/Apoyo/Externos), pipeline de datos (Price Providers → Staging → Normalización → Validación → Catálogo), Motor de Normalización, Sistema Experto (resumen), seguridad, testing, **No-objetivos**, riesgos, **ADRs numerados (001-011)**, **ERD v1.0 completo con diagramas e imágenes** (`erd_nivel1_core.png`, `erd_nivel2_pipeline.png`), estado del proyecto. **Documento congelado — cualquier cambio de fondo necesita un ADR nuevo.** |
 | `03-plan-implementacion.md` | Equipo (operativo, sí puede cambiar) | Organización en Track A (Laravel/React) y Track B (Sistema Experto/Python), roadmap por fases (0A/0B → 1-9), fases del Sistema Experto (P0-P4), Definition of Done, tabla de riesgos, roadmap futuro (v1.1/v1.2), estructura de carpetas del repo. |
 | `04-sistema-experto.md` | Materia de Sistemas Expertos + equipo | Dominio, hechos primarios vs. derivados, variables de salida, **Forward Chaining** (con justificación), **política de resolución de conflictos** (jerarquía de prioridad), 15 reglas de diseño (la implementación usa R01–R08), **explicabilidad a dos niveles** (reglas activadas + explicación en lenguaje natural), contrato de API con errores (400/422/500), casos de prueba (incluyendo uno ambiguo), limitaciones. **Implementado** con FastAPI + Pydantic y reglas en `data/rules.json`. |
 | `05-decision-costo-combustible.md` | Todo el equipo técnico | **ADR-05**: reemplazo de `CostoCombustible ($)` por `PenalizacionDistancia` normalizada (0–1, min-max por corrida) en la fórmula del motor de optimización — evita dolarizar combustible encadenando distancia Haversine × precio citado × consumo supuesto (tres capas de imprecisión). Justificación, fórmula antes/después, migraciones, implementación backend/frontend y suite de regresión. |
-| `06-referencia-extractor-vtex.md` | Equipo técnico (extractor en curso) | Análisis de referencia del extractor automático de precios (repo hermano): fuentes y modos (HTML/VTEX/partner-feed), estrategia VTEX paso a paso, cortesía HTTP, normalización, persistencia append-only, crons; mapeo a nuestro pipeline. **§4: plan aprobado Fases 0–3; §5: veredicto legal por supermercado con citas y URLs. En implementación desde el 2026-08-22.** |
+| `06-referencia-extractor-vtex.md` | Equipo técnico | Análisis de referencia del extractor automático de precios (repo hermano): fuentes y modos (HTML/VTEX/partner-feed), estrategia VTEX paso a paso, cortesía HTTP, normalización, persistencia append-only, crons; mapeo a nuestro pipeline. **§4: plan aprobado Fases 0–3; §5: veredicto legal por supermercado con citas y URLs. Implementado desde el 2026-08-22.** |
 | `07-decision-extractor-fuentes-riesgo.md` | Todo el equipo técnico | **ADR-10**: alcance de la extracción automatizada — se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA con riesgo académico aceptado e informado; PriceSmart queda en carga manual (su robots.txt prohíbe scrapers por nombre). Condiciones operativas obligatorias: UA identificable, pausas, sin evasión de controles, apagado instantáneo por config, solo datos fácticos (sin imágenes ni logos). |
 | `08-decision-sucursal-tienda-online.md` | Todo el equipo técnico | **ADR-11**: `sucursales.latitud/longitud` pasan a nullable para la Sucursal "Tienda en línea" (canal nacional sin ubicación física) — esas alternativas quedan excluidas del ranking Haversine pero siguen válidas para comparación de precios nacional; también hace nullable `distancia/tiempo` en `resultados_optimizacion` y corrige el cast `(float) null → 0.0` en `ComparisonService`. |
+| `09-preguntas-chat-experto.md` | Equipo técnico y de soporte | Temas que el chat del Sistema Experto puede responder, ejemplos de preguntas que funcionan y que no, cómo Laravel normaliza las siete intenciones guía y cómo se responde promociones con los datos persistidos. |
 
 ---
 
@@ -46,7 +49,7 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 
 | ADR | Decisión |
 |---|---|
-| 001 | Laravel 12 como backend (el equipo ya lo domina) |
+| 001 | Laravel 13.8 como backend (el equipo ya lo domina) |
 | 002 | React + PWA como frontend (cubre Android/iOS/escritorio sin apps nativas) |
 | 003 | PostgreSQL como base de datos |
 | 004 | Laravel Sanctum como única estrategia de autenticación (se descartó JWT manual, Passport y Firebase) |
@@ -55,6 +58,8 @@ centralice precios entre supermercados como sí existe en Chile (Carriapp), Arge
 | 007 | Motor de Normalización como módulo propio (no solo un paso genérico del pipeline) |
 | 008 | Score del Motor de Optimización configurable: `Score = α·CostoCompra + β·PenalizacionDistancia + γ·CostoTiempo − δ·BeneficioPromociones` (menor Score = mejor opción; los pesos α/β/γ/δ no están fijos en el código) |
 | 009 | Sistema Experto **stateless**: nunca accede directamente a PostgreSQL, solo recibe hechos en JSON desde Laravel y responde una recomendación en JSON. Laravel es el único dueño de la base de datos. |
+| 010 | Extracción automatizada acotada: se automatizan Super Selectos (HTML) y las tiendas VTEX de Walmart CA con riesgo académico aceptado e informado; PriceSmart queda en carga manual. Condiciones obligatorias de cortesía y UA identificable (ver `07-decision-extractor-fuentes-riesgo.md`). |
+| 011 | `sucursales.latitud/longitud` nullable para la Sucursal "Tienda en línea": esas alternativas quedan fuera del ranking Haversine pero siguen válidas para comparación de precios nacional (ver `08-decision-sucursal-tienda-online.md`). |
 
 **Principios de arquitectura (resumen, los 8 completos están en `02-arquitectura.md` sección 1):**
 el núcleo no depende de una tecnología específica; cada módulo tiene una única responsabilidad;

@@ -1,8 +1,9 @@
 # SmartMarket SV: guía de integración del Sistema Experto
 
 Documento técnico para el compañero que implementará los cambios en Laravel y
-React. Esta guía se basa en el código actual de `Backend-Experto`,
-`Frontend-Experto` y `Sistema-Experto-Python`.
+React. Esta guía se basa en el código actual del monorepo (`backend-laravel/` y
+`frontend-react/`) y en el servicio `Sistema-Experto-Python`, que vive en un
+repositorio aparte.
 
 ## 1. Regla principal de arquitectura
 
@@ -94,7 +95,7 @@ El servicio Python tiene 104 pruebas automatizadas pasando.
 
 ### Laravel
 
-Ruta: `Backend-Experto/backend-laravel/`, rama `backend-laravel`.
+Ruta: `backend-laravel/` (monorepo, rama `develop`).
 
 Flujo actual:
 
@@ -108,8 +109,10 @@ ListaCompraController@optimizar
   -> GET /api/listas/{lista}/optimizar
 ```
 
-Actualmente no existe `app/Services/ExpertSystemClient.php` dentro de Laravel;
-solo existe el ejemplo en el proyecto Python.
+La integración ya está implementada en `app/Services/ExpertSystemService.php`
+(equivalente al ejemplo `examples/laravel/app/Services/ExpertSystemClient.php`
+del proyecto Python). Laravel lo invoca desde `OptimizationService` y desde el
+endpoint de chat de listas, siempre con fallback si Python no responde.
 
 Rutas actuales importantes:
 
@@ -123,7 +126,7 @@ Las rutas de listas usan `auth:sanctum`.
 
 ### React
 
-Ruta: `Frontend-Experto/frontend-react/`, rama `frontend-react`.
+Ruta: `frontend-react/` (monorepo, rama `develop`).
 
 El frontend ya llama a Laravel mediante `VITE_API_URL`. Las dos vistas que
 renderizan resultados de optimización son:
@@ -367,9 +370,9 @@ config/services.php
 .env.example
 app/Services/Optimization/ComparisonService.php
 app/Services/Optimization/OptimizationService.php
-tests/Unit/ExpertSystemClientTest.php
-tests/Unit/Optimization/OptimizationServiceTest.php
-tests/Feature/ListaCompraOptimizationTest.php
+tests/Unit/ExpertSystemServiceTest.php
+tests/Unit/OptimizationServiceTest.php
+tests/Feature/ListaChatTest.php
 ```
 
 ### Cliente HTTP
@@ -513,14 +516,26 @@ Python expone `POST {EXPERT_SYSTEM_URL}/api/v1/chat` y espera un objeto con
 }
 ```
 
-Si se habilita en React, crear primero un proxy protegido de Laravel, por
-ejemplo `POST /api/expert/chat`. React llama a Laravel y Laravel usa
-`ExpertSystemClient::chat()`. Python no debe ser llamado desde el navegador.
+**Estado: implementado.** React llama a Laravel con
+`POST /api/listas/{lista}/chat` (protegido con `auth:sanctum`). Laravel reconstruye
+los hechos desde `ResultadoOptimizacion.resultado_json` y usa
+`ExpertSystemService::chat()`. Python nunca se llama desde el navegador.
 
-Si Python falla, devolver `supported=false` con un mensaje controlado. Esta
-parte no debe bloquear la integración de `/optimizar`.
+`app/Services/ChatIntentNormalizer.php` traduce las siete preguntas guía a las
+frases canónicas que entiende el clasificador Python. Las preguntas de
+promociones se responden en Laravel con el beneficio persistido en la corrida
+(el servicio desplegado no tiene esa intención); el resto se envía a Python.
+La referencia de preguntas soportadas está en `docs/09-preguntas-chat-experto.md`.
+
+Si Python falla, Laravel devuelve `supported=false` con un mensaje controlado.
+Esta parte no bloquea la integración de `/optimizar`.
 
 ## 10. Cambios requeridos en React
+
+> **Estado: implementado.** Esta sección se conserva como referencia del
+> contrato y de las decisiones de UI. En el código actual los tipos viven en
+> `src/types/api.ts` y `src/types/domain.ts`, y las vistas que consumen la
+> recomendación son `CompararView.tsx`, `ListasView.tsx` y `ExpertChat.tsx`.
 
 ### Tipos
 
@@ -582,13 +597,9 @@ ocultar el resultado de optimización. Se puede extraer la presentación repetid
 a `src/components/ExpertRecommendationCard.tsx`; ese componente solo presenta
 datos y no contiene reglas.
 
-React usa `VITE_API_URL` para Laravel. En producción:
-
-```dotenv
-VITE_API_URL=https://URL-PUBLICA-DE-LARAVEL/api
-```
-
-React no debe conocer `EXPERT_SYSTEM_URL`.
+React usa `VITE_API_URL` para Laravel. **Decisión actual del equipo:** el
+frontend y el backend se quedan en local; solo el Sistema Experto se despliega
+en Render. El `.env` de producción del frontend no se usa en esta entrega.
 
 ## 11. Errores y fallback
 
@@ -609,9 +620,9 @@ tokens ni datos personales.
 Crear o ampliar:
 
 ```text
-tests/Unit/ExpertSystemClientTest.php
-tests/Unit/Optimization/OptimizationServiceTest.php
-tests/Feature/ListaCompraOptimizationTest.php
+tests/Unit/ExpertSystemServiceTest.php
+tests/Unit/OptimizationServiceTest.php
+tests/Feature/ListaChatTest.php
 ```
 
 Usar `Http::fake()` para probar HTTP 200, 422, 500, timeout, conexión,
@@ -619,7 +630,7 @@ presupuesto null, mapeo de tiempo/promociones, ausencia de `score`, ahorro no
 negativo y fallback. También comprobar que el endpoint de optimización sigue
 devolviendo HTTP 200 cuando Python está apagado.
 
-Ejecutar desde `Backend-Experto/backend-laravel`:
+Ejecutar desde `backend-laravel`:
 
 ```powershell
 php artisan test
@@ -628,7 +639,7 @@ php artisan test
 ## 13. Pruebas de React
 
 Actualmente no hay suite dedicada de componentes. Como mínimo ejecutar desde
-`Frontend-Experto/frontend-react`:
+`frontend-react`:
 
 ```powershell
 npm install
@@ -656,7 +667,7 @@ Python, desde `Sistema-Experto-Python`:
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
 ```
 
-Laravel, desde `Backend-Experto/backend-laravel`:
+Laravel, desde `backend-laravel`:
 
 ```powershell
 php artisan serve --host=127.0.0.1 --port=8000
@@ -670,7 +681,7 @@ EXPERT_SYSTEM_TIMEOUT=3
 EXPERT_SYSTEM_RETRY_TIMES=1
 ```
 
-React, desde `Frontend-Experto/frontend-react`:
+React, desde `frontend-react`:
 
 ```powershell
 npm install
@@ -715,3 +726,7 @@ La integración queda lista cuando:
 
 La integración agrega un cliente HTTP y transforma respuestas; no reescribe el
 motor de inferencia ni la base de conocimiento.
+
+**Estado (noviembre 2026):** criterios cumplidos en el monorepo — 117 pruebas de
+Laravel en verde, build/lint de frontend correctos y el servicio experto responde
+`/health`, `/recommend` y `/chat` en Render.

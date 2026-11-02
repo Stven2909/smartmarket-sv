@@ -84,6 +84,8 @@ Laravel y Python) — ver Fase 0B.
 >   `precio_normal` vs `precio_final`; no hay ranking ni lógica de negocio en el backend.
 >
 > **Pruebas de funcionamiento (integración frontend):**
+> *(Valores medidos al momento de esa integración. Los datos demo actuales ya crecieron:
+> 6 sucursales físicas + 1 tienda en línea y 9 promociones activas.)*
 > - `OPTIONS /api/sucursales` con `Origin: http://localhost:5173` → 204 con
 >   `Access-Control-Allow-Origin: http://localhost:5173` y `Access-Control-Allow-Headers: authorization,content-type`.
 > - `GET /api/sucursales` → 4 sucursales, cada una con su `supermercado`.
@@ -132,11 +134,11 @@ Laravel → (petición HTTP) → Sistema Experto (Python) → respuesta → Reac
 
 ### Fase 9 — Pruebas y despliegue
 - Pruebas automatizadas de las partes más importantes (ver `02-arquitectura.md`, sección 8).
-- Subir el proyecto a Render/Railway (backend y Sistema Experto), Vercel (frontend) y
-  Supabase/Neon (base de datos).
+- **Decisión del equipo:** backend y frontend se quedan en local; solo el Sistema Experto se
+  despliega en Render. No se preparan manifiestos de despliegue para el resto.
 - Ensayo completo de la demo antes de la entrega o defensa.
 
-### Estado de avance (octubre 2026)
+### Estado de avance (noviembre 2026)
 
 | Fase | Estado |
 |---|---|
@@ -149,11 +151,11 @@ Laravel → (petición HTTP) → Sistema Experto (Python) → respuesta → Reac
 | 6 Sistema Experto | ✅ Terminado (R01–R08 + chat explicativo) |
 | 7 Integración Laravel ↔ Python | ✅ Terminada, con fallback si Python no responde |
 | 8 Experiencia de usuario / PWA | 🟡 PWA instalable; falta accesibilidad y pulido fino |
-| 9 Pruebas y despliegue | 🟡 93 tests de backend; frontend sin tests; solo el experto está desplegado |
+| 9 Pruebas y despliegue | 🟡 117 tests de backend; frontend sin tests; solo el experto está desplegado (decisión: el resto queda local) |
 
-**Deuda técnica priorizada (octubre 2026):**
+**Deuda técnica priorizada (noviembre 2026):**
 
-1. Desplegar backend y frontend (CI ya existe: `.github/workflows/ci.yml`).
+1. ~~Desplegar backend y frontend~~ — decisión: quedan en local; solo el experto va a Render.
 2. Reducir latencia del Sistema Experto (llamadas secuenciales + cold start de Render).
 3. ~~Rate limiting en auth/chat/optimizar~~ (hecho) y evaluar expiración de tokens Sanctum.
 4. Completar tests de catálogo/buscador/listas y sumar pruebas de frontend (auth ya cubierto).
@@ -230,9 +232,11 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 - Notificaciones push.
 - Programa de fidelización.
 
-**Nota sobre CI/CD** (automatizar pruebas y despliegue cada vez que se sube código nuevo): es una
-buena práctica, pero se deja en la categoría de "calidad", no de "requisito del MVP" — no debe
-bloquear ninguna entrega si el equipo no llega a implementarlo por falta de tiempo.
+**Nota sobre CI/CD** (automatizar pruebas y despliegue cada vez que se sube código nuevo): se
+implementó el workflow de integración continua en `.github/workflows/ci.yml` (pruebas de backend +
+lint/build de frontend) y los últimos runs están en verde. El despliegue automático queda fuera de
+esta entrega porque backend y frontend se mantienen en local; solo el Sistema Experto vive en
+Render.
 
 ---
 
