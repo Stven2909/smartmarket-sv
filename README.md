@@ -21,6 +21,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Trazabilidad:** conserva los hechos derivados y la evaluación de cada condición.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
 - **Comparación de alternativas:** ordena de 2 a 10 opciones y explica sus posiciones.
+- **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
@@ -153,6 +154,7 @@ La documentación Swagger/OpenAPI está disponible cuando no se configura una cl
 | `POST` | `/api/v1/recommend` | Evalúa una alternativa y devuelve una recomendación explicable |
 | `POST` | `/api/v1/compare` | Compara entre 2 y 10 alternativas |
 | `GET` | `/api/v1/knowledge` | Consulta reglas, umbrales, pesos y versiones |
+| `POST` | `/api/v1/sensitivity` | Analiza la sensibilidad de una recomendación ante cambios hipotéticos |
 | `POST` | `/api/v1/chat` | Explica una recomendación existente |
 
 ### Ejemplo de recomendación
@@ -201,6 +203,10 @@ Las solicitudes inválidas o inconsistentes reciben `HTTP 422`. Los productos es
 
 El comparador evalúa individualmente cada alternativa y ordena por conclusión experta, índice auxiliar, menor costo y finalmente ID. La respuesta incluye un `ranking`, la mejor alternativa relativa y advertencias cuando corresponda. Una primera posición no implica que una alternativa sea recomendable si todas presentan condiciones desfavorables.
 
+### Análisis de sensibilidad
+
+`POST /api/v1/sensitivity` recibe `{ "alternativa": { ... } }`, donde `alternativa` contiene los mismos 14 campos de `/recommend`. Calcula el resultado original y varios escenarios hipotéticos independientes: incremento de precio del 5 % o 10 %, 2 km adicionales, 15 minutos más, pérdida de promociones y falta de un producto esencial cuando corresponde. Devuelve el dictamen, la regla y la variación del índice en cada escenario, además del número de cambios de decisión. **No representa una predicción del futuro.** Consulta [la metodología de sensibilidad](docs/analisis-sensibilidad.md).
+
 ### Consulta del conocimiento y chatbot
 
 `GET /api/v1/knowledge` permite inspeccionar la base de reglas y sus parámetros vigentes sin modificarlos.
@@ -214,7 +220,7 @@ Para los contratos completos consulta [la documentación de la API](docs/api-con
 | Variable | Uso |
 |---|---|
 | `SMARTMARKET_API_URL` | Dirección base del servicio FastAPI utilizada por Streamlit |
-| `SMARTMARKET_API_KEY` | Clave opcional para proteger los endpoints de recomendación, comparación, conocimiento y chatbot |
+| `SMARTMARKET_API_KEY` | Clave opcional para proteger los endpoints de recomendación, comparación, conocimiento, sensibilidad y chatbot |
 
 Streamlit utiliza `http://127.0.0.1:8001` por defecto. Cuando `SMARTMARKET_API_KEY` está definida en el servidor, los endpoints protegidos requieren la cabecera `X-API-Key`. El endpoint `/health` permanece público.
 
@@ -245,7 +251,7 @@ python -m pytest -q
 ruff check app demo tests
 ```
 
-La suite comprueba reglas, clasificaciones, resolución de conflictos, validación HTTP, trazabilidad, índice de conveniencia, comparación, chatbot y renderizado básico de Streamlit. El flujo de integración continua ejecuta las verificaciones de lint y pruebas.
+La suite comprueba reglas, clasificaciones, resolución de conflictos, validación HTTP, trazabilidad, índice de conveniencia, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit. El flujo de integración continua ejecuta las verificaciones de lint y pruebas.
 
 ## Alcance
 
