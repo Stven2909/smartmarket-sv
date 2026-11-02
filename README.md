@@ -22,6 +22,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
 - **Comparación de alternativas:** ordena de 2 a 10 opciones y explica sus posiciones.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
+- **Entrada manual de hechos:** admite información recopilada por el equipo y escenarios ficticios sin consultar fuentes comerciales automáticamente.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
@@ -255,7 +256,7 @@ La suite comprueba reglas, clasificaciones, resolución de conflictos, validaci�
 
 ## Alcance
 
-El proyecto trabaja con hechos proporcionados en las solicitudes y escenarios de ejemplo. No consulta automáticamente inventarios o precios reales de supermercados y no utiliza una base de datos propia para la inferencia. Sus reglas y pesos son configurables, pero deben validarse con datos del dominio para aplicarlos a decisiones reales.
+El motor recibe hechos mediante JSON. Estos pueden provenir de **datos reales recopilados e ingresados manualmente por el equipo** o de **escenarios sintéticos de prueba**. Los escenarios precargados en `data/scenarios.json` son simulados, no precios ni inventarios reales verificados. No hay scraping, consultas automáticas a tiendas ni base de datos obligatoria para la inferencia. Para entradas reales, se registra la fecha y procedencia por separado, sin agregar campos al contrato de los 14 hechos. Las reglas y los pesos se evalúan mediante pruebas reproducibles, sin afirmar precisión comercial general. Consulta la [guía de captura y procedencia de datos](docs/fuentes-y-datos.md).
 
 ## Licencia
 
