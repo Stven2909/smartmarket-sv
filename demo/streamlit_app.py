@@ -106,8 +106,8 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
         errors.append("Presupuesto debe ser mayor que cero.")
     if int(payload.get("productos_totales", 0)) <= 0:
         errors.append("Productos totales debe ser mayor que cero.")
-    if int(payload.get("productos_esenciales_totales", 0)) <= 0:
-        errors.append("Productos esenciales totales debe ser mayor que cero.")
+    if int(payload.get("productos_esenciales_totales", 0)) < 0:
+        errors.append("Productos esenciales totales no puede ser negativo.")
     if int(payload.get("numero_supermercados", 0)) < 1:
         errors.append("Número de supermercados debe ser como mínimo uno.")
     if int(payload.get("productos_disponibles", 0)) > int(payload.get("productos_totales", 0)):
@@ -118,6 +118,16 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
         errors.append(
             "Productos esenciales disponibles no puede superar productos esenciales totales."
         )
+    total = int(payload.get("productos_totales", 0))
+    disponibles = int(payload.get("productos_disponibles", 0))
+    esenciales_total = int(payload.get("productos_esenciales_totales", 0))
+    esenciales_disponibles = int(payload.get("productos_esenciales_disponibles", 0))
+    if esenciales_total > total:
+        errors.append("Productos esenciales totales no puede superar productos totales.")
+    if esenciales_disponibles > disponibles:
+        errors.append("Productos esenciales disponibles no puede superar productos disponibles.")
+    if disponibles - esenciales_disponibles > total - esenciales_total:
+        errors.append("Productos opcionales disponibles no pueden superar su total.")
     return errors
 
 
@@ -287,7 +297,7 @@ def _render_scenario_form(scenario: dict[str, Any]) -> dict[str, Any] | None:
         )
         productos_esenciales_totales = st.number_input(
             "Productos esenciales totales",
-            min_value=1,
+            min_value=0,
             step=1,
             value=int(defaults["productos_esenciales_totales"]),
         )
