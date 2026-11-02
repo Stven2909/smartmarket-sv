@@ -248,6 +248,41 @@ def call_rule_audit_api(base_url: str | None = None) -> dict[str, Any]:
     return response.json()
 
 
+def call_evidence_report_api(
+    scenarios: list[dict[str, Any]], base_url: str | None = None
+) -> bytes:
+    """Solicita un PDF real; la interfaz no replica el motor experto."""
+
+    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/evidence-report"
+    payload = {
+        "procedencia": "sintetico",
+        "escenarios": [
+            {"nombre":item["name"], "hechos":item["facts"]}
+            for item in scenarios
+        ],
+    }
+    try:
+        response = requests.post(
+            url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS,
+            headers=api_auth_headers(),
+        )
+    except requests.Timeout as exc:
+        raise ApiClientError("La generación del informe tardó demasiado.") from exc
+    except requests.RequestException as exc:
+        raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+    if response.status_code >= 400:
+        raise ApiClientError(
+            f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
+            response.status_code,
+        )
+    if (
+        not response.headers.get("content-type", "").startswith("application/pdf")
+        or not response.content.startswith(b"%PDF-")
+    ):
+        raise ApiClientError("FastAPI no devolvió un documento PDF válido.")
+    return response.content
+
+
 def call_chat_api(
     message: str,
     facts: dict[str, Any],
@@ -901,6 +936,45 @@ def render_rule_audit(base_url: str) -> None:
     )
 
 
+def render_evidence_report(
+    scenarios: list[dict[str, Any]], base_url: str
+) -> None:
+    """Descarga evidencia integral construida por la API Python."""
+
+    st.subheader("Informe académico descargable")
+    st.write(
+        "Genera un PDF con el ranking, las ocho trazas por escenario, "
+        "cobertura, solapamientos, umbrales, pesos y sensibilidad."
+    )
+    st.caption(
+        f"Se utilizarán {len(scenarios)} escenarios sintéticos precargados. "
+        "No se consulta Laravel ni se capturan datos de supermercados."
+    )
+    if st.button("Generar informe académico PDF", key="evidence_button"):
+        if not 2 <= len(scenarios) <= 10:
+            st.warning("El informe necesita entre 2 y 10 escenarios comparables.")
+        else:
+            try:
+                with st.spinner("Preparando evidencia técnica..."):
+                    st.session_state["evidence_pdf"] = call_evidence_report_api(
+                        scenarios, base_url
+                    )
+            except ApiClientError as exc:
+                st.session_state.pop("evidence_pdf", None)
+                st.error(f"No fue posible generar el informe: {exc}")
+
+    document = st.session_state.get("evidence_pdf")
+    if document:
+        st.success("El documento PDF está listo.")
+        st.download_button(
+            "Descargar informe académico PDF",
+            data=document,
+            file_name="smartmarket-informe-academico.pdf",
+            mime="application/pdf",
+            key="download_evidence_pdf",
+        )
+
+
 def render_knowledge_tab(base_url: str) -> None:
     st.subheader("Base de conocimiento y criterios del experto")
     st.write(
@@ -1071,6 +1145,7 @@ def main() -> None:
         render_knowledge_tab(base_url)
         render_rule_coverage(scenarios, base_url)
         render_rule_audit(base_url)
+        render_evidence_report(scenarios, base_url)
 
 
 if __name__ == "__main__":
