@@ -1,5 +1,7 @@
 """Solicitud de un informe técnico PDF sobre escenarios suministrados."""
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.recommendation import RecommendationRequest
@@ -16,6 +18,7 @@ class EvidenceReportRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     escenarios: list[EvidenceScenario] = Field(min_length=2, max_length=10)
+    procedencia: Literal["sintetico", "no_verificada"] = "no_verificada"
 
     @model_validator(mode="after")
     def check_comparability(self) -> "EvidenceReportRequest":
