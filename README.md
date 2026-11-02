@@ -25,6 +25,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
 - **Diagnóstico experto:** identifica riesgos críticos y condiciones pendientes de las reglas favorables, sin modificar los hechos recibidos.
 - **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 2430 escenarios sintéticos.
+- **Comparador de versiones (HU-13):** identifica cambios de dictamen, ganador, activaciones y explicación entre dos bases de reglas sin modificar la versión publicada.
 - **Informe académico PDF (HU-12):** integra ranking, trazas de las ocho reglas, sensibilidad, versiones y auditoría en un documento descargable.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
@@ -159,6 +160,7 @@ La documentación Swagger/OpenAPI está disponible cuando no se configura una cl
 | `POST` | `/api/v1/compare` | Compara entre 2 y 10 alternativas |
 | `GET` | `/api/v1/knowledge` | Consulta reglas, umbrales, pesos y versiones |
 | `GET` | `/api/v1/rule-audit` | Audita consistencia, duplicados y solapamientos en modo lectura |
+| `POST` | `/api/v1/rule-regression` | Compara dos snapshots de reglas y detecta regresiones críticas |
 | `POST` | `/api/v1/evidence-report` | Genera un informe académico PDF con 2 a 10 escenarios |
 | `POST` | `/api/v1/sensitivity` | Analiza la sensibilidad de una recomendación ante cambios hipotéticos |
 | `POST` | `/api/v1/diagnosis` | Diagnostica reglas favorables pendientes y riesgos críticos |
@@ -224,6 +226,8 @@ El comparador evalúa individualmente cada alternativa y ordena por conclusión 
 
 `GET /api/v1/rule-audit` audita la consistencia de las reglas sin modificarlas, informa anomalías estructurales y solapamientos con ejemplos sintéticos reproducibles. El resultado es un informe de revisión, no una validación comercial ni una prueba formal universal. Consulta la [metodología de auditoría](docs/auditoria-consistencia-reglas.md).
 
+`POST /api/v1/rule-regression` ejecuta dos snapshots proporcionados por el solicitante contra los mismos hechos y muestra las decisiones que cambian. Distingue cambios de dictamen y de explicación, señala regresiones críticas e identifica cada snapshot mediante una huella SHA-256. No publica reglas nuevas. Consulta la [guía de comparación de versiones](docs/comparador-versiones-reglas.md).
+
 `POST /api/v1/evidence-report` genera un archivo PDF en memoria con los resultados de 2 a 10 alternativas de presupuesto común, trazas, ranking, sensibilidad y auditoría. Desde Streamlit se genera y descarga en **Base de conocimiento**. Consulta la [guía del informe PDF](docs/informe-academico.md).
 
 `POST /api/v1/chat` recibe `message`, `facts` y la respuesta previa en `recommendation`. Las respuestas son deterministas y se basan en los hechos y la recomendación suministrados, sin generar nuevas conclusiones.
@@ -266,7 +270,7 @@ python -m pytest -q
 ruff check app demo tests
 ```
 
-La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, generación y lectura de informes PDF, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
+La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, comparación de versiones y detección de regresiones, generación y lectura de informes PDF, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
 
 [Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta las verificaciones de lint y pruebas.
 

@@ -12,6 +12,7 @@ from app.api.health_routes import router as health_router
 from app.api.knowledge_routes import router as knowledge_router
 from app.api.recommendation_routes import router as recommendation_router
 from app.api.rule_audit_routes import router as rule_audit_router
+from app.api.rule_regression_routes import router as rule_regression_router
 from app.api.sensitivity_routes import router as sensitivity_router
 from app.schemas.versions import CONTRACT_VERSION
 
@@ -49,4 +50,5 @@ app.include_router(diagnosis_router, dependencies=[Security(require_api_key)])
 app.include_router(evidence_report_router, dependencies=[Security(require_api_key)])
 app.include_router(knowledge_router, dependencies=[Security(require_api_key)])
 app.include_router(rule_audit_router, dependencies=[Security(require_api_key)])
+app.include_router(rule_regression_router, dependencies=[Security(require_api_key)])
 app.include_router(sensitivity_router, dependencies=[Security(require_api_key)])

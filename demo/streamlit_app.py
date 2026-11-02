@@ -196,6 +196,28 @@ def call_comparison_api(
     return _post_json("/api/v1/compare", {"alternativas": alternatives}, base_url)
 
 
+def call_rule_regression_api(
+    baseline: dict[str, Any],
+    proposed: dict[str, Any],
+    scenarios: list[dict[str, Any]],
+    base_url: str | None = None,
+) -> dict[str, Any]:
+    """Compara snapshots sin escribir sobre la base de reglas publicada."""
+
+    return _post_json(
+        "/api/v1/rule-regression",
+        {
+            "anterior": baseline,
+            "propuesta": proposed,
+            "escenarios": [
+                {"nombre": item["name"], "hechos": item["facts"]}
+                for item in scenarios
+            ],
+        },
+        base_url,
+    )
+
+
 def call_sensitivity_api(
     alternative: dict[str, Any], base_url: str | None = None
 ) -> dict[str, Any]:
@@ -936,6 +958,141 @@ def render_rule_audit(base_url: str) -> None:
     )
 
 
+def render_rule_regression(
+    scenarios: list[dict[str, Any]], base_url: str
+) -> None:
+    """Ensaya cambios aislados de prioridades sin modificar la API de producción."""
+
+    st.subheader("Comparador de versiones de reglas")
+    st.caption(
+        "Simula una prioridad distinta sobre R01–R08 y compara los mismos "
+        "escenarios contra ambas versiones. No publica cambios."
+    )
+    if st.button("Cargar reglas actuales para comparar", key="regression_load"):
+        try:
+            st.session_state["regression_knowledge"] = call_knowledge_api(base_url)
+            st.session_state.pop("regression_result", None)
+        except ApiClientError as exc:
+            st.error(f"No se pudo consultar las reglas: {exc}")
+
+    knowledge = st.session_state.get("regression_knowledge")
+    if not knowledge:
+        st.info("Carga la versión actual de las reglas para iniciar la simulación.")
+        return
+
+    rules = knowledge["rules"]
+    ids = [rule["id"] for rule in rules]
+    default_id = ids.index("R06") if "R06" in ids else 0
+    selected = st.selectbox(
+        "Regla que deseas simular",
+        options=ids,
+        index=default_id,
+        key="regression_rule_id",
+    )
+    current_rule = next(item for item in rules if item["id"] == selected)
+    current_priority = int(current_rule["priority"])
+    default_new = 7 if selected == "R06" else current_priority + 1
+    priority = int(
+        st.number_input(
+            "Nueva prioridad para la versión de prueba",
+            min_value=1,
+            max_value=100,
+            value=min(default_new, 100),
+            step=1,
+            key="regression_new_priority",
+        )
+    )
+    st.caption(
+        f"Regla {selected}: prioridad vigente {current_priority}; "
+        f"prioridad simulada {priority}. Un valor menor tiene mayor precedencia."
+    )
+
+    proposed_rules = json.loads(json.dumps(rules, ensure_ascii=False))
+    for rule in proposed_rules:
+        if rule["id"] == selected:
+            rule["priority"] = priority
+
+    fingerprint = json.dumps(
+        [rules, selected, priority, scenarios],
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    if st.button("Comparar versiones de reglas", key="regression_compare"):
+        if priority == current_priority:
+            st.info(
+                "La prioridad no cambió: ambas bases de reglas serían equivalentes."
+            )
+        try:
+            st.session_state["regression_result"] = call_rule_regression_api(
+                {
+                    "etiqueta": knowledge["rules_version"] + " (vigente)",
+                    "reglas": rules,
+                },
+                {
+                    "etiqueta": "simulación de prioridad",
+                    "reglas": proposed_rules,
+                },
+                scenarios,
+                base_url,
+            )
+            st.session_state["regression_fingerprint"] = fingerprint
+        except ApiClientError as exc:
+            st.session_state.pop("regression_result", None)
+            st.error(f"No se pudo comparar las reglas: {exc}")
+
+    report = st.session_state.get("regression_result")
+    if not report or st.session_state.get("regression_fingerprint") != fingerprint:
+        return
+
+    first, second, third, fourth = st.columns(4)
+    first.metric("Casos evaluados", report["escenarios_evaluados"])
+    second.metric("Cambios de nivel", report["cambios_nivel"])
+    third.metric("Reglas ganadoras distintas", report["cambios_regla_ganadora"])
+    fourth.metric("Regresiones críticas", report["regresiones_criticas"])
+
+    if report["regresiones_criticas"]:
+        st.error(
+            "La simulación permitiría una recomendación favorable donde antes "
+            "había una regla crítica activa. Revisar antes de publicar."
+        )
+    st.caption(
+        f"SHA-256 vigente: {report['huella_anterior']} | "
+        f"SHA-256 propuesta: {report['huella_propuesta']}"
+    )
+    st.dataframe(
+        [
+            {
+                "Escenario": item["escenario"],
+                "Nivel anterior": item["nivel_anterior"],
+                "Nivel simulado": item["nivel_propuesto"],
+                "Regla anterior": item["regla_anterior"] or "Ninguna",
+                "Regla simulada": item["regla_propuesta"] or "Ninguna",
+                "Cambio de nivel": "Sí" if item["cambio_nivel"] else "No",
+                "Riesgo crítico": "Sí" if item["regresion_critica"] else "No",
+            }
+            for item in report["resultados"]
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    with st.expander("Cambios en las reglas y explicaciones"):
+        st.json(report["cambios_reglas"])
+        for item in report["resultados"]:
+            if item["cambio_explicacion"]:
+                st.write(f"**{item['escenario']}**")
+                st.write("Antes: " + item["explicacion_anterior"])
+                st.write("Propuesta: " + item["explicacion_propuesta"])
+    for warning in report.get("advertencias", []):
+        st.caption(warning)
+    st.download_button(
+        "Descargar comparación JSON",
+        data=json.dumps(report, ensure_ascii=False, indent=2),
+        mime="application/json",
+        file_name="smartmarket-regresion-reglas.json",
+        key="regression_download",
+    )
+
+
 def render_evidence_report(
     scenarios: list[dict[str, Any]], base_url: str
 ) -> None:
@@ -1145,6 +1302,7 @@ def main() -> None:
         render_knowledge_tab(base_url)
         render_rule_coverage(scenarios, base_url)
         render_rule_audit(base_url)
+        render_rule_regression(scenarios, base_url)
         render_evidence_report(scenarios, base_url)
 
 
