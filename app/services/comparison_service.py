@@ -73,6 +73,19 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
         "Los pesos y umbrales son parámetros explicables, no probabilidades "
         "ni valores aprendidos por inteligencia artificial.",
     ]
+    # La comparación está diseñada para opciones de una misma lista.
+    # Avisar, sin rechazar ni alterar el contrato anterior, si los hechos
+    # indican listas distintas o una clasificación de esenciales diferente.
+    totals = {
+        (option.productos_totales, option.productos_esenciales_totales)
+        for option in request.alternativas
+    }
+    if len(totals) > 1:
+        warnings.append(
+            "Las alternativas tienen distintos totales de productos o esenciales. "
+            "Comprueba que corresponden a la misma lista antes de interpretar el ranking."
+        )
+
     if all(_tier(row.recomendacion) >= 2 for row in alternatives):
         warnings.append(
             "Ninguna opción tiene una regla favorable; la primera posición "
