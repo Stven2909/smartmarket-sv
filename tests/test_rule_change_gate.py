@@ -110,7 +110,8 @@ def test_narrative_only_changes_are_allowed_without_misleading_level_change(tmp_
     assert result["huella_anterior"] != result["huella_propuesta"]
 
 
-def test_invalid_json_fails_closed(tmp_path, capsys):
+def test_invalid_json_fails_closed(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
     invalid = tmp_path / "invalid-rules.json"
     invalid.write_text("{invalid json", encoding="utf-8")
     status = main(
@@ -122,6 +123,27 @@ def test_invalid_json_fails_closed(tmp_path, capsys):
     )
     assert status == 2
     assert "ERROR" in capsys.readouterr().err
+
+
+def test_cli_returns_failure_when_critical_rule_is_removed(tmp_path, monkeypatch):
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(tmp_path / "summary.md"))
+    proposed = save_modified(
+        tmp_path,
+        lambda rules: rules.__setitem__(
+            slice(None), [rule for rule in rules if rule["id"] != "R01"]
+        ),
+    )
+    result = main(
+        [
+            "--baseline", str(RULES),
+            "--candidate", str(proposed),
+            "--scenarios", str(SCENARIOS),
+        ]
+    )
+    assert result == 1
+    summary = (tmp_path / "summary.md").read_text(encoding="utf-8")
+    assert "BLOQUEADO" in summary
+    assert "R01" in summary
 
 
 def test_cli_writes_summary_and_returns_correct_exit_code(tmp_path, monkeypatch):
