@@ -67,5 +67,5 @@ Además se prueban preguntas ambiguas del chatbot, explicaciones ligadas a la re
 
 - El análisis modifica un factor principal cada vez; no estudia combinaciones ni distribuciones probabilísticas.
 - El precio de referencia se mantiene fijo al recalcular el ahorro; esta hipótesis se documenta para que el usuario no confunda la simulación con datos comerciales.
-- La API actual no conoce antigüedad del precio, precisión geográfica, nombres de productos ni cuantía de promociones. Esos datos podrían incorporarse en una versión **opcional** del contrato con su procedencia y fecha, sin alterar el contrato vigente.
-- Una validación científica posterior requiere escenarios reales y criterios contrastados por especialistas; no puede inferirse la exactitud del sistema únicamente de que pasen las pruebas programadas.
+- La API no recibe la fecha, procedencia ni detalle de cada precio. Para observaciones reales capturadas manualmente, esos metadatos deben conservarse **fuera del contrato de 14 hechos**, siguiendo la [guía de procedencia](fuentes-y-datos.md).
+- La evaluación del prototipo se basa en pruebas internas reproducibles, casos límite, conflictos de reglas y sensibilidad. Puede incorporar observaciones manuales reales y escenarios sintéticos claramente identificados. Superar las pruebas **no demuestra exactitud frente a todo el mercado**; no se requiere evaluación por especialistas externos.
