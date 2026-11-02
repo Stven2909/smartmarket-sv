@@ -1,6 +1,7 @@
 """HU-16: ensayos basados en propiedades y relaciones metamórficas."""
 
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from app.expert_system.classifiers import derive_facts
 from app.expert_system.convenience_index import CRITICAL_RULE_IDS
