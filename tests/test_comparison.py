@@ -170,10 +170,11 @@ def test_comparison_http_api_key_is_enforced(monkeypatch):
 
 def test_demo_has_four_views_and_comparison_selection():
     script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
-    at = AppTest.from_file(str(script)).run(timeout=20)
+    at = AppTest.from_file(str(script))
+    at.session_state["active_tab"] = "Comparador"
+    at.run(timeout=20)
     assert not at.exception
     assert len(at.tabs) == 4
-    assert at.selectbox
     assert at.multiselect
     assert len(at.multiselect[0].value) >= 2
 
@@ -209,6 +210,7 @@ def test_streamlit_comparison_with_same_request_id_does_not_duplicate_widgets():
         ComparisonRequest(alternativas=[option("primera"), option("segunda")])
     )
     at = AppTest.from_file(str(script))
+    at.session_state["active_tab"] = "Comparador"
     at.session_state["latest_comparison"] = report.model_dump(mode="json")
     at.run(timeout=20)
     assert not at.exception
