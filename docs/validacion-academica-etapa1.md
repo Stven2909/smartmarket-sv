@@ -1,6 +1,6 @@
 # Matriz de validación académica — etapa 1
 
-Esta matriz reúne comprobaciones internas reproducibles de la lógica de reglas. Los escenarios de demostración son sintéticos; los casos provenientes de observaciones reales capturadas manualmente deben identificarse con su fuente y fecha en un registro separado. No se requiere evaluación por especialistas externos ni se afirma exactitud comercial.
+Esta matriz reúne comprobaciones internas reproducibles de la lógica de reglas y del contrato HTTP del sistema experto. El servicio recibe hechos de entrada preparados por el backend y no se encarga de su recopilación.
 
 ## Política de compatibilidad
 
