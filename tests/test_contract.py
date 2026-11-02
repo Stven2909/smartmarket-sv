@@ -47,7 +47,7 @@ CONTRACT_CASES = [
     pytest.param({}, "EXCELENTE", "R06", "ALTA_CONVENIENCIA", id="ideal"),
     pytest.param({"costo_total": 56}, "NO_RECOMENDABLE", "R01", None, id="budget"),
     pytest.param(
-        {"productos_esenciales_disponibles": 5},
+        {"productos_disponibles": 9, "productos_esenciales_disponibles": 5},
         "NO_RECOMENDABLE",
         "R02",
         None,
@@ -126,6 +126,8 @@ CONTRACT_CASES = [
             "distancia_adicional_km": 7,
             "tiempo_estimado_min": 44,
             "productos_disponibles": 5,
+            "productos_esenciales_disponibles": 5,
+            "productos_esenciales_totales": 5,
             "promociones_aplicables": False,
         },
         "NO_RECOMENDABLE",
