@@ -37,7 +37,7 @@ def test_rejects_invalid_iteration_counts():
     for n in (0, -5, 100_001):
         try:
             benchmark(n)
-            assert False, "Debe rechazar iteraciones no válidas"
+            raise AssertionError("Debe rechazar iteraciones no válidas")
         except ValueError:
             pass
 
