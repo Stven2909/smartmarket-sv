@@ -10,7 +10,6 @@ from app.services.comparison_service import compare_alternatives
 from app.services.recommendation_service import recommend
 from demo.streamlit_app import build_coverage_report, load_scenarios
 
-
 BASE = {
     "request_id": "diagnostico-001",
     "alternativa_id": "sucursal-a",
