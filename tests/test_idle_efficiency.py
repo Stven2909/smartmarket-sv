@@ -7,6 +7,7 @@ from pathlib import Path
 from streamlit.testing.v1 import AppTest
 
 from app.expert_system.rule_auditor import _cached_default_audit, audit_rules
+from app.expert_system.rule_loader import _cached_production_rules, load_rules
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -46,6 +47,16 @@ def test_audit_is_lazy_cached_and_returns_independent_results():
     assert second.resumen != first.resumen
     assert len(second.cobertura) == 8
     assert _cached_default_audit.cache_info().hits == 1
+
+
+def test_rule_loader_reuses_parsed_rules_without_leaking_mutations():
+    _cached_production_rules.cache_clear()
+    first = load_rules()
+    assert _cached_production_rules.cache_info().misses == 1
+    first[0].priority = 999
+    second = load_rules()
+    assert second[0].priority != 999
+    assert _cached_production_rules.cache_info().hits == 1
 
 
 def test_separate_deployment_dependencies_are_minimal():
