@@ -1,4 +1,5 @@
 import json
+from functools import lru_cache
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -12,11 +13,23 @@ class RuleLoaderError(ValueError):
     """Error legible al cargar o validar la base de conocimiento."""
 
 
+@lru_cache(maxsize=1)
+def _cached_production_rules() -> tuple[ProductionRule, ...]:
+    """Carga la versión desplegada solo en el primer uso."""
+
+    return tuple(_parse_rules(DEFAULT_RULES_PATH))
+
+
 def load_rules(path: Path | None = None) -> list[ProductionRule]:
-    """Carga y valida rules.json desde una ruta absoluta o la ruta predeterminada."""
+    """Devuelve reglas independientes y evita reabrir la base fija en cada solicitud."""
 
-    rules_path = Path(path) if path is not None else DEFAULT_RULES_PATH
+    if path is None:
+        return [rule.model_copy(deep=True) for rule in _cached_production_rules()]
+    # Los snapshots explícitos y archivos de prueba nunca comparten caché.
+    return _parse_rules(Path(path))
 
+
+def _parse_rules(rules_path: Path) -> list[ProductionRule]:
     try:
         raw_data = json.loads(rules_path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:

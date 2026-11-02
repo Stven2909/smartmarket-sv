@@ -55,7 +55,7 @@ proceso HTTP. Por ejemplo, en Render:
 3. Usar la rama `main` del repositorio Python.
 4. Usar estos comandos:
 
-   - Build command: `pip install -r requirements.txt`
+   - Build command: `pip install -r requirements.txt` (solo las dependencias de FastAPI y PDF)
    - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 5. Configurar el health check como `/health`.
@@ -78,6 +78,7 @@ autorizado sin publicarla en archivos versionados.
    - Repository: el fork personal de `smartmarket-sv`.
    - Branch: `main`.
    - Main file path: `demo/streamlit_app.py`.
+   - Dependencias detectadas automáticamente en `demo/requirements.txt` (solo Streamlit y Requests).
 
 5. Elegir un subdominio, por ejemplo `smartmarket-sv-demo`, si está
    disponible.
@@ -165,6 +166,12 @@ mostrados por la interfaz y el contrato Pydantic.
 
 Revisar los logs del proveedor de FastAPI y probar primero `/health`. La demo
 no ejecuta el motor localmente ni puede reparar un servicio API apagado.
+
+## Optimización y reposo automático
+
+La demo usa pestañas de ejecución diferida (Streamlit 1.55 o superior) y no consulta la API al abrir la aplicación sin interacción. La primera petición después de un reposo de Render puede tardar más que una petición normal; la interfaz concede hasta 90 segundos para completar esa solicitud sin realizar pings adicionales.
+
+El alojamiento gratuito puede hibernar tanto Streamlit como Render por inactividad. **Una app ligera no se mantiene despierta indefinidamente**: no se agregan tareas programadas ni peticiones de mantenimiento. Más detalles en [optimización y reposo](optimizacion-reposo.md).
 
 ## Desarrollo local
 

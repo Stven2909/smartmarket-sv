@@ -7,8 +7,8 @@ import requests
 import streamlit as st
 
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
-# ponytail: 30s porque Render free tier arranca en frío (~30-60s) tras dormir
-REQUEST_TIMEOUT_SECONDS = 30
+# Espera pasiva ante un posible arranque en frío; no realiza peticiones periódicas.
+REQUEST_TIMEOUT_SECONDS = 90
 SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
 
 
@@ -24,6 +24,7 @@ class ApiClientError(RuntimeError):
         self.status_code = status_code
 
 
+@st.cache_data(show_spinner=False, max_entries=4)
 def load_scenarios(path: Path | None = None) -> list[dict[str, Any]]:
     scenarios_path = Path(path) if path is not None else SCENARIOS_PATH
 
@@ -1261,49 +1262,58 @@ def main() -> None:
         st.error(str(exc))
         return
 
+    # Desde Streamlit 1.55, solo se ejecuta la pestaña seleccionada.
+    # Evita construir tablas, controles y JSON de las otras tres vistas
+    # en cada rerun de un formulario.
     lab, comparison_tab, sensitivity_tab, knowledge = st.tabs(
-        ["Laboratorio", "Comparador", "Sensibilidad", "Base de conocimiento"]
+        ["Laboratorio", "Comparador", "Sensibilidad", "Base de conocimiento"],
+        key="active_tab",
+        on_change="rerun",
     )
-    with lab:
-        st.subheader("Prueba una recomendación")
-        st.caption("Elige un escenario y modifica sus hechos antes de ejecutar.")
-        scenario_by_name = {scenario["name"]: scenario for scenario in scenarios}
-        selected_name = st.selectbox("Escenario", list(scenario_by_name))
-        selected = scenario_by_name[selected_name]
-        st.caption("Escenario de prueba · " + selected["description"])
+    if lab.open:
+        with lab:
+            st.subheader("Prueba una recomendación")
+            st.caption("Elige un escenario y modifica sus hechos antes de ejecutar.")
+            scenario_by_name = {scenario["name"]: scenario for scenario in scenarios}
+            selected_name = st.selectbox("Escenario", list(scenario_by_name))
+            selected = scenario_by_name[selected_name]
+            st.caption("Escenario de prueba · " + selected["description"])
 
-        payload = _render_scenario_form(selected)
-        if payload is not None:
-            errors = validate_payload(payload)
-            if errors:
-                for error in errors:
-                    st.warning(error)
-            else:
-                try:
-                    result = call_recommendation_api(payload, base_url)
-                    st.session_state["latest_recommendation"] = result
-                    st.session_state["latest_facts"] = payload
-                except ApiClientError as exc:
-                    st.error(str(exc))
+            payload = _render_scenario_form(selected)
+            if payload is not None:
+                errors = validate_payload(payload)
+                if errors:
+                    for error in errors:
+                        st.warning(error)
+                else:
+                    try:
+                        result = call_recommendation_api(payload, base_url)
+                        st.session_state["latest_recommendation"] = result
+                        st.session_state["latest_facts"] = payload
+                    except ApiClientError as exc:
+                        st.error(str(exc))
 
-        latest_result = st.session_state.get("latest_recommendation")
-        latest_facts = st.session_state.get("latest_facts")
-        if latest_result is not None:
-            st.header("Resultado de la inferencia")
-            render_recommendation(latest_result)
-            render_diagnosis_panel(base_url, latest_facts)
-        render_chatbot(latest_facts, latest_result)
+            latest_result = st.session_state.get("latest_recommendation")
+            latest_facts = st.session_state.get("latest_facts")
+            if latest_result is not None:
+                st.header("Resultado de la inferencia")
+                render_recommendation(latest_result)
+                render_diagnosis_panel(base_url, latest_facts)
+            render_chatbot(latest_facts, latest_result)
 
-    with comparison_tab:
-        render_comparison_tab(scenarios, base_url)
-    with sensitivity_tab:
-        render_sensitivity_tab(base_url)
-    with knowledge:
-        render_knowledge_tab(base_url)
-        render_rule_coverage(scenarios, base_url)
-        render_rule_audit(base_url)
-        render_rule_regression(scenarios, base_url)
-        render_evidence_report(scenarios, base_url)
+    if comparison_tab.open:
+        with comparison_tab:
+            render_comparison_tab(scenarios, base_url)
+    if sensitivity_tab.open:
+        with sensitivity_tab:
+            render_sensitivity_tab(base_url)
+    if knowledge.open:
+        with knowledge:
+            render_knowledge_tab(base_url)
+            render_rule_coverage(scenarios, base_url)
+            render_rule_audit(base_url)
+            render_rule_regression(scenarios, base_url)
+            render_evidence_report(scenarios, base_url)
 
 
 if __name__ == "__main__":

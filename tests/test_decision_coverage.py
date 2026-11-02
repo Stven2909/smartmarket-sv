@@ -87,7 +87,9 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
 
 def test_streamlit_coverage_controls_load_without_network():
     script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
-    at = AppTest.from_file(str(script)).run(timeout=20)
+    at = AppTest.from_file(str(script))
+    at.session_state["active_tab"] = "Base de conocimiento"
+    at.run(timeout=20)
     assert not at.exception
     assert len(at.tabs) == 4
     assert any(button.label == "Evaluar cobertura" for button in at.button)
