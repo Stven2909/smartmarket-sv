@@ -37,6 +37,7 @@ preguntas a Laravel. React no debe llamar directamente al motor Python.
 | `POST` | `/api/v1/diagnosis` | Explicar riesgos y requisitos pendientes (opcional) |
 | `GET` | `/api/v1/knowledge` | Consultar reglas y parámetros de solo lectura (opcional) |
 | `GET` | `/api/v1/rule-audit` | Auditar reglas y solapamientos en modo lectura (opcional) |
+| `POST` | `/api/v1/evidence-report` | Exportar PDF de evidencias técnicas (opcional, 2–10 casos) |
 
 Para los endpoints JSON:
 
