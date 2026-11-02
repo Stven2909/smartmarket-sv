@@ -11,6 +11,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             DemoDataSeeder::class,
+            // Refuerza el catálogo con los precios mock de las cadenas que no
+            // se sincronizan por webscraping (ADR-012). Idempotente.
+            MockSupermarketsSeeder::class,
         ]);
     }
 }

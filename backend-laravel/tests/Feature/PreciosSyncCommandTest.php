@@ -29,11 +29,15 @@ class PreciosSyncCommandTest extends TestCase
             ]],
         ];
 
-        config(['price_providers.fuentes.prueba-vtex' => [
-            'modo' => 'vtex',
-            'base_url' => 'https://prueba-vtex.test',
-            'enabled' => true,
-        ]]);
+        config([
+            // La fuente de prueba debe estar en la lista blanca operativa (ADR-012).
+            'price_providers.sincronizacion.fuentes_permitidas' => ['super-selectos', 'prueba-vtex'],
+            'price_providers.fuentes.prueba-vtex' => [
+                'modo' => 'vtex',
+                'base_url' => 'https://prueba-vtex.test',
+                'enabled' => true,
+            ],
+        ]);
 
         Http::fake([
             '*/category/tree/*' => Http::response([['id' => 9, 'name' => 'Raiz', 'hasChildren' => false]]),
@@ -102,12 +106,23 @@ class PreciosSyncCommandTest extends TestCase
         $this->assertSame(1, $run->productos_obtenidos);
     }
 
-    public function test_fuente_manual_no_tiene_driver_y_se_avisa_sin_fallar(): void
+    public function test_fuente_manual_no_permitida_falla_aunque_tenga_driver(): void
     {
+        // PriceSmart sigue siendo modo manual (ADR-010), pero además está fuera
+        // de la lista blanca: solo Super Selectos se sincroniza (ADR-012).
         $this->artisan('precios:sync', ['--fuente' => 'pricesmart'])
-            ->assertSuccessful(); // pricesmart es carga manual según ADR-10/doc 06 §5.5
+            ->assertExitCode(1);
 
         $this->assertSame(0, SyncRun::count());
+    }
+
+    public function test_fuente_con_driver_pero_fuera_de_lista_blanca_falla(): void
+    {
+        $this->artisan('precios:sync', ['--fuente' => 'walmart'])
+            ->assertExitCode(1);
+
+        $this->assertSame(0, SyncRun::count());
+        $this->assertSame(0, ProductoRaw::count());
     }
 
     public function test_fuente_desconocida_falla_con_codigo_de_error(): void
@@ -120,11 +135,15 @@ class PreciosSyncCommandTest extends TestCase
 
     public function test_bloqueo_del_supermercado_marca_corrida_abortada_y_comando_falla(): void
     {
-        config(['price_providers.fuentes.prueba-vtex' => [
-            'modo' => 'vtex',
-            'base_url' => 'https://prueba-vtex.test',
-            'enabled' => true,
-        ]]);
+        config([
+            // La fuente de prueba debe estar en la lista blanca operativa (ADR-012).
+            'price_providers.sincronizacion.fuentes_permitidas' => ['super-selectos', 'prueba-vtex'],
+            'price_providers.fuentes.prueba-vtex' => [
+                'modo' => 'vtex',
+                'base_url' => 'https://prueba-vtex.test',
+                'enabled' => true,
+            ],
+        ]);
 
         Http::fake(['*' => Http::response('Access Denied', 403)]);
 

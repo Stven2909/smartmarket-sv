@@ -6,7 +6,16 @@
 //
 // Veredicto legal por fuente: docs/06-referencia-extractor-vtex.md §5.
 // Alcance y condiciones operativas obligatorias: docs/07-decision-extractor-fuentes-riesgo.md (ADR-10).
+// Actualización 2026-11-01 (ADR-012): solo Super Selectos se sincroniza por webscraping.
+// Walmart, Maxi Despensa, Don Juan y PriceSmart quedan como datos mock de seeder.
 return [
+
+    'sincronizacion' => [
+        // Lista blanca operativa: el comando precios:sync y precios:procesar solo
+        // aceptan estas fuentes. El resto se considera mock/carga manual.
+        'fuentes_permitidas' => ['super-selectos'],
+        'fuente_por_defecto' => 'super-selectos',
+    ],
 
     'defaults' => [
         // Obligación del ADR-10: User-Agent identificable, nunca suplantar navegador.
@@ -39,40 +48,46 @@ return [
             // su sucursal virtual "Tienda en línea", ADR-11).
             'supermercado' => 'Super Selectos',
             'enabled' => true,
-            'notas' => 'Única cadena independiente; ToS sin cláusulas anti-extracción (doc 06 §5.1).',
+            'mock' => false,
+            'notas' => 'Única cadena que se sincroniza por webscraping (ADR-012); ToS sin cláusulas anti-extracción (doc 06 §5.1).',
         ],
 
         'walmart' => [
             'modo' => 'vtex',
             'base_url' => 'https://www.walmart.com.sv',
             'supermercado' => 'Walmart',
-            'enabled' => true,
-            'notas' => 'Operadora del Sur; ToS restrictivo — automatiza bajo ADR-10.',
+            'enabled' => false,
+            'mock' => true,
+            'notas' => 'Sincronización deshabilitada (ADR-012); sus precios vienen de MockSupermarketsSeeder.',
         ],
 
         'maxi-despensa' => [
             'modo' => 'vtex',
             'base_url' => 'https://www.maxidespensa.com.sv',
             'supermercado' => 'Maxi Despensa',
-            'enabled' => true,
-            'notas' => 'Misma entidad que Walmart (inferencia fuerte, doc 06 §5.2).',
+            'enabled' => false,
+            'mock' => true,
+            'notas' => 'Sincronización deshabilitada (ADR-012); sus precios vienen de MockSupermarketsSeeder.',
         ],
 
         'don-juan' => [
             'modo' => 'vtex',
             'base_url' => 'https://www.ladespensadedonjuan.com.sv',
             'supermercado' => 'La Despensa de Don Juan',
-            'enabled' => true,
-            'notas' => 'ToS verificado idéntico al de walmart.com.sv.',
+            'enabled' => false,
+            'mock' => true,
+            'notas' => 'Sincronización deshabilitada (ADR-012); sus precios vienen de MockSupermarketsSeeder.',
         ],
 
         // Excluido de la automatización por decisión expresa del ADR-10: su
-        // robots.txt prohíbe scrapers por nombre. Permanece como fuente manual.
+        // robots.txt prohíbe scrapers por nombre. Permanece como fuente manual
+        // y ahora también recibe datos mock (ADR-012).
         'pricesmart' => [
             'modo' => 'manual',
             'supermercado' => 'PriceSmart',
             'enabled' => false,
-            'notas' => 'robots.txt bloquea scrapers nominalmente (doc 06 §5.3) — carga manual.',
+            'mock' => true,
+            'notas' => 'robots.txt bloquea scrapers nominalmente (doc 06 §5.3) — datos mock de seeder.',
         ],
 
         // Reservado v1.2: requiere convenio comercial + token (fuente partner-feed).
@@ -80,6 +95,7 @@ return [
             'modo' => 'partner-feed',
             'supermercado' => 'Súper San Francisco',
             'enabled' => false,
+            'mock' => false,
             'notas' => 'Requiere acuerdo comercial (doc 06 §1).',
         ],
     ],

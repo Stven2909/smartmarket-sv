@@ -9,10 +9,14 @@ use Illuminate\Console\Command;
 // normaliza hacia el Catálogo Maestro. Separado de precios:sync para que la
 // recolección (que habla con internet) y la publicación (local, idempotente)
 // se ejecuten — y fallen — de forma independiente.
+//
+// Alcance operativo (ADR-012): solo Super Selectos deja filas en staging. El
+// comando usa esa fuente por defecto y rechaza cualquier otra; las demás
+// cadenas se alimentan desde MockSupermarketsSeeder.
 class PreciosProcesar extends Command
 {
     protected $signature = 'precios:procesar
-        {--fuente= : Clave de la fuente (ej. walmart). Vacío = todas las filas pendientes}
+        {--fuente= : Clave de la fuente (solo super-selectos). Vacío = fuente por defecto}
         {--limite= : Tope de filas a procesar en esta corrida}
         {--dry-run : Simula el matching y reporta sin escribir}';
 
@@ -20,24 +24,41 @@ class PreciosProcesar extends Command
 
     public function handle(StagingProcessor $processor): int
     {
-        $fuente = $this->option('fuente') ?: null;
+        $todas = config('price_providers.fuentes', []);
+        $permitidas = $this->fuentesPermitidas();
 
-        if ($fuente !== null && ! array_key_exists((string) $fuente, config('price_providers.fuentes', []))) {
-            $this->error("Fuente desconocida '{$fuente}'. Definidas: "
-                . implode(', ', array_keys(config('price_providers.fuentes', []))));
+        $fuente = (string) ($this->option('fuente')
+            ?: config('price_providers.sincronizacion.fuente_por_defecto', ''));
+
+        if ($fuente === '') {
+            $this->error('No hay fuente por defecto configurada en price_providers.sincronizacion.fuente_por_defecto.');
+
+            return self::FAILURE;
+        }
+
+        if (! array_key_exists($fuente, $todas)) {
+            $this->error("Fuente desconocida '{$fuente}'. Definidas: " . implode(', ', array_keys($todas)));
+
+            return self::FAILURE;
+        }
+
+        if (! in_array($fuente, $permitidas, true)) {
+            $this->error("La fuente '{$fuente}' no está habilitada para procesamiento. Solo se permite: "
+                . (implode(', ', $permitidas) ?: 'ninguna')
+                . '. Las demás cadenas usan datos mock (ADR-012).');
 
             return self::FAILURE;
         }
 
         $conteos = $processor->procesar(
-            $fuente !== null ? (string) $fuente : null,
+            $fuente,
             max(0, (int) $this->option('limite')),
             (bool) $this->option('dry-run'),
         );
 
         $sufijoDry = $this->option('dry-run') ? ' (dry-run: sin escritura)' : '';
 
-        $etiqueta = $fuente ?? 'todas-las-fuentes';
+        $etiqueta = $fuente;
 
         $this->info("[{$etiqueta}] procesados={$conteos['procesados']}"
             . " publicados={$conteos['publicados']}"
@@ -49,5 +70,13 @@ class PreciosProcesar extends Command
         // Los errores individuales ya quedaron marcados en staging con su motivo:
         // la corrida no se considera fallida por ellos.
         return self::SUCCESS;
+    }
+
+    /** @return string[] */
+    private function fuentesPermitidas(): array
+    {
+        $permitidas = config('price_providers.sincronizacion.fuentes_permitidas', []);
+
+        return is_array($permitidas) ? array_values($permitidas) : [];
     }
 }

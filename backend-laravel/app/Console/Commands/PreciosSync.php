@@ -15,12 +15,16 @@ use Throwable;
 // Price Provider del Flujo 2 (02-arquitectura.md §6): obtiene → valida →
 // escribe SOLO a staging (producto_raw), jamás directo a precios_actuales.
 //
-// Cortesía y postura según ADR-10; health check por corrida según
+// Alcance operativo (ADR-012): solo Super Selectos se consulta por webscraping.
+// Walmart, Maxi Despensa, Don Juan y PriceSmart se alimentan desde
+// MockSupermarketsSeeder; el comando rechaza cualquier otra fuente.
+//
+// Cortesía y postura según ADR-010; health check por corrida según
 // 06-referencia-extractor-vtex.md §4 punto 5.
 class PreciosSync extends Command
 {
     protected $signature = 'precios:sync
-        {--fuente= : Clave de la fuente (ej. walmart). Vacío = todas las habilitadas}
+        {--fuente= : Clave de la fuente (solo super-selectos por defecto). Vacío = todas las permitidas}
         {--limite= : Tope de productos obtenidos por fuente (útil para pruebas)}
         {--dry-run : Recolecta y reporta sin escribir en staging}';
 
@@ -71,10 +75,25 @@ class PreciosSync extends Command
     private function fuentesObjetivo(): ?array
     {
         $todas = config('price_providers.fuentes', []);
+        $permitidas = $this->fuentesPermitidas();
 
         if ($clave = $this->option('fuente')) {
             if (! isset($todas[$clave])) {
                 $this->error("Fuente desconocida '{$clave}'. Definidas: " . implode(', ', array_keys($todas)));
+
+                return null;
+            }
+
+            if (! in_array($clave, $permitidas, true)) {
+                $this->error("La fuente '{$clave}' no está habilitada para sincronización. Solo se permite: "
+                    . (implode(', ', $permitidas) ?: 'ninguna')
+                    . '. Las demás cadenas usan datos mock (ADR-012).');
+
+                return null;
+            }
+
+            if (! ($todas[$clave]['enabled'] ?? false)) {
+                $this->error("La fuente '{$clave}' está deshabilitada en config/price_providers.php.");
 
                 return null;
             }
@@ -85,7 +104,17 @@ class PreciosSync extends Command
         return collect($todas)
             ->filter(fn ($config) => $config['enabled'] ?? false)
             ->keys()
+            ->filter(fn ($clave) => in_array($clave, $permitidas, true))
+            ->values()
             ->all();
+    }
+
+    /** @return string[] */
+    private function fuentesPermitidas(): array
+    {
+        $permitidas = config('price_providers.sincronizacion.fuentes_permitidas', []);
+
+        return is_array($permitidas) ? array_values($permitidas) : [];
     }
 
     private function sincronizarFuente(PriceProvider $provider): bool

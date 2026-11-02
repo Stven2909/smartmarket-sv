@@ -120,12 +120,16 @@ class StagingProcessorCasosTest extends TestCase
 
     public function test_pipeline_completo_sync_luego_procesar(): void
     {
-        config(['price_providers.fuentes.prueba-vtex' => [
-            'modo' => 'vtex',
-            'base_url' => 'https://prueba-vtex.test',
-            'supermercado' => 'Walmart',
-            'enabled' => true,
-        ]]);
+        config([
+            // Fuente temporal de prueba dentro de la lista blanca (ADR-012).
+            'price_providers.sincronizacion.fuentes_permitidas' => ['super-selectos', 'prueba-vtex'],
+            'price_providers.fuentes.prueba-vtex' => [
+                'modo' => 'vtex',
+                'base_url' => 'https://prueba-vtex.test',
+                'supermercado' => 'Walmart',
+                'enabled' => true,
+            ],
+        ]);
 
         Http::fake([
             '*/category/tree/*' => Http::response([['id' => 9, 'name' => 'Raiz', 'hasChildren' => false]]),
@@ -144,7 +148,7 @@ class StagingProcessorCasosTest extends TestCase
         ]);
 
         $this->artisan('precios:sync', ['--fuente' => 'prueba-vtex'])->assertSuccessful();
-        $this->artisan('precios:procesar')->assertSuccessful();
+        $this->artisan('precios:procesar', ['--fuente' => 'prueba-vtex'])->assertSuccessful();
 
         $this->assertSame(1, PrecioActual::count());
         $this->assertSame(4.20, (float) PrecioActual::sole()->precio_final);
