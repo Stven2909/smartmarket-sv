@@ -151,7 +151,7 @@ Laravel → (petición HTTP) → Sistema Experto (Python) → respuesta → Reac
 | 6 Sistema Experto | ✅ Terminado (R01–R08 + chat explicativo) |
 | 7 Integración Laravel ↔ Python | ✅ Terminada, con fallback si Python no responde |
 | 8 Experiencia de usuario / PWA | 🟡 PWA instalable; falta accesibilidad y pulido fino |
-| 9 Pruebas y despliegue | 🟡 117 tests de backend; frontend sin tests; solo el experto está desplegado (decisión: el resto queda local) |
+| 9 Pruebas y despliegue | 🟡 123 tests de backend; frontend sin tests; solo el experto está desplegado (decisión: el resto queda local) |
 
 **Deuda técnica priorizada (noviembre 2026):**
 
@@ -217,7 +217,7 @@ Una tarea no se marca como terminada solo porque "ya funciona". Debe cumplir:
 ## 7. Lo que queda fuera del MVP (roadmap futuro)
 
 ### v1.1 (mejoras de infraestructura, no bloquean la entrega)
-- Extractor automático de precios (antes llamado "Web Scraper"). **IMPLEMENTADO en agosto 2026.** Análisis técnico y veredicto legal por supermercado en `06-referencia-extractor-vtex.md` (§4–§5); alcance y aceptación de riesgo académico en **ADR-10** (`07-decision-extractor-fuentes-riesgo.md`). Se automatizan Super Selectos (HTML) y las tres tiendas VTEX de Walmart CA; PriceSmart permanece con carga manual. Incluye staging, normalización, comandos `precios:sync` / `precios:procesar` y panel Filament.
+- Extractor automático de precios (antes llamado "Web Scraper"). **IMPLEMENTADO en agosto 2026 y acotado por ADR-012 en noviembre 2026.** Análisis técnico y veredicto legal por supermercado en `06-referencia-extractor-vtex.md` (§4–§5); alcance y aceptación de riesgo académico en **ADR-10** (`07-decision-extractor-fuentes-riesgo.md`). **Operativamente solo Super Selectos se sincroniza por webscraping**; Walmart, Maxi Despensa, Don Juan y PriceSmart se alimentan con datos mock deterministas (`MockSupermarketsSeeder`). Incluye staging, normalización, comandos `precios:sync` / `precios:procesar` y panel Filament. Detalle del ajuste en `10-decision-solo-super-selectos-mocks.md`.
 - Docker (para organizar mejor cómo se despliega cada servicio).
 - Documentación completa en OpenAPI.
 - Registro de actividad (logging) más detallado.

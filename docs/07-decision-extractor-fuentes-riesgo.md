@@ -1,6 +1,7 @@
 # ADR-10: Extracción automatizada de fuentes de precios — alcance y aceptación de riesgo académico
 
 **Estado:** Aceptado — decisión del equipo, 2026-08-22
+**Alcance operativo:** ajustado por **ADR-012** (2026-11-01, `10-decision-solo-super-selectos-mocks.md`): solo Super Selectos se sincroniza; las demás cadenas usan datos mock.
 **Contexto técnico:** `06-referencia-extractor-vtex.md` (análisis + veredicto legal por fuente, §5)
 **Nota de numeración:** los ADRs 001–009 viven en el registro de `02-arquitectura.md` §9;
 esta serie continúa esa numeración. El archivo `05-decision-costo-combustible.md`

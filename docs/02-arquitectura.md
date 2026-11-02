@@ -267,6 +267,13 @@ el sistema experto) **nunca necesita saber de dónde vino un precio**. Si mañan
 el extractor automático y conseguimos una API oficial, no hay que tocar nada más del sistema —
 solo se agrega un proveedor nuevo.
 
+> **Alcance operativo vigente (ADR-012):** de todas las fuentes registradas, solo **Super Selectos**
+> se sincroniza por webscraping. Walmart, Maxi Despensa, La Despensa de Don Juan y PriceSmart se
+> alimentan con datos mock deterministas (`MockSupermarketsSeeder`, `origen_dato = 'mock-seeder'`),
+> y `precios:sync` / `precios:procesar` rechazan cualquier otra fuente. Los drivers VTEX siguen en
+> el código, deshabilitados, para una reactivación futura. Detalle en
+> `10-decision-solo-super-selectos-mocks.md`.
+
 ### 6.2 Motor de Normalización (módulo propio)
 
 Es uno de los módulos más importantes de todo el sistema, aunque pase desapercibido: es el que
@@ -434,8 +441,9 @@ referenciarlas fácilmente desde otros documentos.*
 | ADR-007 | Motor de Normalización como módulo propio | Sin esto, comparar precios entre supermercados no sería confiable. |
 | ADR-008 | Score configurable (α, β, γ, δ) | Permite adaptar la recomendación a lo que cada familia prioriza. |
 | ADR-009 | Sistema Experto *stateless* | El Sistema Experto no accede directamente a PostgreSQL; solo recibe hechos en JSON y responde una recomendación. Laravel es el único responsable de consultar datos, preparar hechos, invocar el servicio Python y persistir la recomendación final. |
-| ADR-010 | Extracción automatizada de fuentes de precios, con alcance y riesgo académico aceptado | Sin extractor, la plataforma dependería 100% de carga manual. Se automatizan Super Selectos y las tiendas VTEX de Walmart CA; PriceSmart queda manual porque su `robots.txt` prohíbe scrapers. Detalle en `07-decision-extractor-fuentes-riesgo.md`. |
+| ADR-010 | Extracción automatizada de fuentes de precios, con alcance y riesgo académico aceptado | Sin extractor, la plataforma dependería 100% de carga manual. Se automatizan Super Selectos y las tiendas VTEX de Walmart CA; PriceSmart queda manual porque su `robots.txt` prohíbe scrapers. Detalle en `07-decision-extractor-fuentes-riesgo.md`. **Alcance operativo ajustado por ADR-012.** |
 | ADR-011 | Sucursal "Tienda en línea" sin coordenadas | El canal nacional no tiene ubicación física, pero sigue siendo comparable en precio. `latitud/longitud` pasan a nullable y esas alternativas se excluyen del ranking Haversine. Detalle en `08-decision-sucursal-tienda-online.md`. |
+| ADR-012 | Solo Super Selectos se sincroniza; el resto son datos mock | Reduce la superficie de fallo del extractor y garantiza alternativas de precio para la demo sin depender de cuatro catálogos cambiantes. Walmart, Maxi Despensa, Don Juan y PriceSmart se alimentan con `MockSupermarketsSeeder` (`origen_dato = 'mock-seeder'`); los comandos rechazan cualquier otra fuente. Detalle en `10-decision-solo-super-selectos-mocks.md`. |
 
 ---
 
@@ -516,7 +524,7 @@ Plan de implementación          ██████████  Terminado
 Documento Sistema Experto        ██████████  Terminado y alineado con el contrato implementado
 Diseño detallado (wireframes)     ████████░░  UI construida; mapa de sucursales pendiente
 Construcción del MVP               █████████░  Backend + PWA + Sistema Experto integrados
-Pruebas                            ███████░░░  117 tests de backend; frontend sin tests
+Pruebas                            ███████░░░  123 tests de backend; frontend sin tests
 Despliegue                         ██████████  Backend/frontend en local; Sistema Experto en Render
 ```
 

@@ -24,6 +24,7 @@ Toda la documentación técnica y de negocio vive en `docs/`. Orden recomendado 
 07-decision-extractor-fuentes-riesgo.md
 08-decision-sucursal-tienda-online.md
 09-preguntas-chat-experto.md → temas que responde el chat explicativo
+10-decision-solo-super-selectos-mocks.md → ADR-012: solo Super Selectos sincroniza; el resto son mocks
 CONTEXTO-SISTEMA-EXPERTO.md → guía de integración Laravel ↔ Python
 ```
 
@@ -56,7 +57,7 @@ smartmarket/
 ├── frontend-react/         → PWA React + Vite + Tailwind
 │   └── README.md           → instalación, scripts, estructura y PWA
 │
-├── docs/                   → documentación técnica y de negocio (00–09 + atlas/evidencia)
+├── docs/                   → documentación técnica y de negocio (00–10 + atlas/evidencia)
 ├── shared/                 → datos compartidos (demo_products.json)
 │
 ├── .github/                → workflows de CI (`.github/workflows/ci.yml`)
@@ -139,7 +140,7 @@ MVP Fase A (backend + API)       ██████████  Auth, catálogo
 MVP Fase B (frontend React)      ██████████  PWA con home, buscador, comparador, listas, perfil,
                                                         promociones, historial y chat explicativo
 Sistema Experto (Python)         ██████████  Servicio desplegado e integrado (recommend + chat)
-Pruebas                          ███████░░░  Backend: 117 tests. Frontend: sin tests automatizados
+Pruebas                          ███████░░░  Backend: 123 tests. Frontend: sin tests automatizados
 Mapa de sucursales               ░░░░░░░░░░  Pendiente (la optimización ya funciona; falta la vista de mapa)
 Despliegue                       ██████████  Backend/frontend en local; Sistema Experto en Render
 CI/CD                            ██████████  Workflow de lint + build + tests en verde (GitHub Actions)

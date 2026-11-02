@@ -15,6 +15,13 @@
 >   La decisión informada de riesgo quedó documentada en
 >   `07-decision-extractor-fuentes-riesgo.md` (**ADR-10**). Si una fuente se apaga,
 >   el sistema sigue funcionando con carga manual.
+>
+> **Actualización 2026-11-01 (ADR-012):** el alcance operativo se reduce a **Super Selectos**.
+> Los drivers VTEX de Walmart, Maxi Despensa y Don Juan quedan en el código pero deshabilitados;
+> esas cadenas y PriceSmart se alimentan con datos mock deterministas
+> (`MockSupermarketsSeeder`). Los comandos `precios:sync` y `precios:procesar` rechazan cualquier
+> fuente fuera de `price_providers.sincronizacion.fuentes_permitidas`. Detalle en
+> `10-decision-solo-super-selectos-mocks.md`.
 
 ---
 
@@ -201,11 +208,12 @@ para auditoría sin promover contenido creativo a las tablas del catálogo.
 
 Detalles operativos:
 
-1. **Comando Artisan por fuente** (`php artisan precios:sync walmart --dry-run`)
+1. **Comando Artisan por fuente** (`php artisan precios:sync --fuente=super-selectos --dry-run`)
    actuando como Price Provider: obtiene → valida → escribe **solo a Staging**, jamás
-   directo a `precios_actuales` (§6.3).
-2. **Convención de origen**: `origen_dato = '{modo}-{fuente}'` → `vtex-walmart`,
-   `vtex-maxi-despensa`, `vtex-don-juan`, `html-super-selectos`; `'manual'` queda intacto.
+   directo a `precios_actuales` (§6.3). Desde ADR-012 solo `super-selectos` está permitido.
+2. **Convención de origen**: `origen_dato = '{modo}-{fuente}'` → `html-super-selectos`;
+   `'manual'` y `'mock-seeder'` quedan intactos. Los antiguos `vtex-*` siguen definidos en
+   el código pero deshabilitados por ADR-012.
 3. **Cortesía HTTP (nuestros valores, más conservadores que los del repo hermano §2.4)**:
    User-Agent identificable `SmartMarketSV-AcademicBot/1.0 (+URL-del-repo; correo-de-contacto)`
    *(completar URL real del repo y contacto institucional antes de la primera corrida)*;
@@ -220,7 +228,9 @@ Detalles operativos:
 6. **Orden de construcción**: driver VTEX primero (menor fragilidad: JSON limpio);
    Super Selectos (HTML) después, validando los selectores de §2.3 contra un fixture
    fresco capturado antes de confiar en ellos.
-7. **PriceSmart no se automatiza**: carga manual (veredicto en §5).
+7. **PriceSmart no se automatiza**: carga manual (veredicto en §5) y, desde ADR-012, recibe
+   datos mock. Walmart, Maxi Despensa y Don Juan también pasan a mock/seeders, con sus drivers
+   VTEX deshabilitados.
 
 ---
 

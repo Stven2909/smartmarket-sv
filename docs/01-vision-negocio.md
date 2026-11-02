@@ -320,7 +320,7 @@ la publicidad masiva o la venta de posiciones.
 |---|---|
 | Disponibilidad del Sistema Experto | ≥ 99 % en horario de demo. |
 | Latencia de `/recommend` | Bajo 1 s en caliente; fallback si supera el timeout. |
-| Pruebas de backend | 100 % en verde (hoy: 117 pruebas). |
+| Pruebas de backend | 100 % en verde (hoy: 123 pruebas). |
 | Build/lint de frontend | Sin errores (hoy: build OK, 1 warning de Fast Refresh). |
 | Cobertura de fuentes | Al menos dos fuentes activas + carga manual. |
 

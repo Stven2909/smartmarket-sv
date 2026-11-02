@@ -727,6 +727,6 @@ La integración queda lista cuando:
 La integración agrega un cliente HTTP y transforma respuestas; no reescribe el
 motor de inferencia ni la base de conocimiento.
 
-**Estado (noviembre 2026):** criterios cumplidos en el monorepo — 117 pruebas de
+**Estado (noviembre 2026):** criterios cumplidos en el monorepo - 123 pruebas de
 Laravel en verde, build/lint de frontend correctos y el servicio experto responde
 `/health`, `/recommend` y `/chat` en Render.

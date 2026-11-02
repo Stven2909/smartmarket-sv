@@ -78,16 +78,16 @@ backend-laravel/
 │   │   │   ├── ComparisonService.php      # costo total de una lista por sucursal
 │   │   │   ├── DistanceService.php        # Haversine
 │   │   │   └── OptimizationService.php    # Score, ordenamiento, payloads y persistencia
-│   │   └── PriceProviders/                # extractores: Super Selectos (HTML) y tiendas VTEX
+│   │   └── PriceProviders/                # extractores: Super Selectos (HTML) activo; VTEX deshabilitado
 ├── config/
 │   ├── optimization.php                   # pesos α/β/γ/δ y supuestos del MVP (configurables por env)
 │   └── services.php                       # URL/timeout/retry del Sistema Experto
 ├── database/
 │   ├── migrations/                        # ERD v1.0 (ver docs/02-arquitectura.md)
-│   └── seeders/                           # DatabaseSeeder, DemoDataSeeder, UserSeeder
+│   └── seeders/                           # DatabaseSeeder, DemoDataSeeder, MockSupermarketsSeeder, UserSeeder
 ├── routes/
 │   └── api.php                            # todas las rutas JSON
-└── tests/                                 # 117 pruebas (Unit + Feature)
+└── tests/                                 # 123 pruebas (Unit + Feature)
 ```
 
 Arquitectura por capas **Controller → Service → Model** (ADR-005): los controladores solo coordinan
@@ -211,16 +211,23 @@ Los límites se definen en `AppServiceProvider` y se aplican desde `bootstrap/ap
 El extractor automático (v1.1) está implementado con staging y validación:
 
 ```
-Price Provider (Super Selectos HTML / VTEX)
+Price Provider (Super Selectos HTML)
   → producto_raw (staging)
   → Normalización y validación
   → Catálogo Maestro + PrecioActual (+ HistorialPrecio)
+
+MockSupermarketsSeeder (Walmart, Maxi Despensa, Don Juan, PriceSmart)
+  → PrecioActual directo (origen_dato = 'mock-seeder')
 ```
 
 - `php artisan precios:sync` recolecta hacia staging y registra la corrida en `sync_runs`.
+  Solo procesa `super-selectos`; cualquier otra fuente se rechaza (ADR-012).
 - `php artisan precios:procesar` publica las filas válidas y archiva el precio anterior.
+  También usa `super-selectos` por defecto y rechaza fuentes fuera de la lista blanca.
+- `php artisan db:seed --class=MockSupermarketsSeeder` genera/refresca los precios mock
+  deterministas de las otras cuatro cadenas sin tocar Super Selectos.
 - Ambos comandos aceptan `--dry-run` y respetan el apagado por configuración.
-- PriceSmart permanece con carga manual (ADR-10).
+- Los drivers VTEX siguen en el código, deshabilitados, para una reactivación futura.
 - Todo es administrable desde el panel Filament (staging, corridas y precios).
 
 ---
@@ -231,6 +238,8 @@ Price Provider (Super Selectos HTML / VTEX)
 
 - Categorías, supermercados y sucursales (con coordenadas).
 - Productos, aliases y precios actuales (con promociones).
+- Después ejecuta `MockSupermarketsSeeder`: precios deterministas para Walmart, Maxi Despensa,
+  Don Juan y PriceSmart (`origen_dato = 'mock-seeder'`), sin modificar Super Selectos.
 
 El seeder es **idempotente** (`firstOrCreate` / `updateOrCreate`). El SKU lógico del JSON (ej.
 `FOREMOST-LECHE-1L`) se usa solo como clave interna del seeder; todavía no es columna en `productos`
@@ -241,7 +250,7 @@ El seeder es **idempotente** (`firstOrCreate` / `updateOrCreate`). El SKU lógic
 ## Calidad
 
 ```bash
-composer test          # 117 pruebas (limpia el cache de config y usa SQLite en memoria)
+composer test          # 123 pruebas (limpia el cache de config y usa SQLite en memoria)
 ./vendor/bin/pint      # formateo de código
 ```
 
@@ -254,11 +263,12 @@ composer test          # 117 pruebas (limpia el cache de config y usa SQLite en 
 ## Documentación
 
 - `docs/00-contexto-proyecto.md` — resumen ejecutivo para retomar desarrollo
-- `docs/02-arquitectura.md` — arquitectura congelada (ERD v1.0, ADRs 001-011, Motor de Normalización)
+- `docs/02-arquitectura.md` — arquitectura congelada (ERD v1.0, ADRs 001-012, Motor de Normalización)
 - `docs/03-plan-implementacion.md` — roadmap, fases y Definition of Done
 - `docs/04-sistema-experto.md` — Sistema Experto (Python) que consume esta API
 - `docs/05-decision-costo-combustible.md` — ADR-05 (`PenalizacionDistancia`)
 - `docs/06-referencia-extractor-vtex.md` y `07-decision-extractor-fuentes-riesgo.md` — pipeline de precios y ADR-10
 - `docs/08-decision-sucursal-tienda-online.md` — ADR-11 (sucursal sin coordenadas)
 - `docs/09-preguntas-chat-experto.md` — temas que responde el chat
+- `docs/10-decision-solo-super-selectos-mocks.md` — ADR-012 (solo Super Selectos sincroniza; el resto son mocks)
 - `docs/CONTEXTO-SISTEMA-EXPERTO.md` — guía de integración Laravel ↔ Python
