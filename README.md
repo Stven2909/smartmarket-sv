@@ -24,6 +24,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
 - **Diagnóstico experto:** identifica riesgos críticos y condiciones pendientes de las reglas favorables, sin modificar los hechos recibidos.
+- **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 2430 escenarios sintéticos.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
@@ -156,6 +157,7 @@ La documentación Swagger/OpenAPI está disponible cuando no se configura una cl
 | `POST` | `/api/v1/recommend` | Evalúa una alternativa y devuelve una recomendación explicable |
 | `POST` | `/api/v1/compare` | Compara entre 2 y 10 alternativas |
 | `GET` | `/api/v1/knowledge` | Consulta reglas, umbrales, pesos y versiones |
+| `GET` | `/api/v1/rule-audit` | Audita consistencia, duplicados y solapamientos en modo lectura |
 | `POST` | `/api/v1/sensitivity` | Analiza la sensibilidad de una recomendación ante cambios hipotéticos |
 | `POST` | `/api/v1/diagnosis` | Diagnostica reglas favorables pendientes y riesgos críticos |
 | `POST` | `/api/v1/chat` | Explica una recomendación existente |
@@ -218,6 +220,8 @@ El comparador evalúa individualmente cada alternativa y ordena por conclusión 
 
 `GET /api/v1/knowledge` permite inspeccionar la base de reglas y sus parámetros vigentes sin modificarlos.
 
+`GET /api/v1/rule-audit` audita la consistencia de las reglas sin modificarlas, informa anomalías estructurales y solapamientos con ejemplos sintéticos reproducibles. El resultado es un informe de revisión, no una validación comercial ni una prueba formal universal. Consulta la [metodología de auditoría](docs/auditoria-consistencia-reglas.md).
+
 `POST /api/v1/chat` recibe `message`, `facts` y la respuesta previa en `recommendation`. Las respuestas son deterministas y se basan en los hechos y la recomendación suministrados, sin generar nuevas conclusiones.
 
 Para los contratos completos consulta [la documentación de la API](docs/api-contract.md) y [los ejemplos de integración](docs/laravel-integration.md).
@@ -258,7 +262,7 @@ python -m pytest -q
 ruff check app demo tests
 ```
 
-La suite comprueba reglas, clasificaciones, resolución de conflictos, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
+La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
 
 [Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta las verificaciones de lint y pruebas.
 
