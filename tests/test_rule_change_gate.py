@@ -3,8 +3,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from scripts.check_rule_regression import (
     check_changes,
     main,
