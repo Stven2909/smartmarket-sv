@@ -19,6 +19,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
 - **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
+- **Cobertura de reglas:** ejecuta nueve escenarios de prueba y muestra activaciones, victorias, conflictos y casos sin regla en la interfaz.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
 - **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
@@ -78,7 +79,7 @@ Las ocho reglas se almacenan en [`data/rules.json`](data/rules.json).
 | R07 | Presupuesto y esenciales cubiertos con promociones aplicables | `BUENA` |
 | R08 | Dos supermercados con ahorro alto y presupuesto respetado | `BUENA` |
 
-Si ninguna regla se activa, el sistema devuelve provisionalmente `NO_RECOMENDABLE` e indica que se requiere comparar otras opciones. La regla R06 no presupone que todos los productos opcionales estén disponibles.
+Si ninguna regla se activa, el sistema devuelve provisionalmente `NO_RECOMENDABLE` e indica que se requiere comparar otras opciones. Cuando el presupuesto se supera ligeramente (hasta el 10 %) sin activar otras reglas, la explicación y la acción indican explícitamente esa condición; no se inventa una regla ganadora. La regla R06 no presupone que todos los productos opcionales estén disponibles.
 
 ### Índice de conveniencia
 
