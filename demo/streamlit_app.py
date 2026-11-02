@@ -677,7 +677,6 @@ def render_knowledge_tab(base_url: str) -> None:
 def main() -> None:
     st.set_page_config(
         page_title="SmartMarket SV · Laboratorio experto",
-        page_icon="🛒",
         layout="wide",
     )
     st.markdown(
@@ -732,7 +731,7 @@ def main() -> None:
         return
 
     lab, comparison_tab, sensitivity_tab, knowledge = st.tabs(
-        ["🧪 Laboratorio", "📊 Comparador", "🔬 Sensibilidad", "📚 Base de conocimiento"]
+        ["Laboratorio", "Comparador", "Sensibilidad", "Base de conocimiento"]
     )
     with lab:
         st.subheader("Prueba una recomendación")
