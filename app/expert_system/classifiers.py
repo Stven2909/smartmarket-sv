@@ -29,6 +29,8 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
     )
     porcentaje_esenciales_disponibles = (
         request.productos_esenciales_disponibles / request.productos_esenciales_totales * 100
+        if request.productos_esenciales_totales > 0
+        else 100.0
     )
 
     dentro_presupuesto = request.costo_total <= request.presupuesto
