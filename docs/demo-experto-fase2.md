@@ -98,8 +98,8 @@ ruff check app demo tests
 python -m pytest -q
 ```
 
-Las pruebas cubren contrato anterior, determinismo y conflictos, rankings, HTTP 422, X-API-Key y arranque de las tres vistas con el entorno de pruebas de Streamlit. Las pruebas ASGI no requieren desplegar Laravel, Render ni conectar bases de datos.
+Las pruebas cubren contrato anterior, determinismo y conflictos, rankings, HTTP 422, X-API-Key y arranque de las vistas con el entorno de pruebas de Streamlit. Las pruebas ASGI no requieren desplegar Laravel, Render ni conectar bases de datos.
 
 ## Limitaciones académicas
 
-Este es un motor de producción determinista que evalúa una pasada de reglas, no aprendizaje automático ni encadenamiento iterativo de hechos derivados. El ranking es una función de comparación definida, no una probabilidad ni un modelo entrenado. Los umbrales y pesos son supuestos de diseño contrastados con pruebas de límites y sensibilidad sobre escenarios sintéticos o datos reales capturados manualmente. Estas pruebas no demuestran validez general para todo el mercado. Las reglas R05 y R08 se pueden demostrar con escenarios multitienda, aunque el flujo actual de Laravel entregue alternativas individuales.
+Este es un motor de producción determinista que evalúa una pasada de reglas, no aprendizaje automático ni encadenamiento iterativo de hechos derivados. El ranking es una función de comparación definida, no una probabilidad ni un modelo entrenado. Los umbrales y pesos son parámetros configurados cuya coherencia se comprueba mediante pruebas de límites y sensibilidad. La demo emplea escenarios de ejemplo y no modifica los datos que pueda suministrar el backend. Las reglas R05 y R08 se pueden demostrar con escenarios multitienda, aunque el flujo actual de Laravel entregue alternativas individuales.
