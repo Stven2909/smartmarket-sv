@@ -1,3 +1,5 @@
+"""Clasificadores deterministas de hechos; sus cambios se revisan entre commits en CI."""
+
 from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los

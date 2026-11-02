@@ -26,6 +26,9 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-14 | Ejecutar regresiones automáticamente en PR que cambian reglas | Alta | Implementada |
 | HU-15 | Importar alternativas CSV/JSON con procedencia | Alta | Implementada |
 | HU-16 | Ejecutar propiedades e invariantes del motor con Hypothesis | Alta | Implementada |
+| HU-17 | Comparar código base y propuesto con escenarios fijos | Alta | Implementada |
+| HU-18 | Validar el contrato enviado por Laravel sin tocar develop | Alta | Implementada |
+| HU-19 | Medir rendimiento y memoria sin solicitudes remotas | Media | Implementada |
 
 ## Historias y criterios de aceptación
 
@@ -240,9 +243,29 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Pruebas:** `tests/test_property_invariants.py`.
 
+## HU-17 — Verificación de cambios de umbrales y pesos
+
+**Como** mantenedor, **quiero** comprobar dos commits distintos sobre exactamente los mismos hechos **para** detectar cambios peligrosos aunque no se haya editado `rules.json`.
+
+**Aceptación:** 2469 escenarios entre clases y fronteras, importaciones de dos worktrees aislados, detección de pérdidas R01–R05, degradaciones de seguridad, saltos de índice mayores de 10 puntos y contrato inalterado. Los cambios menores se informan sin bloquearlos. El CI no modifica producción.
+
+## HU-18 — Pruebas de integración por contrato Laravel
+
+**Como** integrador, **quiero** validar solicitudes con el formato real de `construirPayload` **para** anticipar incompatibilidades de Laravel antes de desplegar.
+
+**Aceptación:** fixtures sintéticos vinculados a un commit de `develop`, 14/16 campos, correlación `request_id`, respuestas por regla, errores 422, encabezado `X-API-Key` y ejecución HTTP ASGI sin redes ni modificaciones de Steven.
+
+## HU-19 — Benchmarks reproducibles de inferencia
+
+**Como** desarrollador, **quiero** ver latencia y memoria del motor después del calentamiento **para** tener un punto de referencia y detectar pérdidas de eficiencia.
+
+**Aceptación:** script que realiza 300 iteraciones de prueba local en CI, mediana y p95 en milisegundos, throughput, memoria asignada observada por `tracemalloc`, sin pings a Render ni límites inestables impuestos al runner.
+
+**Evidencia y límites:** [guía de HU-17–HU-19](regresiones-integracion-benchmark.md).
+
 ## Historias propuestas para otras iteraciones
 
-**Pendientes posibles:** añadir nuevas clases de entrada cuando se introduzcan clasificadores, umbrales o hechos derivados distintos.
+**Pendientes posibles:** ampliar escenarios de frontera cuando se modifiquen los clasificadores; coordinar pruebas ejecutando Laravel en un entorno de integración autorizado.
 
 ### Definición de terminado
 

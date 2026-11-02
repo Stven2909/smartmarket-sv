@@ -45,3 +45,34 @@ jobs:
               --scenarios data/scenarios.json \
               --json-output "$RUNNER_TEMP/rule-regression.json"
           fi
+
+      - name: Gate - Code behavior regression on pull requests
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet "$BASE_SHA" HEAD -- app/expert_system app/services/recommendation_service.py app/schemas/recommendation.py data/rules.json; then
+            echo "## HU-17 · Sin cambios al código de inferencia" >> "$GITHUB_STEP_SUMMARY"
+          else
+            python -m scripts.behavior_guard generate \
+              --scenarios data/scenarios.json --output "$RUNNER_TEMP/expert-cases.json"
+            python -m scripts.behavior_guard snapshot \
+              --cases "$RUNNER_TEMP/expert-cases.json" \
+              --output "$RUNNER_TEMP/expert-candidate.json"
+            git worktree add --detach "$RUNNER_TEMP/expert-baseline" "$BASE_SHA"
+            (
+              cd "$RUNNER_TEMP/expert-baseline"
+              PYTHONPATH="$RUNNER_TEMP/expert-baseline" \
+                python "$GITHUB_WORKSPACE/scripts/behavior_guard.py" snapshot \
+                  --cases "$RUNNER_TEMP/expert-cases.json" \
+                  --output "$RUNNER_TEMP/expert-baseline.json"
+            )
+            python -m scripts.behavior_guard compare \
+              --baseline "$RUNNER_TEMP/expert-baseline.json" \
+              --candidate "$RUNNER_TEMP/expert-candidate.json" \
+              --max-index-shift 10
+          fi
+
+      - name: Lightweight expert benchmark (no external requests)
+        run: python -m scripts.benchmark_inference --iterations 300

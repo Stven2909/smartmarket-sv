@@ -1,0 +1,204 @@
+{
+  "fuente_laravel": "https://github.com/Stven2909/smartmarket-sv/blob/513946f7de5028fc65773ddca6888b03fd249381/backend-laravel/app/Services/Optimization/OptimizationService.php",
+  "fuente_cliente": "https://github.com/Stven2909/smartmarket-sv/blob/513946f7de5028fc65773ddca6888b03fd249381/backend-laravel/app/Services/ExpertSystemService.php",
+  "tipo": "casos_sinteticos_reproducen_formato_php_no_llamadas_reales",
+  "validos": [
+    {
+      "nombre": "sucursal-ideal",
+      "hechos": {
+        "request_id": "lista-14-sucursal-ideal",
+        "alternativa_id": "sucursal-ideal",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 1,
+        "promociones_aplicables": true
+      },
+      "esperado": {
+        "nivel": "EXCELENTE",
+        "regla": "R06"
+      }
+    },
+    {
+      "nombre": "sucursal-costosa",
+      "hechos": {
+        "request_id": "lista-14-sucursal-costosa",
+        "alternativa_id": "sucursal-costosa",
+        "costo_total": 56,
+        "presupuesto": 50,
+        "ahorro": 0,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 1,
+        "promociones_aplicables": false
+      },
+      "esperado": {
+        "nivel": "NO_RECOMENDABLE",
+        "regla": "R01"
+      }
+    },
+    {
+      "nombre": "sucursal-esenciales",
+      "hechos": {
+        "request_id": "lista-14-sucursal-esenciales",
+        "alternativa_id": "sucursal-esenciales",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 9,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 5,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 1,
+        "promociones_aplicables": true
+      },
+      "esperado": {
+        "nivel": "NO_RECOMENDABLE",
+        "regla": "R02"
+      }
+    },
+    {
+      "nombre": "sucursal-2-paradas",
+      "hechos": {
+        "request_id": "lista-14-sucursal-2-paradas",
+        "alternativa_id": "sucursal-2-paradas",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 2,
+        "promociones_aplicables": true
+      },
+      "esperado": {
+        "nivel": "BUENA",
+        "regla": "R08"
+      }
+    },
+    {
+      "nombre": "sucursal-sin-esenciales",
+      "hechos": {
+        "request_id": "lista-14-sucursal-sin-esenciales",
+        "alternativa_id": "sucursal-sin-esenciales",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 0,
+        "productos_esenciales_totales": 0,
+        "numero_supermercados": 1,
+        "promociones_aplicables": true
+      },
+      "esperado": {
+        "nivel": "EXCELENTE",
+        "regla": "R06"
+      }
+    }
+  ],
+  "invalidos": [
+    {
+      "nombre": "sucursal-sin-distancia",
+      "hechos": {
+        "request_id": "lista-14-sucursal-sin-distancia",
+        "alternativa_id": "sucursal-sin-distancia",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": null,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 1,
+        "promociones_aplicables": true
+      },
+      "esperado": null
+    },
+    {
+      "nombre": "sucursal-presupuesto-invalido",
+      "hechos": {
+        "request_id": "lista-14-sucursal-presupuesto-invalido",
+        "alternativa_id": "sucursal-presupuesto-invalido",
+        "costo_total": 42.5,
+        "presupuesto": 0,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 1,
+        "promociones_aplicables": true
+      },
+      "esperado": null
+    },
+    {
+      "nombre": "sucursal-conteo-invalido",
+      "hechos": {
+        "request_id": "lista-14-sucursal-conteo-invalido",
+        "alternativa_id": "sucursal-conteo-invalido",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 11,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 1,
+        "promociones_aplicables": true
+      },
+      "esperado": null
+    },
+    {
+      "nombre": "sucursal-cero-paradas",
+      "hechos": {
+        "request_id": "lista-14-sucursal-cero-paradas",
+        "alternativa_id": "sucursal-cero-paradas",
+        "costo_total": 42.5,
+        "presupuesto": 50,
+        "ahorro": 11.25,
+        "distancia_km": 2.3,
+        "distancia_adicional_km": 0.8,
+        "tiempo_estimado_min": 12,
+        "productos_disponibles": 10,
+        "productos_totales": 10,
+        "productos_esenciales_disponibles": 6,
+        "productos_esenciales_totales": 6,
+        "numero_supermercados": 0,
+        "promociones_aplicables": true
+      },
+      "esperado": null
+    }
+  ]
+}

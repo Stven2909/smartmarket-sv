@@ -25,6 +25,9 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
 - **Importación CSV/JSON (HU-15):** Streamlit valida hasta 750 filas y distingue datos manuales, escenarios sintéticos y referencias web, sin añadir campos al motor.
 - **Pruebas basadas en propiedades (HU-16):** Hypothesis comprueba determinismo, condiciones excluyentes, prioridades críticas y monotonía del índice auxiliar.
+- **Regresión de código (HU-17):** compara en procesos aislados el commit base y el candidato sobre 2469 escenarios, detectando cambios de umbrales, pesos y activación crítica.
+- **Compatibilidad Laravel (HU-18):** valida mediante HTTP en memoria los 14 hechos y respuestas esperadas a partir de casos sintéticos basados en el contrato PHP de Steven.
+- **Benchmark del motor (HU-19):** mide mediana, p95 y memoria en CI sin despertar Render.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
 - **Diagnóstico experto:** identifica riesgos críticos y condiciones pendientes de las reglas favorables, sin modificar los hechos recibidos.
 - **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 2430 escenarios sintéticos.
@@ -277,7 +280,7 @@ ruff check app demo scripts tests
 
 La suite comprueba reglas, clasificaciones, resolución de conflictos, auditoría de consistencia, comparación de versiones, importación CSV/JSON, pruebas generativas de invariantes, detección de regresiones, generación y lectura de informes PDF, validación HTTP, trazabilidad, índice de conveniencia, diagnóstico experto, comparación, sensibilidad, valores no finitos, chatbot y renderizado básico de Streamlit.
 
-[Datos de exposición: 300 alternativas y 61 referencias de precios](docs/importacion-datos-y-propiedades.md). [Guía de optimización y reposo](docs/optimizacion-reposo.md). [Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta lint, pruebas y, en solicitudes de cambio que modifican `data/rules.json`, el [control automático de regresiones](docs/ci-regresion-reglas.md). Para exigir que un PR con CI fallido no pueda fusionarse, se debe configurar la protección de rama en GitHub.
+[Datos de exposición: 300 alternativas y 61 referencias de precios](docs/importacion-datos-y-propiedades.md). [Regresiones HU-17, pruebas Laravel HU-18 y rendimiento HU-19](docs/regresiones-integracion-benchmark.md). [Guía de optimización y reposo](docs/optimizacion-reposo.md). [Historias de usuario con criterios de aceptación](docs/historias-de-usuario.md). El flujo de integración continua ejecuta lint, pruebas y, en solicitudes de cambio que modifican `data/rules.json`, el [control automático de regresiones](docs/ci-regresion-reglas.md). Para exigir que un PR con CI fallido no pueda fusionarse, se debe configurar la protección de rama en GitHub.
 
 ## Alcance
 
