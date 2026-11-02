@@ -229,6 +229,25 @@ def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
     return response.json()
 
 
+def call_rule_audit_api(base_url: str | None = None) -> dict[str, Any]:
+    """Consulta el informe de consistencia sin evaluar ni modificar compras."""
+    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/rule-audit"
+    try:
+        response = requests.get(
+            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
+        )
+    except requests.Timeout as exc:
+        raise ApiClientError("La auditoría tardó demasiado en responder.") from exc
+    except requests.RequestException as exc:
+        raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+    if response.status_code >= 400:
+        raise ApiClientError(
+            f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
+            response.status_code,
+        )
+    return response.json()
+
+
 def call_chat_api(
     message: str,
     facts: dict[str, Any],
@@ -795,6 +814,93 @@ def render_rule_coverage(
         st.success("Las ocho reglas aparecen activadas en los escenarios evaluados.")
 
 
+def render_rule_audit(base_url: str) -> None:
+    """Muestra la auditoría independiente de la cobertura por escenarios."""
+
+    st.subheader("Verificador de consistencia de reglas")
+    st.caption(
+        "Identifica condiciones incompatibles, duplicados, reglas sombreadas y "
+        "solapamientos previstos. No cambia las reglas ni su prioridad."
+    )
+    if st.button("Auditar base de conocimiento", key="rule_audit_button"):
+        try:
+            st.session_state["rule_audit_report"] = call_rule_audit_api(base_url)
+        except ApiClientError as exc:
+            st.error(f"No se pudo realizar la auditoría: {exc}")
+    report = st.session_state.get("rule_audit_report")
+    if not report:
+        st.info("Ejecuta la auditoría para inspeccionar la consistencia de R01–R08.")
+        return
+
+    first, second, third = st.columns(3)
+    first.metric("Reglas", report["reglas_evaluadas"])
+    second.metric("Hallazgos para revisar", len(report["hallazgos"]))
+    third.metric("Pares que se solapan", len(report["solapamientos"]))
+    st.write(report["resumen"])
+
+    findings = report.get("hallazgos", [])
+    if findings:
+        st.warning("Hay observaciones que conviene revisar antes de editar las reglas.")
+        st.dataframe(
+            [
+                {
+                    "Tipo": issue["tipo"],
+                    "Reglas": ", ".join(issue["reglas"]),
+                    "Explicación": issue["detalle"],
+                }
+                for issue in findings
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+    else:
+        st.success("No se detectaron anomalías estructurales en la muestra evaluada.")
+
+    overlaps = report.get("solapamientos", [])
+    if overlaps:
+        st.caption(
+            "Los solapamientos no son necesariamente errores: el motor decide "
+            "por prioridad y por ID si existe empate."
+        )
+        st.dataframe(
+            [
+                {
+                    "Reglas": " / ".join(pair["reglas"]),
+                    "Ganadora": pair["ganador_por_prioridad"],
+                    "Niveles": " / ".join(pair["niveles"]),
+                    "Conflicto de nivel": "Sí" if pair["conflicto_de_nivel"] else "No",
+                    "Coincidencias sintéticas": pair["casos_coincidentes"],
+                }
+                for pair in overlaps
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+        with st.expander("Ejemplo sintético reproducible de un solapamiento"):
+            st.json(overlaps[0]["ejemplo"])
+
+    st.dataframe(
+        [
+            {
+                "Regla": item["regla"],
+                "Activaciones en la muestra": item["activaciones"],
+            }
+            for item in report.get("cobertura", [])
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    for limitation in report.get("limitaciones", []):
+        st.caption(limitation)
+    st.download_button(
+        "Descargar auditoría JSON",
+        data=json.dumps(report, indent=2, ensure_ascii=False),
+        mime="application/json",
+        file_name="smartmarket-auditoria-reglas.json",
+        key="download_rule_audit",
+    )
+
+
 def render_knowledge_tab(base_url: str) -> None:
     st.subheader("Base de conocimiento y criterios del experto")
     st.write(
@@ -964,6 +1070,7 @@ def main() -> None:
     with knowledge:
         render_knowledge_tab(base_url)
         render_rule_coverage(scenarios, base_url)
+        render_rule_audit(base_url)
 
 
 if __name__ == "__main__":
