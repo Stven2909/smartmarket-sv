@@ -189,6 +189,32 @@ def call_recommendation_api(payload: dict[str, Any], base_url: str | None = None
     return _post_json("/api/v1/recommend", payload, base_url)
 
 
+def call_comparison_api(
+    alternatives: list[dict[str, Any]], base_url: str | None = None
+) -> dict[str, Any]:
+    """Compara opciones usando exclusivamente el servicio Python."""
+    return _post_json("/api/v1/compare", {"alternativas": alternatives}, base_url)
+
+
+def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
+    """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
+    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/knowledge"
+    try:
+        response = requests.get(
+            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
+        )
+    except requests.Timeout as exc:
+        raise ApiClientError("La API tardó demasiado en responder.") from exc
+    except requests.RequestException as exc:
+        raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+    if response.status_code >= 400:
+        raise ApiClientError(
+            f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
+            response.status_code,
+        )
+    return response.json()
+
+
 def call_chat_api(
     message: str,
     facts: dict[str, Any],
@@ -206,28 +232,116 @@ def call_chat_api(
     )
 
 
-def render_recommendation(result: dict[str, Any]) -> None:
-    level = result.get("nivel_recomendacion", "DESCONOCIDO")
-    if level == "EXCELENTE":
-        st.success(level)
-    elif level == "BUENA":
-        st.warning(level)
-    else:
-        st.error(level)
+def render_recommendation(
+    result: dict[str, Any], *, widget_key: str = "laboratory"
+) -> None:
+    """Panel de auditoría: conclusión, pesos, hechos y explicación de reglas."""
 
-    st.subheader("Request ID")
-    st.code(result.get("request_id", "no disponible"))
-    st.write(f"**Regla ganadora:** {result.get('winning_rule') or 'ninguna'}")
-    st.subheader("Acción sugerida")
-    st.write(result.get("accion_sugerida", "Sin acción disponible."))
-    st.subheader("Explicación")
-    st.write(result.get("explicacion", "Sin explicación disponible."))
-    st.write(f"**Reglas activadas:** {', '.join(result.get('reglas_activadas', [])) or 'ninguna'}")
-    st.write(f"**Prioridad aplicada:** {result.get('prioridad_aplicada', 'SIN_REGLA')}")
-    st.write(f"**Versión de reglas:** {result.get('version_reglas', 'desconocida')}")
-    st.subheader("Hechos derivados")
+    level = result.get("nivel_recomendacion", "DESCONOCIDO")
+    index = result.get("indice_conveniencia")
+    score = float(index) if isinstance(index, (int, float)) else None
+    rule = result.get("winning_rule")
+    activated = result.get("reglas_activadas", [])
     facts = result.get("hechos_derivados", {})
-    st.table([{"Hecho": name, "Valor": str(value)} for name, value in facts.items()])
+
+    with st.container(border=True):
+        if level == "EXCELENTE":
+            st.success("Alternativa favorable según las reglas")
+        elif level == "BUENA":
+            st.info("Alternativa aceptable según las reglas")
+        else:
+            st.warning("No recomendable o sin una regla favorable")
+
+        a, b, c, d = st.columns(4)
+        a.metric("Decisión experta", level)
+        b.metric("Índice auxiliar", f"{score:.2f}/100" if score is not None else "N/D")
+        c.metric("Regla ganadora", rule or "Ninguna")
+        d.metric("Reglas activadas", len(activated))
+        if score is not None:
+            st.progress(max(0.0, min(score / 100.0, 1.0)))
+        st.caption(
+            "El índice es un indicador ponderado, no una probabilidad ni una confianza "
+            "estadística. Las reglas críticas mantienen prioridad."
+        )
+
+    st.subheader("Decisión y justificación")
+    st.write(f"**Acción:** {result.get('accion_sugerida', 'Sin acción')}")
+    st.write(result.get("explicacion", "Sin explicación disponible."))
+    st.caption(
+        f"Solicitud: {result.get('request_id', 'N/D')} · "
+        f"Categoría: {result.get('prioridad_aplicada', 'SIN_REGLA')} · "
+        f"Reglas: {result.get('version_reglas', 'N/D')}"
+    )
+
+    st.subheader("Por qué obtuvo ese índice")
+    weights = result.get("pesos_conveniencia") or {}
+    components = result.get("componentes_conveniencia") or {}
+    labels = {
+        "ahorro": "Ahorro",
+        "disponibilidad": "Disponibilidad",
+        "distancia": "Distancia adicional",
+        "tiempo": "Tiempo estimado",
+        "promociones": "Promociones",
+    }
+    if weights and components:
+        contribution_rows = [
+            {
+                "Criterio": labels.get(key, key),
+                "Peso (%)": round(float(weight) * 100, 1),
+                "Valor normalizado": round(float(components.get(key, 0)), 3),
+                "Puntos aportados": round(
+                    float(weight) * float(components.get(key, 0)) * 100, 2
+                ),
+            }
+            for key, weight in weights.items()
+        ]
+        st.dataframe(contribution_rows, hide_index=True, use_container_width=True)
+    else:
+        st.info("Este servicio no incluyó el desglose ponderado.")
+
+    with st.expander("Hechos derivados usados por el motor"):
+        st.dataframe(
+            [{"Hecho": name, "Valor": str(value)} for name, value in facts.items()],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    with st.expander("Auditoría de las 8 reglas: condiciones y coincidencias"):
+        trace = result.get("trace") or []
+        if not trace:
+            st.info("No se recibió la traza de inferencia.")
+        else:
+            audit_rows = []
+            for entry in trace:
+                for fact_name, condition in entry.get("conditions", {}).items():
+                    audit_rows.append(
+                        {
+                            "Regla": entry.get("rule_id"),
+                            "Activada": bool(entry.get("activated")),
+                            "Hecho": fact_name,
+                            "Esperado": str(condition.get("expected")),
+                            "Observado": str(condition.get("actual")),
+                            "Coincide": bool(condition.get("matched")),
+                        }
+                    )
+            st.dataframe(audit_rows, hide_index=True, use_container_width=True)
+            losing = result.get("losing_rules") or []
+            st.caption(
+                "Ganadora: "
+                + (rule or "ninguna")
+                + " · Otras activadas: "
+                + (", ".join(losing) if losing else "ninguna")
+            )
+
+    with st.expander("JSON completo de evidencia"):
+        st.code(json.dumps(result, ensure_ascii=False, indent=2), language="json")
+    st.download_button(
+        "Descargar evidencia JSON",
+        data=json.dumps(result, ensure_ascii=False, indent=2),
+        file_name="smartmarket-evidencia.json",
+        mime="application/json",
+        key=f"download_{widget_key}",
+    )
 
 
 def render_chatbot(facts: dict[str, Any] | None, recommendation: dict[str, Any] | None) -> None:
@@ -331,12 +445,207 @@ def _render_scenario_form(scenario: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def main() -> None:
-    st.set_page_config(page_title="SmartMarket SV", page_icon="🛒")
-    st.title("SmartMarket SV - Sistema Experto")
+def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> None:
+    st.subheader("Comparador experto de alternativas")
+    st.write(
+        "Selecciona al menos dos escenarios. Python ejecutará el mismo motor experto "
+        "en cada uno y explicará el orden de preferencia."
+    )
+    by_name = {scenario["name"]: scenario for scenario in scenarios}
+    names = list(by_name)
+    selected = st.multiselect(
+        "Alternativas para comparar",
+        names,
+        default=names[:3],
+        key="comparison_selection",
+    )
+    include_custom = False
+    if st.session_state.get("latest_facts"):
+        include_custom = st.checkbox(
+            "Incluir mi última alternativa del laboratorio", value=False
+        )
 
-    base_url = st.sidebar.text_input("URL de FastAPI", value=api_base_url())
-    if st.sidebar.button("Verificar estado del servicio"):
+    if st.button("Comparar alternativas", type="primary", key="compare_button"):
+        selected_payloads = [by_name[name]["facts"] for name in selected]
+        if include_custom:
+            selected_payloads.append(st.session_state["latest_facts"])
+        identifiers = [item["alternativa_id"] for item in selected_payloads]
+        budgets = {item["presupuesto"] for item in selected_payloads}
+        if not 2 <= len(selected_payloads) <= 10:
+            st.warning("Debes seleccionar entre 2 y 10 alternativas.")
+        elif len(identifiers) != len(set(identifiers)):
+            st.warning(
+                "Las alternativas deben tener identificadores únicos. "
+                "Cambia la ID del laboratorio o elimina el escenario repetido."
+            )
+        elif len(budgets) != 1:
+            st.warning("Todas las opciones deben compartir el mismo presupuesto.")
+        elif any(validate_payload(item) for item in selected_payloads):
+            st.warning("Revisa los datos de las alternativas: hay casos no válidos.")
+        else:
+            try:
+                comparison = call_comparison_api(selected_payloads, base_url)
+                st.session_state["latest_comparison"] = comparison
+            except ApiClientError as exc:
+                st.error(f"No se pudo comparar: {exc}")
+                st.info(
+                    "El comparador requiere una versión del servicio Python "
+                    "que incluya /api/v1/compare."
+                )
+
+    comparison = st.session_state.get("latest_comparison")
+    if not comparison:
+        st.info("Ejecuta una comparación para ver el ranking y su explicación.")
+        return
+
+    st.metric(
+        "Mejor alternativa entre las evaluadas",
+        comparison.get("mejor_alternativa_id", "N/D"),
+    )
+    st.caption(comparison.get("criterio_orden", ""))
+    rows = comparison.get("ranking", [])
+    st.dataframe(
+        [
+            {
+                "Puesto": row.get("posicion"),
+                "Alternativa": row.get("alternativa_id"),
+                "Dictamen": row["recomendacion"].get("nivel_recomendacion"),
+                "Regla": row["recomendacion"].get("winning_rule") or "Sin regla",
+                "Índice auxiliar": row["recomendacion"].get("indice_conveniencia"),
+                "Costo": row.get("costo_total"),
+                "Riesgo": "Sí" if row.get("riesgo_critico") else "No",
+            }
+            for row in rows
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    for warning in comparison.get("advertencias", []):
+        st.caption(warning)
+    for row in rows:
+        title = f"#{row['posicion']} · {row['alternativa_id']}"
+        with st.expander(title):
+            st.write(row.get("motivo_posicion", ""))
+            render_recommendation(
+                row["recomendacion"], widget_key=f"comparison_{row['posicion']}"
+            )
+
+
+def render_knowledge_tab(base_url: str) -> None:
+    st.subheader("Base de conocimiento y criterios del experto")
+    st.write(
+        "La inferencia es determinista: se evalúan las condiciones de cada regla, "
+        "pueden activarse varias y gana la de mayor prioridad. No se entrena un modelo."
+    )
+    if st.button("Cargar reglas y parámetros de la API", key="knowledge_button"):
+        try:
+            st.session_state["knowledge_snapshot"] = call_knowledge_api(base_url)
+        except ApiClientError as exc:
+            st.error(f"No se pudo consultar la base de conocimiento: {exc}")
+
+    knowledge = st.session_state.get("knowledge_snapshot")
+    if not knowledge:
+        st.info(
+            "Carga la base de conocimiento para ver las reglas reales del servicio "
+            "Python. No se necesita Laravel."
+        )
+        return
+
+    rules = knowledge.get("rules", [])
+    st.metric("Reglas de producción vigentes", len(rules))
+    st.caption(
+        f"Versión de reglas: {knowledge.get('rules_version', 'N/D')} · "
+        f"Versión de umbrales: {knowledge.get('thresholds_version', 'N/D')}"
+    )
+    st.dataframe(
+        [
+            {
+                "Regla": rule["id"],
+                "Nombre": rule["name"],
+                "Prioridad": rule["priority"],
+                "Dictamen": rule["result"]["level"],
+                "Condiciones AND": len(rule["conditions"]),
+            }
+            for rule in rules
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    for rule in sorted(rules, key=lambda item: (item["priority"], item["id"])):
+        with st.expander(
+            f"{rule['id']} · {rule['name']} · prioridad {rule['priority']}"
+        ):
+            st.write(f"**Conclusión:** {rule['result']['level']}")
+            st.write(f"**Acción:** {rule['result']['action']}")
+            st.write(f"**Justificación:** {rule['result']['explanation']}")
+            st.json(rule["conditions"])
+
+    st.subheader("Umbrales documentados")
+    st.dataframe(
+        [
+            {"Parámetro": name, "Valor": value}
+            for name, value in knowledge.get("thresholds", {}).items()
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    st.subheader("Pesos del índice auxiliar")
+    st.dataframe(
+        [
+            {"Factor": name, "Peso (%)": round(float(weight) * 100, 1)}
+            for name, weight in knowledge.get("weights", {}).items()
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    st.caption(
+        "Los umbrales y pesos son supuestos configurados del prototipo. "
+        "Su elección requiere justificación y validación académica externa."
+    )
+
+
+def main() -> None:
+    st.set_page_config(
+        page_title="SmartMarket SV · Laboratorio experto",
+        page_icon="🛒",
+        layout="wide",
+    )
+    st.markdown(
+        """
+        <style>
+        .block-container {max-width: 1200px; padding-top: 2rem;}
+        [data-testid="stMetric"] {
+            background: rgba(42, 118, 98, 0.065);
+            border: 1px solid rgba(80, 150, 135, 0.20);
+            border-radius: 14px;
+            padding: 16px;
+        }
+        [data-testid="stMetricValue"] {font-size: 1.45rem;}
+        [data-testid="stDataFrame"] {border-radius: 12px; overflow: hidden;}
+        [data-testid="stExpander"] {border-radius: 12px;}
+        .sm-hero {
+            background: linear-gradient(118deg, #092b2a 0%, #0e5a4c 57%, #18856e 100%);
+            color: #fff; padding: 30px 32px; border-radius: 20px;
+            margin-bottom: 22px; box-shadow: 0 8px 28px rgba(3, 36, 29, .15);
+        }
+        .sm-kicker {
+            font-size: .77rem; letter-spacing: .14em; text-transform: uppercase;
+            font-weight: 700; opacity: .78; margin: 0 0 8px 0;
+        }
+        .sm-hero h1 {font-size: 2.1rem; margin: 0; color: #fff;}
+        .sm-hero p {font-size: .98rem; opacity: .9; margin: 10px 0 0 0;}
+        </style>
+        <section class="sm-hero">
+          <p class="sm-kicker">Sistema experto · Laboratorio académico</p>
+          <h1>SmartMarket SV</h1>
+          <p>Decisiones transparentes · Reglas verificables · Comparación explicable</p>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    base_url = st.sidebar.text_input("URL del servicio Python", value=api_base_url())
+    st.sidebar.caption("API independiente de Laravel. Los datos vienen de escenarios.")
+    if st.sidebar.button("Verificar conexión", key="health_button"):
         try:
             health = call_health_endpoint(base_url)
             st.sidebar.success(f"API disponible: {health.get('status', 'ok')}")
@@ -349,31 +658,41 @@ def main() -> None:
         st.error(str(exc))
         return
 
-    scenario_by_name = {scenario["name"]: scenario for scenario in scenarios}
-    selected_name = st.selectbox("Escenario", list(scenario_by_name))
-    selected = scenario_by_name[selected_name]
-    st.caption(selected["description"])
+    lab, comparison_tab, knowledge = st.tabs(
+        ["🧪 Laboratorio", "📊 Comparador", "📚 Base de conocimiento"]
+    )
+    with lab:
+        st.subheader("Prueba una recomendación")
+        st.caption("Elige un escenario y modifica sus hechos antes de ejecutar.")
+        scenario_by_name = {scenario["name"]: scenario for scenario in scenarios}
+        selected_name = st.selectbox("Escenario", list(scenario_by_name))
+        selected = scenario_by_name[selected_name]
+        st.caption(selected["description"])
+        payload = _render_scenario_form(selected)
+        if payload is not None:
+            errors = validate_payload(payload)
+            if errors:
+                for error in errors:
+                    st.warning(error)
+            else:
+                try:
+                    result = call_recommendation_api(payload, base_url)
+                    st.session_state["latest_recommendation"] = result
+                    st.session_state["latest_facts"] = payload
+                except ApiClientError as exc:
+                    st.error(str(exc))
 
-    payload = _render_scenario_form(selected)
-    if payload is not None:
-        validation_errors = validate_payload(payload)
-        if validation_errors:
-            for error in validation_errors:
-                st.warning(error)
-        else:
-            try:
-                result = call_recommendation_api(payload, base_url)
-                st.session_state["latest_recommendation"] = result
-                st.session_state["latest_facts"] = payload
-            except ApiClientError as exc:
-                st.error(str(exc))
+        latest_result = st.session_state.get("latest_recommendation")
+        latest_facts = st.session_state.get("latest_facts")
+        if latest_result is not None:
+            st.header("Resultado de la inferencia")
+            render_recommendation(latest_result)
+        render_chatbot(latest_facts, latest_result)
 
-    latest_result = st.session_state.get("latest_recommendation")
-    latest_facts = st.session_state.get("latest_facts")
-    if latest_result is not None:
-        st.header("Resultado")
-        render_recommendation(latest_result)
-    render_chatbot(latest_facts, latest_result)
+    with comparison_tab:
+        render_comparison_tab(scenarios, base_url)
+    with knowledge:
+        render_knowledge_tab(base_url)
 
 
 if __name__ == "__main__":
