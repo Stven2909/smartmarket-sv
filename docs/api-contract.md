@@ -32,6 +32,10 @@ preguntas a Laravel. React no debe llamar directamente al motor Python.
 | `GET` | `/health` | Verificar disponibilidad |
 | `POST` | `/api/v1/recommend` | Obtener recomendación e índice auxiliar |
 | `POST` | `/api/v1/chat` | Explicar una recomendación |
+| `POST` | `/api/v1/compare` | Comparar alternativas de forma independiente (opcional) |
+| `POST` | `/api/v1/sensitivity` | Analizar variaciones hipotéticas (opcional) |
+| `POST` | `/api/v1/diagnosis` | Explicar riesgos y requisitos pendientes (opcional) |
+| `GET` | `/api/v1/knowledge` | Consultar reglas y parámetros de solo lectura (opcional) |
 
 Para los endpoints JSON:
 
