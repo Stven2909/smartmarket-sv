@@ -90,14 +90,14 @@ def test_fail_closed_on_unaligned_snapshot_or_invalid_contract():
     invalid["casos"].pop()
     try:
         compare(old, invalid)
-        assert False, "La comparación debería rechazar muestras diferentes"
+        raise AssertionError("La comparación debería rechazar muestras diferentes")
     except ValueError:
         pass
     invalid = json.loads(json.dumps(old))
     invalid["contrato_entrada"] = []
     try:
         compare(old, invalid)
-        assert False, "La comparación debería rechazar contratos diferentes"
+        raise AssertionError("La comparación debería rechazar contratos diferentes")
     except ValueError:
         pass
 
