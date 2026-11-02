@@ -18,9 +18,9 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Evaluación de alternativas:** clasifica una compra como `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
 - **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
-- **Trazabilidad:** conserva los hechos derivados y la evaluación de cada condición.
+- **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
-- **Comparación de alternativas:** ordena de 2 a 10 opciones y explica sus posiciones.
+- **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.

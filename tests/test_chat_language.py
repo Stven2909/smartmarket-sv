@@ -185,7 +185,8 @@ def test_winning_rule_response_explains_code_in_human_language():
     response = chat(make_chat("¿Qué regla ganó?"))
 
     assert "R06" in response.response
-    assert "condiciones más importantes de compra" in response.response
+    assert "La regla ganadora es R06" in response.response
+    assert "EXCELENTE" in response.response
     assert "dentro de tu presupuesto" in response.response
 
 

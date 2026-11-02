@@ -60,7 +60,11 @@ def _evaluate_rule_with_trace(
         "reason": (
             "Todas las condiciones se cumplieron."
             if activated
-            else "Una o más condiciones no se cumplieron."
+            else (
+                "Condiciones no cumplidas: "
+                + ", ".join(unmatched_conditions)
+                + "."
+            )
         ),
     }
     return activated, trace
