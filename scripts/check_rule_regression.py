@@ -104,7 +104,8 @@ def check_changes(
         "regresiones_criticas": 0,
         "perdidas_proteccion": 0,
     }
-    example_changes: list[dict[str, Any]] = []
+    critical_examples: list[dict[str, Any]] = []
+    ordinary_examples: list[dict[str, Any]] = []
     for start in range(0, len(cases), 10):
         response = compare_rule_versions(
             RuleRegressionRequest(
@@ -126,13 +127,16 @@ def check_changes(
             )
             if missing_critical:
                 total["perdidas_proteccion"] += 1
-            if (
+            relevant = (
                 row.cambio_nivel
                 or row.cambio_regla
                 or row.cambio_activaciones
                 or missing_critical
-            ) and len(example_changes) < 15:
-                example_changes.append(
+            )
+            dangerous = row.regresion_critica or bool(missing_critical)
+            destination = critical_examples if dangerous else ordinary_examples
+            if relevant and len(destination) < 15:
+                destination.append(
                     {
                         "escenario": row.escenario,
                         "nivel_anterior": row.nivel_anterior,
@@ -158,7 +162,7 @@ def check_changes(
         ],
         "metricas": total,
         "hallazgos_nuevos": issues,
-        "ejemplos": example_changes,
+        "ejemplos": (critical_examples + ordinary_examples)[:15],
         "advertencias": [
             "Se comparan las mismas entradas con dos bases aisladas de reglas.",
             "Las pérdidas de cobertura de reglas R01–R05 son bloqueantes "
