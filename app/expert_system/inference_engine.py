@@ -104,11 +104,12 @@ def _evaluate_all_rules(
     return activated_rules, trace
 
 
-def run_inference(request: RecommendationRequest, rules_path=None) -> dict[str, Any]:
-    """Ejecuta el flujo completo de inferencia para una solicitud validada."""
+def run_inference_with_rules(
+    request: RecommendationRequest, rules: list[ProductionRule]
+) -> dict[str, Any]:
+    """Ejecuta la inferencia sobre reglas aisladas, sin reescribir rules.json."""
 
     facts = derive_facts(request)
-    rules = load_rules(rules_path)
     activated_rules, trace = _evaluate_all_rules(rules, facts)
     conflict = resolve_conflicts(activated_rules)
 
@@ -119,3 +120,9 @@ def run_inference(request: RecommendationRequest, rules_path=None) -> dict[str, 
         conflict=conflict,
     )
     return enrich_inference_result(result, request)
+
+
+def run_inference(request: RecommendationRequest, rules_path=None) -> dict[str, Any]:
+    """Ejecuta el flujo de producción con las reglas vigentes."""
+
+    return run_inference_with_rules(request, load_rules(rules_path))
