@@ -22,7 +22,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-10 | Proteger rutas y comprobar la integración HTTP | Alta | Implementada |
 | HU-11 | Detectar automáticamente contradicciones al revisar reglas | Media | Implementada |
 | HU-12 | Exportar un informe completo de decisiones y pruebas | Media | Implementada |
-| HU-13 | Comparar resultados históricos de dos versiones de reglas | Media | Propuesta |
+| HU-13 | Detectar regresiones entre dos snapshots de reglas | Alta | Implementada |
 
 ## Historias y criterios de aceptación
 
@@ -177,9 +177,25 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Evidencia:** `tests/test_evidence_report.py` y [manual del informe](informe-academico.md).
 
+## HU-13 — Comparación segura de versiones de reglas
+
+**Como** mantenedor del motor, **quiero** comparar dos versiones de reglas sobre los mismos hechos **para** detectar regresiones antes de publicar cambios.
+
+**Criterios de aceptación:**
+- `POST /api/v1/rule-regression` acepta dos snapshots completos y de 1 a 10 escenarios de prueba.
+- Devuelve decisiones anteriores y propuestas, reglas ganadoras, activaciones, explicaciones y cambios por escenario.
+- Identifica reglas agregadas, retiradas y modificadas y calcula huellas SHA-256 de cada snapshot; las etiquetas aportadas por el usuario no acreditan su identidad histórica.
+- Marca regresiones críticas cuando un rechazo respaldado por reglas R01–R05 pasa a un nivel favorable.
+- Las reglas suministradas se validan; solicitudes inválidas responden HTTP 422.
+- El comparador evalúa con el mismo motor pero sin modificar `data/rules.json` ni `POST /api/v1/recommend`.
+- Streamlit permite simular cambios de prioridad, ver diferencias y descargar el resultado en JSON, sin editar reglas publicadas.
+- Se respeta `X-API-Key` cuando está configurada y se documenta que la muestra no prueba equivalencia universal.
+
+**Evidencia:** `tests/test_rule_regression.py` y [guía técnica](comparador-versiones-reglas.md).
+
 ## Historias propuestas para otras iteraciones
 
-**HU-13 — Comparación de versiones.** Como mantenedor, quiero ejecutar los mismos escenarios frente a dos bases de reglas versionadas para detectar regresiones. **Aceptación:** compara dictámenes y reglas ganadoras; muestra diferencias y conserva los contratos públicos; requiere aportar ambas versiones.
+**Pendientes posibles:** ampliar en el futuro los escenarios de regresión con más combinaciones de hechos y revisar automáticamente cambios propuestos en PR, sin alterar la integración existente.
 
 ### Definición de terminado
 
