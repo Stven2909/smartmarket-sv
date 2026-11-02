@@ -122,12 +122,11 @@ La demo permite:
 - Preguntar al chatbot explicativo.
 - Comparar alternativas y examinar reglas, umbrales y análisis de sensibilidad.
 
-Los escenarios **precargados** son sintéticos. También es posible introducir
-hechos obtenidos a partir de **datos reales recopilados manualmente**. La
-procedencia y fecha de los datos reales se documentan por separado; la demo
-no comprueba esa procedencia. Streamlit no consulta Laravel, PostgreSQL ni
-supermercados, no hace scraping y no utiliza IA generativa para decidir.
-Consultar la [guía de fuentes y datos](fuentes-y-datos.md).
+Los escenarios precargados son ejemplos de prueba. Streamlit envía los hechos
+al servicio FastAPI para mostrar la inferencia, sin consultar Laravel,
+PostgreSQL ni supermercados. La aplicación no realiza scraping ni toma
+decisiones mediante IA generativa. En la aplicación integrada, el backend
+Laravel proporciona los hechos al servicio Python mediante HTTP.
 
 ## Contrato entre Laravel y Python
 
