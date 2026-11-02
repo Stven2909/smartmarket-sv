@@ -168,11 +168,11 @@ def test_comparison_http_api_key_is_enforced(monkeypatch):
     assert authorized.status_code == 200
 
 
-def test_demo_has_three_views_and_comparison_selection():
+def test_demo_has_four_views_and_comparison_selection():
     script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
     at = AppTest.from_file(str(script)).run(timeout=20)
     assert not at.exception
-    assert len(at.tabs) == 3
+    assert len(at.tabs) == 4
     assert at.selectbox
     assert at.multiselect
     assert len(at.multiselect[0].value) >= 2
