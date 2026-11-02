@@ -1,6 +1,7 @@
 """Pruebas de humo de Python/FastAPI y Streamlit, sin depender de Laravel."""
 
 import asyncio
+from pathlib import Path
 
 import httpx
 import pytest
@@ -204,7 +205,8 @@ def test_streamlit_client_calls_fastapi_http_contract_without_network(monkeypatc
 
 
 def test_streamlit_renders_scenario_selection_without_a_server():
-    at = AppTest.from_file("demo/streamlit_app.py").run(timeout=20)
+    script_path = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
+    at = AppTest.from_file(str(script_path)).run(timeout=20)
     assert not at.exception
     assert at.selectbox
     assert "Compra ideal" in at.selectbox[0].options
