@@ -21,6 +21,16 @@ La interfaz está desplegada en Streamlit Community Cloud y disponible públicam
 
 ---
 
+## Laboratorio explicable y comparación (fase 2)
+
+La versión de desarrollo incorpora tres pantallas en Streamlit: **Laboratorio**, **Comparador** y **Base de conocimiento**. Permiten seguir las ocho reglas, inspeccionar la contribución de cada peso y comparar de 2 a 10 alternativas por nivel experto e índice auxiliar.
+
+**Endpoints opcionales:** `POST /api/v1/compare` y `GET /api/v1/knowledge`. Los endpoints `/api/v1/recommend` y `/api/v1/chat` y su contrato previo no cambian.
+
+La demostración y las pruebas se ejecutan enteramente en Python, **sin instalar Laravel, React ni una base de datos**. La nueva interfaz se mostrará en Streamlit Cloud solo cuando se despliegue esta versión.
+
+[Guía de exposición y de puesta en marcha](docs/demo-experto-fase2.md).
+
 ## ¿Qué es?
 
 Un motor de inferencia clásico basado en **reglas de producción**. No es Machine Learning: no entrena modelos ni genera salidas probabilísticas. Cada conclusión se construye con hechos, hechos derivados y reglas priorizadas, por lo que **la misma entrada siempre produce la misma salida y la misma explicación**.
@@ -42,7 +52,7 @@ Resolución de conflictos ──► Nivel + Acción + Explicación + Trazabilida
 ## Cómo funciona
 
 1. **Clasificación de hechos**: los valores numéricos se convierten en categorías (ahorro alto, distancia lejana, tiempo medio, etc.) mediante umbrales centralizados y versionados.
-2. **Encadenamiento hacia adelante**: el motor evalúa las reglas contra los hechos derivados.
+2. **Evaluación de producción en una pasada**: el motor evalúa las reglas contra los hechos derivados. No genera hechos nuevos a partir de las conclusiones de otras reglas; por ello no es un encadenamiento iterativo.
 3. **Resolución de conflictos**: cuando varias reglas aplican, gana la de mayor prioridad; en empate decide el ID de regla. Determinista siempre.
 4. **Explicación trazable**: para cada regla se conserva qué condiciones cumplió, cuáles no y por qué se activó o rechazó.
 5. **Índice de conveniencia** *(capa complementaria)*: un puntaje ponderado de 0 a 100 (ahorro, disponibilidad, distancia, tiempo y promociones) que enriquece la respuesta sin alterar jamás una conclusión crítica de las reglas R01–R05.
@@ -77,7 +87,7 @@ Streamlit ──HTTP──► FastAPI ──► Motor de inferencia
                         └── Chatbot determinista
 ```
 
-La interfaz consume todo por HTTP; toda la lógica vive en el servicio.
+La interfaz consume todo por HTTP; toda la lógica de inferencia vive en el servicio. La vista de parámetros también consulta la API por HTTP.
 
 ## Responsabilidades de integración
 
