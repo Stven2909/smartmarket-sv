@@ -601,6 +601,121 @@ def render_sensitivity_tab(base_url: str) -> None:
         st.caption(notice)
 
 
+def build_coverage_report(
+    comparison: dict[str, Any], scenarios: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Resume las trazas reales de la API para los escenarios de demostración."""
+
+    scenario_names = {
+        item["facts"]["alternativa_id"]: item["name"] for item in scenarios
+    }
+    ranked = comparison.get("ranking", [])
+    rule_ids = sorted(
+        {
+            trace["rule_id"]
+            for item in ranked
+            for trace in item["recomendacion"].get("trace", [])
+        }
+    )
+    counts = {
+        rule_id: {"activations": 0, "wins": 0, "scenarios": []}
+        for rule_id in rule_ids
+    }
+    scenario_rows = []
+    no_winner = 0
+    overlaps = 0
+
+    for item in ranked:
+        alternative_id = item["alternativa_id"]
+        result = item["recomendacion"]
+        active = result.get("reglas_activadas") or []
+        winner = result.get("winning_rule")
+        if winner is None:
+            no_winner += 1
+        if len(active) > 1:
+            overlaps += 1
+        for rule_id in active:
+            if rule_id in counts:
+                counts[rule_id]["activations"] += 1
+                counts[rule_id]["scenarios"].append(
+                    scenario_names.get(alternative_id, alternative_id)
+                )
+        if winner in counts:
+            counts[winner]["wins"] += 1
+        scenario_rows.append(
+            {
+                "Escenario": scenario_names.get(alternative_id, alternative_id),
+                "Nivel": result.get("nivel_recomendacion"),
+                "Ganadora": winner or "Sin regla",
+                "Reglas activadas": ", ".join(active) if active else "Ninguna",
+            }
+        )
+
+    return {
+        "rules": [
+            {
+                "Regla": rule_id,
+                "Activaciones": counts[rule_id]["activations"],
+                "Victorias": counts[rule_id]["wins"],
+                "Escenarios": ", ".join(counts[rule_id]["scenarios"]) or "Ninguno",
+            }
+            for rule_id in rule_ids
+        ],
+        "scenarios": scenario_rows,
+        "no_winner": no_winner,
+        "conflicts": overlaps,
+        "total": len(ranked),
+    }
+
+
+def render_rule_coverage(
+    scenarios: list[dict[str, Any]], base_url: str
+) -> None:
+    st.subheader("Matriz de cobertura de reglas")
+    st.caption(
+        "Ejecuta los escenarios de prueba contra la API Python. "
+        "La matriz muestra reglas activadas, ganadoras y conflictos; "
+        "no mide exactitud sobre datos comerciales."
+    )
+    if st.button("Evaluar cobertura", key="coverage_button"):
+        if not 2 <= len(scenarios) <= 10:
+            st.warning("La matriz requiere entre 2 y 10 escenarios de prueba.")
+        else:
+            try:
+                result = call_comparison_api(
+                    [scenario["facts"] for scenario in scenarios], base_url
+                )
+                st.session_state["rule_coverage"] = build_coverage_report(
+                    result, scenarios
+                )
+            except ApiClientError as exc:
+                st.error(f"No se pudo evaluar la cobertura: {exc}")
+
+    report = st.session_state.get("rule_coverage")
+    if report is None:
+        return
+
+    a, b, c = st.columns(3)
+    a.metric("Escenarios evaluados", report["total"])
+    b.metric("Sin regla ganadora", report["no_winner"])
+    c.metric("Con varias reglas activas", report["conflicts"])
+    st.dataframe(
+        report["rules"], hide_index=True, use_container_width=True
+    )
+    st.dataframe(
+        report["scenarios"], hide_index=True, use_container_width=True
+    )
+    missing = [
+        item["Regla"] for item in report["rules"] if item["Activaciones"] == 0
+    ]
+    if missing:
+        st.warning(
+            "Reglas sin cobertura en estos escenarios: " + ", ".join(missing)
+        )
+    else:
+        st.success("Las ocho reglas aparecen activadas en los escenarios evaluados.")
+
+
 def render_knowledge_tab(base_url: str) -> None:
     st.subheader("Base de conocimiento y criterios del experto")
     st.write(
@@ -768,6 +883,7 @@ def main() -> None:
         render_sensitivity_tab(base_url)
     with knowledge:
         render_knowledge_tab(base_url)
+        render_rule_coverage(scenarios, base_url)
 
 
 if __name__ == "__main__":
