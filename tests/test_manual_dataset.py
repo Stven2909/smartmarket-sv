@@ -196,3 +196,11 @@ def test_streamlit_entrypoint_imports_from_demo_directory():
         check=False,
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
+
+
+def test_widget_and_server_agree_on_two_mb_upload_limit():
+    from demo.manual_dataset import MAX_BYTES
+
+    assert MAX_BYTES == 2_000_000
+    script = (Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py")
+    assert "max_upload_size=2" in script.read_text(encoding="utf-8")
