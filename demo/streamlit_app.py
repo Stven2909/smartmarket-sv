@@ -196,6 +196,13 @@ def call_comparison_api(
     return _post_json("/api/v1/compare", {"alternativas": alternatives}, base_url)
 
 
+def call_sensitivity_api(
+    alternative: dict[str, Any], base_url: str | None = None
+) -> dict[str, Any]:
+    """Ejecuta escenarios hipotéticos en la API sin depender de otros sistemas."""
+    return _post_json("/api/v1/sensitivity", {"alternativa": alternative}, base_url)
+
+
 def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
     """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
     url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/knowledge"
@@ -531,6 +538,64 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
             )
 
 
+def render_sensitivity_tab(base_url: str) -> None:
+    st.subheader("Análisis de sensibilidad de la recomendación")
+    st.write(
+        "Comprueba cómo cambia el resultado si sube el costo, aumenta el recorrido, "
+        "desaparecen promociones o falta un producto esencial. "
+        "Son pruebas hipotéticas, no predicciones."
+    )
+    original = st.session_state.get("latest_facts")
+    if original is None:
+        st.info("Primero evalúa una alternativa en la pestaña Laboratorio.")
+        return
+
+    if st.button("Ejecutar escenarios de sensibilidad", key="sensitivity_button"):
+        try:
+            st.session_state["latest_sensitivity"] = call_sensitivity_api(
+                original, base_url
+            )
+        except ApiClientError as exc:
+            st.error(f"No se pudo ejecutar el análisis: {exc}")
+
+    report = st.session_state.get("latest_sensitivity")
+    if not report or report.get("alternativa_id") != original["alternativa_id"]:
+        st.info("Ejecuta el análisis para ver el efecto de cambios hipotéticos.")
+        return
+
+    st.metric(
+        "Escenarios con una decisión diferente",
+        report["cantidad_decisiones_distintas"],
+    )
+    st.write(report["interpretacion"])
+    baseline = report["escenario_base"]
+    st.caption(
+        f"Resultado inicial: {baseline['nivel_recomendacion']} · "
+        f"Regla {baseline.get('winning_rule') or 'ninguna'} · "
+        f"Índice {baseline['indice_conveniencia']}/100"
+    )
+    st.dataframe(
+        [
+            {
+                "Escenario": scenario["escenario"],
+                "Dictamen": scenario["recomendacion"]["nivel_recomendacion"],
+                "Regla": scenario["recomendacion"].get("winning_rule") or "Sin regla",
+                "Variación índice": scenario["diferencia_indice"],
+                "Cambia decisión": "Sí" if scenario["cambia_decision"] else "No",
+            }
+            for scenario in report["escenarios"]
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    for scenario in report["escenarios"]:
+        with st.expander(scenario["descripcion"]):
+            st.json(scenario["cambios"])
+            st.write(scenario["recomendacion"]["explicacion"])
+    for notice in report.get("advertencias", []):
+        st.caption(notice)
+
+
 def render_knowledge_tab(base_url: str) -> None:
     st.subheader("Base de conocimiento y criterios del experto")
     st.write(
@@ -658,8 +723,8 @@ def main() -> None:
         st.error(str(exc))
         return
 
-    lab, comparison_tab, knowledge = st.tabs(
-        ["🧪 Laboratorio", "📊 Comparador", "📚 Base de conocimiento"]
+    lab, comparison_tab, sensitivity_tab, knowledge = st.tabs(
+        ["🧪 Laboratorio", "📊 Comparador", "🔬 Sensibilidad", "📚 Base de conocimiento"]
     )
     with lab:
         st.subheader("Prueba una recomendación")
@@ -691,6 +756,8 @@ def main() -> None:
 
     with comparison_tab:
         render_comparison_tab(scenarios, base_url)
+    with sensitivity_tab:
+        render_sensitivity_tab(base_url)
     with knowledge:
         render_knowledge_tab(base_url)
 
