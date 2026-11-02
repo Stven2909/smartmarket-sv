@@ -714,7 +714,10 @@ def main() -> None:
         unsafe_allow_html=True,
     )
     base_url = st.sidebar.text_input("URL del servicio Python", value=api_base_url())
-    st.sidebar.caption("API independiente de Laravel. Los datos vienen de escenarios.")
+    st.sidebar.caption(
+        "API Python independiente. Los escenarios incluidos son sintéticos; "
+        "también puedes ingresar hechos recopilados manualmente."
+    )
     if st.sidebar.button("Verificar conexión", key="health_button"):
         try:
             health = call_health_endpoint(base_url)
@@ -737,7 +740,10 @@ def main() -> None:
         scenario_by_name = {scenario["name"]: scenario for scenario in scenarios}
         selected_name = st.selectbox("Escenario", list(scenario_by_name))
         selected = scenario_by_name[selected_name]
-        st.caption(selected["description"])
+        st.caption(
+            "Escenario precargado sintético · " + selected["description"]
+            + " Puedes modificar los valores con datos recopilados manualmente."
+        )
         payload = _render_scenario_form(selected)
         if payload is not None:
             errors = validate_payload(payload)
