@@ -4,11 +4,16 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -23,3 +28,20 @@ jobs:
 
       - name: Tests
         run: pytest -q
+
+      - name: Gate - Rule regressions on pull requests
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git show "$BASE_SHA:data/rules.json" > "$RUNNER_TEMP/rules-baseline.json"
+          if cmp -s "$RUNNER_TEMP/rules-baseline.json" data/rules.json; then
+            echo "## HU-14 · Sin modificaciones de rules.json" >> "$GITHUB_STEP_SUMMARY"
+            echo "La puerta de regresiones no requiere evaluar esta propuesta." >> "$GITHUB_STEP_SUMMARY"
+          else
+            python -m scripts.check_rule_regression \
+              --baseline "$RUNNER_TEMP/rules-baseline.json" \
+              --candidate data/rules.json \
+              --scenarios data/scenarios.json \
+              --json-output "$RUNNER_TEMP/rule-regression.json"
+          fi
