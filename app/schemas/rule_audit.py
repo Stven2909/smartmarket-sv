@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 FindingType = Literal[
     "ID_DUPLICADO",
+    "CONDICIONES_INCOMPATIBLES",
     "CONDICIONES_DUPLICADAS",
     "SALIDAS_DIVERGENTES",
     "REGLA_SOMBREADA",
