@@ -185,3 +185,31 @@ def test_streamlit_shows_diagnosis_control_with_a_previous_result():
     assert not at.exception
     assert len(at.tabs) == 4
     assert any(button.label == "Diagnosticar alternativa" for button in at.button)
+
+
+
+def test_streamlit_diagnosis_uses_fastapi_without_external_network(monkeypatch):
+    import requests
+
+    def fake_post(url, *, json, timeout, headers):
+        assert url.endswith("/api/v1/diagnosis")
+        assert timeout > 0
+        return request_api("POST", "/api/v1/diagnosis", json=json, headers=headers)
+
+    monkeypatch.setattr(requests, "post", fake_post)
+    script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
+    at = AppTest.from_file(str(script))
+    at.session_state["latest_facts"] = BASE.copy()
+    at.session_state["latest_recommendation"] = recommend(option()).model_dump(
+        mode="json"
+    )
+    at.run(timeout=20)
+    assert not at.exception
+    button = next(
+        item for item in at.button if item.label == "Diagnosticar alternativa"
+    )
+    button.click()
+    at.run(timeout=20)
+    assert not at.exception
+    assert at.session_state["latest_diagnosis"]["regla_ganadora"] == "R06"
+    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 3
