@@ -16,6 +16,47 @@ from app.schemas.rule_audit import (
 from app.schemas.versions import RULES_VERSION
 
 
+# Cada grupo forma una partición exhaustiva de hechos booleanos derivables.
+EXCLUSIVE_PARTITIONS = (
+    (
+        "dentro_presupuesto",
+        "presupuesto_ligeramente_excedido",
+        "presupuesto_muy_excedido",
+    ),
+    ("todos_productos_disponibles", "faltan_productos"),
+    ("todos_esenciales_disponibles", "faltan_esenciales"),
+    ("ahorro_bajo", "ahorro_medio", "ahorro_alto"),
+    ("distancia_cercana", "distancia_media", "distancia_lejana"),
+    ("tiempo_bajo", "tiempo_medio", "tiempo_alto"),
+    ("una_parada", "dos_paradas", "compra_fragmentada"),
+)
+
+# Relaciones garantizadas por validación de conteos y por derive_facts.
+IMPLICATIONS = (
+    ("todos_productos_disponibles", "todos_esenciales_disponibles"),
+    ("faltan_esenciales", "faltan_productos"),
+)
+
+
+def _impossible_conditions(rule: ProductionRule) -> list[str]:
+    impossible = []
+    for partition in EXCLUSIVE_PARTITIONS:
+        yes = [name for name in partition if rule.conditions.get(name) is True]
+        no = [
+            name
+            for name in partition
+            if name in rule.conditions and rule.conditions[name] is False
+        ]
+        if len(yes) > 1:
+            impossible.append("Incompatibles simultáneos: " + ", ".join(yes))
+        elif len(no) == len(partition):
+            impossible.append("Todas las opciones negadas: " + ", ".join(no))
+    for premise, conclusion in IMPLICATIONS:
+        if rule.conditions.get(premise) is True and rule.conditions.get(conclusion) is False:
+            impossible.append(f"{premise}=true obliga a {conclusion}=true")
+    return impossible
+
+
 def _representative_requests():
     """Recorre clases de límites existentes, sin enumerar precios reales."""
 
@@ -78,6 +119,16 @@ def audit_rules(rules: list[ProductionRule] | None = None) -> RuleAuditResponse:
         raise ValueError("La auditoría requiere al menos una regla.")
 
     findings: list[RuleFinding] = []
+    for rule in checked:
+        for description in _impossible_conditions(rule):
+            findings.append(
+                RuleFinding(
+                    tipo="CONDICIONES_INCOMPATIBLES",
+                    reglas=[rule.id],
+                    detalle=description + ". No puede activarse con hechos coherentes.",
+                )
+            )
+
     identifiers = Counter(rule.id for rule in checked)
     for identifier, amount in sorted(identifiers.items()):
         if amount > 1:
