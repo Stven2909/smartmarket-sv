@@ -203,6 +203,13 @@ def call_sensitivity_api(
     return _post_json("/api/v1/sensitivity", {"alternativa": alternative}, base_url)
 
 
+def call_diagnosis_api(
+    alternative: dict[str, Any], base_url: str | None = None
+) -> dict[str, Any]:
+    """Explica reglas pendientes y riesgos usando los hechos recibidos."""
+    return _post_json("/api/v1/diagnosis", {"alternativa": alternative}, base_url)
+
+
 def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
     """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
     url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/knowledge"
@@ -348,6 +355,78 @@ def render_recommendation(
         file_name="smartmarket-evidencia.json",
         mime="application/json",
         key=f"download_{widget_key}",
+    )
+
+
+def render_diagnosis_panel(base_url: str, facts: dict[str, Any] | None) -> None:
+    """Diagnóstico opcional; solo consulta la API con hechos ya evaluados."""
+
+    st.subheader("Diagnóstico de oportunidades")
+    st.caption(
+        "Explica los requisitos de las reglas favorables sin cambiar el costo, "
+        "la disponibilidad o cualquier otro hecho del backend."
+    )
+    if facts is None:
+        st.info("Primero ejecuta una recomendación en el laboratorio.")
+        return
+
+    if st.button("Diagnosticar alternativa", key="diagnosis_button"):
+        try:
+            st.session_state["latest_diagnosis"] = call_diagnosis_api(facts, base_url)
+            st.session_state["diagnosis_input"] = facts.copy()
+        except ApiClientError as exc:
+            st.error(f"No se pudo obtener el diagnóstico: {exc}")
+            return
+
+    report = st.session_state.get("latest_diagnosis")
+    if not report or st.session_state.get("diagnosis_input") != facts:
+        return
+
+    st.write(report["resumen"])
+    risks = report.get("riesgos_criticos", [])
+    if risks:
+        st.warning(
+            "Reglas críticas activas: "
+            + ", ".join(risk["regla"] for risk in risks)
+        )
+        for risk in risks:
+            st.write(f"**{risk['regla']}:** {risk['motivo']}")
+
+    opportunities = report.get("oportunidades", [])
+    st.dataframe(
+        [
+            {
+                "Regla": item["regla"],
+                "Nivel posible": item["nivel_posible"],
+                "Cumple": (
+                    f"{item['condiciones_cumplidas']}/{item['condiciones_totales']}"
+                ),
+                "Pendientes": len(item["faltantes"]),
+                "Ya activa": "Sí" if item["activa"] else "No",
+            }
+            for item in opportunities
+        ],
+        hide_index=True,
+        use_container_width=True,
+    )
+    for item in opportunities:
+        with st.expander(
+            f"{item['regla']} · {item['nivel_posible']} · "
+            f"{len(item['faltantes'])} requisito(s) pendiente(s)"
+        ):
+            if not item["faltantes"]:
+                st.write("Esta regla ya reúne todas sus condiciones.")
+            else:
+                for missing in item["faltantes"]:
+                    st.write(f"**{missing['hecho']}:** {missing['orientacion']}")
+    for notice in report.get("advertencias", []):
+        st.caption(notice)
+    st.download_button(
+        "Descargar diagnóstico JSON",
+        data=json.dumps(report, ensure_ascii=False, indent=2),
+        file_name="smartmarket-diagnostico.json",
+        mime="application/json",
+        key="download_diagnosis",
     )
 
 
@@ -875,6 +954,7 @@ def main() -> None:
         if latest_result is not None:
             st.header("Resultado de la inferencia")
             render_recommendation(latest_result)
+            render_diagnosis_panel(base_url, latest_facts)
         render_chatbot(latest_facts, latest_result)
 
     with comparison_tab:
