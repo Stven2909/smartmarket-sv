@@ -150,7 +150,7 @@ Ejemplo de respuesta de `/recommend`:
 {
   "request_id": "scenario-ideal",
   "nivel_recomendacion": "EXCELENTE",
-  "accion_sugerida": "Comprar todo en esta alternativa.",
+  "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
   "explicacion": "Cumple el presupuesto, incluye los esenciales y requiere un recorrido conveniente.",
   "reglas_activadas": ["R06", "R07"],
   "hechos_derivados": {
@@ -191,6 +191,8 @@ La compatibilidad Laravel se valida adicionalmente en
 `tests/test_phase12_compatibility.py`: prueba el payload oficial, el flujo
 `/recommend` → `/chat`, índice, reglas críticas, fallback, nulos, campos
 prohibidos y resultados deterministas.
+
+Las listas sin productos esenciales son válidas. R06 no garantiza que todos los productos opcionales estén disponibles; se validan los conteos cruzados.
 
 ## Limitaciones del MVP
 
