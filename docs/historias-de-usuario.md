@@ -20,7 +20,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-08 | Auditar cobertura de las ocho reglas | Alta | Implementada |
 | HU-09 | Rechazar hechos inconsistentes y valores inválidos | Alta | Implementada |
 | HU-10 | Proteger rutas y comprobar la integración HTTP | Alta | Implementada |
-| HU-11 | Detectar automáticamente contradicciones al revisar reglas | Media | Propuesta |
+| HU-11 | Detectar automáticamente contradicciones al revisar reglas | Media | Implementada |
 | HU-12 | Exportar un informe completo de decisiones y pruebas | Media | Propuesta |
 | HU-13 | Comparar resultados históricos de dos versiones de reglas | Media | Propuesta |
 
@@ -146,9 +146,22 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Evidencia:** `tests/test_contract.py`, `tests/test_diagnosis.py`.
 
-## Historias propuestas para otras iteraciones
+## HU-11 — Verificador de consistencia del conocimiento
 
-**HU-11 — Verificador de consistencia del conocimiento.** Como responsable de las reglas, quiero detectar reglas duplicadas, redundancias y contradicciones con casos sintéticos antes de aceptar cambios en `rules.json`. **Aceptación:** genera un informe reproducible; distingue conflictos legítimos resueltos por prioridad de contradicciones; no altera automáticamente las reglas.
+**Como** responsable de las reglas, **quiero** detectar duplicados, contradicciones, solapamientos y reglas sombreadas **para** identificar problemas antes de editar la base de conocimiento.
+
+**Criterios de aceptación:**
+- `GET /api/v1/rule-audit` devuelve un informe de solo lectura con la versión de reglas, cobertura sintética, hallazgos y pares de reglas que se activan simultáneamente.
+- Las reglas con idénticas condiciones o salidas divergentes se señalan explícitamente.
+- Se detectan restricciones mutuamente incompatibles de los hechos derivados y hechos numéricos usados como booleanos.
+- Las reglas sombreadas se identifican cuando otra regla más general y de mayor prioridad impide que ganen.
+- Los solapamientos legítimos, como R06 y R07, se informan con un ejemplo sintético y con la prioridad que resuelve el conflicto, sin presentarlos automáticamente como errores.
+- La auditoría emplea 2430 casos sintéticos representativos, aclara sus límites y no modifica reglas ni decisiones.
+- Se puede visualizar y descargar el informe desde **Base de conocimiento** de Streamlit; se respeta `X-API-Key` cuando está configurada.
+
+**Evidencia:** `tests/test_rule_auditor.py`, [metodología de auditoría](auditoria-consistencia-reglas.md).
+
+## Historias propuestas para otras iteraciones
 
 **HU-12 — Informe académico descargable.** Como expositor, quiero exportar resultados, matriz, parámetros, versiones y pruebas ejecutadas para presentar evidencias. **Aceptación:** el documento identifica escenarios sintéticos, incluye fecha/versiones y no declara precisión comercial inexistente.
 
