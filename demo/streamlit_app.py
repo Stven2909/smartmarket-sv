@@ -555,11 +555,16 @@ def render_sensitivity_tab(base_url: str) -> None:
             st.session_state["latest_sensitivity"] = call_sensitivity_api(
                 original, base_url
             )
+            st.session_state["latest_sensitivity_facts"] = original.copy()
         except ApiClientError as exc:
             st.error(f"No se pudo ejecutar el análisis: {exc}")
 
     report = st.session_state.get("latest_sensitivity")
-    if not report or report.get("alternativa_id") != original["alternativa_id"]:
+    if (
+        not report
+        or report.get("alternativa_id") != original["alternativa_id"]
+        or st.session_state.get("latest_sensitivity_facts") != original
+    ):
         st.info("Ejecuta el análisis para ver el efecto de cambios hipotéticos.")
         return
 
