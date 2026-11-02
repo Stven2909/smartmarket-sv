@@ -1,6 +1,6 @@
 # Matriz de validación académica — etapa 1
 
-Esta matriz documenta la revisión del conocimiento experto y no constituye validación independiente por un especialista externo.
+Esta matriz reúne comprobaciones internas reproducibles de la lógica de reglas. Los escenarios de demostración son sintéticos; los casos provenientes de observaciones reales capturadas manualmente deben identificarse con su fuente y fecha en un registro separado. No se requiere evaluación por especialistas externos ni se afirma exactitud comercial.
 
 ## Política de compatibilidad
 
