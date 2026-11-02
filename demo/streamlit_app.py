@@ -6,10 +6,6 @@ from typing import Any
 import requests
 import streamlit as st
 
-from app.expert_system.classifiers import THRESHOLDS
-from app.expert_system.convenience_config import DEFAULT_CONVENIENCE_CONFIG
-from app.expert_system.rule_loader import load_rules
-
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
 # ponytail: 30s porque Render free tier arranca en frío (~30-60s) tras dormir
 REQUEST_TIMEOUT_SECONDS = 30
@@ -198,6 +194,25 @@ def call_comparison_api(
 ) -> dict[str, Any]:
     """Compara opciones usando exclusivamente el servicio Python."""
     return _post_json("/api/v1/compare", {"alternativas": alternatives}, base_url)
+
+
+def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
+    """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
+    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/knowledge"
+    try:
+        response = requests.get(
+            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
+        )
+    except requests.Timeout as exc:
+        raise ApiClientError("La API tardó demasiado en responder.") from exc
+    except requests.RequestException as exc:
+        raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+    if response.status_code >= 400:
+        raise ApiClientError(
+            f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
+            response.status_code,
+        )
+    return response.json()
 
 
 def call_chat_api(
@@ -503,46 +518,69 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
             render_recommendation(row["recomendacion"])
 
 
-def render_knowledge_tab() -> None:
+def render_knowledge_tab(base_url: str) -> None:
     st.subheader("Base de conocimiento y criterios del experto")
     st.write(
-        "La inferencia es determinista: se comprueban las condiciones de cada regla, "
+        "La inferencia es determinista: se evalúan las condiciones de cada regla, "
         "pueden activarse varias y gana la de mayor prioridad. No se entrena un modelo."
     )
-    rules = load_rules()
+    if st.button("Cargar reglas y parámetros de la API", key="knowledge_button"):
+        try:
+            st.session_state["knowledge_snapshot"] = call_knowledge_api(base_url)
+        except ApiClientError as exc:
+            st.error(f"No se pudo consultar la base de conocimiento: {exc}")
+
+    knowledge = st.session_state.get("knowledge_snapshot")
+    if not knowledge:
+        st.info(
+            "Carga la base de conocimiento para ver las reglas reales del servicio "
+            "Python. No se necesita Laravel."
+        )
+        return
+
+    rules = knowledge.get("rules", [])
     st.metric("Reglas de producción vigentes", len(rules))
+    st.caption(
+        f"Versión de reglas: {knowledge.get('rules_version', 'N/D')} · "
+        f"Versión de umbrales: {knowledge.get('thresholds_version', 'N/D')}"
+    )
     st.dataframe(
         [
             {
-                "Regla": rule.id,
-                "Nombre": rule.name,
-                "Prioridad": rule.priority,
-                "Dictamen": rule.result.level,
-                "Condiciones AND": len(rule.conditions),
+                "Regla": rule["id"],
+                "Nombre": rule["name"],
+                "Prioridad": rule["priority"],
+                "Dictamen": rule["result"]["level"],
+                "Condiciones AND": len(rule["conditions"]),
             }
             for rule in rules
         ],
         hide_index=True,
         use_container_width=True,
     )
-    for rule in sorted(rules, key=lambda item: (item.priority, item.id)):
-        with st.expander(f"{rule.id} · {rule.name} · prioridad {rule.priority}"):
-            st.write(f"**Conclusión:** {rule.result.level}")
-            st.write(f"**Acción:** {rule.result.action}")
-            st.write(f"**Justificación:** {rule.result.explanation}")
-            st.json(rule.conditions)
+    for rule in sorted(rules, key=lambda item: (item["priority"], item["id"])):
+        with st.expander(
+            f"{rule['id']} · {rule['name']} · prioridad {rule['priority']}"
+        ):
+            st.write(f"**Conclusión:** {rule['result']['level']}")
+            st.write(f"**Acción:** {rule['result']['action']}")
+            st.write(f"**Justificación:** {rule['result']['explanation']}")
+            st.json(rule["conditions"])
 
     st.subheader("Umbrales documentados")
     st.dataframe(
-        [{"Parámetro": name, "Valor": value} for name, value in THRESHOLDS.items()],
+        [
+            {"Parámetro": name, "Valor": value}
+            for name, value in knowledge.get("thresholds", {}).items()
+        ],
         hide_index=True,
         use_container_width=True,
     )
     st.subheader("Pesos del índice auxiliar")
     st.dataframe(
         [
-            {"Factor": name, "Peso (%)": round(weight * 100, 1)}
-            for name, weight in DEFAULT_CONVENIENCE_CONFIG.weights().items()
+            {"Factor": name, "Peso (%)": round(float(weight) * 100, 1)}
+            for name, weight in knowledge.get("weights", {}).items()
         ],
         hide_index=True,
         use_container_width=True,
@@ -641,7 +679,7 @@ def main() -> None:
     with comparison_tab:
         render_comparison_tab(scenarios, base_url)
     with knowledge:
-        render_knowledge_tab()
+        render_knowledge_tab(base_url)
 
 
 if __name__ == "__main__":
