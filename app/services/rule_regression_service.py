@@ -1,7 +1,7 @@
 """Regresión comparativa determinista entre versiones aisladas de las reglas."""
 
-from hashlib import sha256
 import json
+from hashlib import sha256
 
 from app.expert_system.convenience_index import CRITICAL_RULE_IDS
 from app.expert_system.inference_engine import run_inference_with_rules
