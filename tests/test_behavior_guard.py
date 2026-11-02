@@ -1,6 +1,10 @@
 """HU-17: comparación de ejecutables y protecciones de seguridad."""
 
 import json
+import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 from scripts.behavior_guard import (
@@ -117,6 +121,50 @@ def test_cli_runs_without_importing_baseline_code_into_candidate(tmp_path):
     assert main(
         ["compare", "--baseline", str(snap), "--candidate", str(snap)]
     ) == 0
+
+
+def test_modified_classifier_in_isolated_code_copy_blocks_critical_loss(tmp_path):
+    """Ejecuta otra implementación, no un snapshot artificialmente editado."""
+
+    baseline_cases = make_cases(ROOT / "data" / "scenarios.json")
+    focus = baseline_cases[:9] + baseline_cases[-30:]
+    before = capture(focus)
+    isolated = tmp_path / "base"
+    isolated.mkdir()
+    shutil.copytree(ROOT / "app", isolated / "app")
+    shutil.copytree(ROOT / "data", isolated / "data")
+
+    classifier = isolated / "app" / "expert_system" / "classifiers.py"
+    original = classifier.read_text(encoding="utf-8")
+    marker = '"presupuesto_exceso_max_pct": 10.0'
+    assert marker in original
+    classifier.write_text(
+        original.replace(marker, '"presupuesto_exceso_max_pct": 50.0'),
+        encoding="utf-8",
+    )
+    cases = tmp_path / "cases.json"
+    output = tmp_path / "candidate.json"
+    cases.write_text(json.dumps(focus), encoding="utf-8")
+    env = {**os.environ, "PYTHONPATH": str(isolated)}
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "behavior_guard.py"),
+            "snapshot",
+            "--cases", str(cases),
+            "--output", str(output),
+        ],
+        cwd=isolated,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=45,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = compare(before, json.loads(output.read_text(encoding="utf-8")))
+    assert report["resultado"] == "BLOQUEADO"
+    assert report["metricas"]["perdidas_proteccion"] > 0
 
 
 def test_workflow_uses_separate_git_worktree_and_correct_paths():
