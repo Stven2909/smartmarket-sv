@@ -79,7 +79,10 @@ def test_chat_promotions_uses_only_real_boolean_facts(available):
     assert response.intent == "PROMOCIONES"
     assert response.supported is True
     assert ("Sí, hay promociones" in response.response) == available
-    assert "importe" in response.response if available else "No se identificaron" in response.response
+    if available:
+        assert "importe" in response.response
+    else:
+        assert "No se identificaron" in response.response
 
 
 def test_chat_promotions_does_not_invent_missing_data():
