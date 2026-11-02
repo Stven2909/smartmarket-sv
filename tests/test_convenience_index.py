@@ -112,6 +112,7 @@ def test_unfavorable_case_returns_zero_or_low_convenience():
             distancia_adicional_km=20,
             tiempo_estimado_min=120,
             productos_disponibles=0,
+            productos_esenciales_disponibles=0,
             promociones_aplicables=False,
         )
     )
@@ -125,7 +126,7 @@ def test_unfavorable_case_returns_zero_or_low_convenience():
     ("changes", "expected_rule"),
     [
         ({"costo_total": 56}, "R01"),
-        ({"productos_esenciales_disponibles": 5}, "R02"),
+        ({"productos_disponibles": 9, "productos_esenciales_disponibles": 5}, "R02"),
         ({"distancia_adicional_km": 8, "ahorro": 2.99}, "R03"),
         ({"tiempo_estimado_min": 45, "ahorro": 2.99}, "R04"),
         ({"numero_supermercados": 3}, "R05"),
@@ -152,7 +153,9 @@ def test_critical_index_does_not_change_r01():
 
 
 def test_critical_index_does_not_change_r02():
-    result = run_inference(make_request(productos_esenciales_disponibles=5))
+    result = run_inference(
+        make_request(productos_disponibles=9, productos_esenciales_disponibles=5)
+    )
 
     assert result["level"] == "NO_RECOMENDABLE"
     assert result["action"] == ("Buscar una alternativa con todos los productos esenciales.")

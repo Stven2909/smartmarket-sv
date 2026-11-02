@@ -191,6 +191,7 @@ def test_recommendation_level_has_one_shared_definition():
 def test_r02_wins_over_r05_and_keeps_both_rules():
     result = run_inference(
         make_request(
+            productos_disponibles=9,
             productos_esenciales_disponibles=5,
             numero_supermercados=3,
         )

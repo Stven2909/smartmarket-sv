@@ -40,8 +40,8 @@
         "tags": [
           "recommendations"
         ],
-        "summary": "Genera una recomendaci\u00f3n explicable",
-        "description": "Valida los hechos de una alternativa, ejecuta el motor de reglas y a\u00f1ade el \u00edndice auxiliar de conveniencia sin alterar las reglas cr\u00edticas.",
+        "summary": "Genera una recomendación explicable",
+        "description": "Valida los hechos de una alternativa, ejecuta el motor de reglas y añade el índice auxiliar de conveniencia sin alterar las reglas críticas.",
         "operationId": "create_recommendation_api_v1_recommend_post",
         "requestBody": {
           "content": {
@@ -55,7 +55,7 @@
         },
         "responses": {
           "200": {
-            "description": "Recomendaci\u00f3n validada y explicable.",
+            "description": "Recomendación validada y explicable.",
             "content": {
               "application/json": {
                 "schema": {
@@ -63,11 +63,11 @@
                 },
                 "examples": {
                   "alternativa_ideal": {
-                    "summary": "Alternativa ideal con \u00edndice complementario",
+                    "summary": "Alternativa ideal con índice complementario",
                     "value": {
                       "request_id": "demo-001",
                       "nivel_recomendacion": "EXCELENTE",
-                      "accion_sugerida": "Comprar todo en esta alternativa.",
+                      "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
                       "explicacion": "Cumple el presupuesto y las condiciones principales.",
                       "reglas_activadas": [
                         "R06",
@@ -78,7 +78,7 @@
                         "dentro_presupuesto": true,
                         "todos_esenciales_disponibles": true,
                         "ahorro_alto": true,
-                        "porcentaje_productos_disponibles": 100.0
+                        "porcentaje_productos_disponibles": 100
                       },
                       "version_reglas": "1.0.0",
                       "version_contrato": "1.0.0",
@@ -109,10 +109,10 @@
                       "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
                       "componentes_conveniencia": {
                         "ahorro": 0.5625,
-                        "disponibilidad": 1.0,
+                        "disponibilidad": 1,
                         "distancia": 0.96,
                         "tiempo": 0.9,
-                        "promociones": 1.0
+                        "promociones": 1
                       },
                       "pesos_conveniencia": {
                         "ahorro": 0.35,
@@ -129,7 +129,7 @@
                       "request_id": "demo-001",
                       "nivel_recomendacion": "NO_RECOMENDABLE",
                       "accion_sugerida": "Replantear la lista o buscar productos sustitutos.",
-                      "explicacion": "El costo supera el presupuesto en m\u00e1s de un 10%. La decisi\u00f3n principal fue determinada por la regla R01. El \u00edndice de conveniencia se muestra como informaci\u00f3n complementaria.",
+                      "explicacion": "El costo supera el presupuesto en más de un 10%. La decisión principal fue determinada por la regla R01. El índice de conveniencia se muestra como información complementaria.",
                       "reglas_activadas": [
                         "R01"
                       ],
@@ -138,7 +138,7 @@
                         "dentro_presupuesto": false,
                         "presupuesto_muy_excedido": true,
                         "ahorro_alto": true,
-                        "porcentaje_productos_disponibles": 100.0
+                        "porcentaje_productos_disponibles": 100
                       },
                       "version_reglas": "1.0.0",
                       "version_contrato": "1.0.0",
@@ -167,10 +167,10 @@
                       "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
                       "componentes_conveniencia": {
                         "ahorro": 0.5625,
-                        "disponibilidad": 1.0,
+                        "disponibilidad": 1,
                         "distancia": 0.96,
                         "tiempo": 0.9,
-                        "promociones": 1.0
+                        "promociones": 1
                       },
                       "pesos_conveniencia": {
                         "ahorro": 0.35,
@@ -186,7 +186,7 @@
             }
           },
           "422": {
-            "description": "JSON ausente, inv\u00e1lido o inconsistente.",
+            "description": "JSON ausente, inválido o inconsistente.",
             "content": {
               "application/json": {
                 "example": {
@@ -220,8 +220,8 @@
         "tags": [
           "chatbot"
         ],
-        "summary": "Explica una recomendaci\u00f3n con un chatbot determinista",
-        "description": "Responde usando \u00fanicamente los hechos y la recomendaci\u00f3n recibidos; no ejecuta reglas nuevas ni genera datos inventados.",
+        "summary": "Explica una recomendación con un chatbot determinista",
+        "description": "Responde usando únicamente los hechos y la recomendación recibidos; no ejecuta reglas nuevas ni genera datos inventados.",
         "operationId": "create_chat_response_api_v1_chat_post",
         "requestBody": {
           "content": {
@@ -244,14 +244,14 @@
                 "example": {
                   "request_id": "demo-001",
                   "intent": "EXPLICACION",
-                  "response": "Te recomiendo esta opci\u00f3n porque la compra est\u00e1 dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
+                  "response": "Te recomiendo esta opción porque la compra está dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
                   "supported": true
                 }
               }
             }
           },
           "422": {
-            "description": "Solicitud de chatbot inv\u00e1lida.",
+            "description": "Solicitud de chatbot inválida.",
             "content": {
               "application/json": {
                 "example": {
@@ -327,7 +327,7 @@
               "ahorro": 11.25,
               "costo_total": 42.5,
               "distancia_adicional_km": 0.8,
-              "presupuesto": 50.0,
+              "presupuesto": 50,
               "productos_disponibles": 10,
               "productos_esenciales_disponibles": 6,
               "productos_esenciales_totales": 6,
@@ -335,22 +335,22 @@
               "promociones_aplicables": true,
               "tiempo_estimado_min": 12
             },
-            "message": "\u00bfPor qu\u00e9 se recomienda esta alternativa?",
+            "message": "¿Por qué se recomienda esta alternativa?",
             "recommendation": {
-              "accion_sugerida": "Comprar todo en esta alternativa.",
+              "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
               "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
               "componentes_conveniencia": {
                 "ahorro": 0.5625,
-                "disponibilidad": 1.0,
+                "disponibilidad": 1,
                 "distancia": 0.96,
-                "promociones": 1.0,
+                "promociones": 1,
                 "tiempo": 0.9
               },
               "explicacion": "Cumple el presupuesto y las condiciones principales.",
               "hechos_derivados": {
                 "ahorro_alto": true,
                 "dentro_presupuesto": true,
-                "porcentaje_productos_disponibles": 100.0,
+                "porcentaje_productos_disponibles": 100,
                 "todos_esenciales_disponibles": true
               },
               "indice_conveniencia": 82.39,
@@ -451,7 +451,7 @@
           {
             "intent": "EXPLICACION",
             "request_id": "demo-001",
-            "response": "Te recomiendo esta opci\u00f3n porque la compra est\u00e1 dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
+            "response": "Te recomiendo esta opción porque la compra está dentro de tu presupuesto, incluye los productos esenciales y el recorrido adicional es corto.",
             "supported": true
           }
         ]
@@ -470,57 +470,57 @@
           },
           "costo_total": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Costo Total"
           },
           "presupuesto": {
             "type": "number",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Presupuesto"
           },
           "ahorro": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Ahorro"
           },
           "distancia_km": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Distancia Km"
           },
           "distancia_adicional_km": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Distancia Adicional Km"
           },
           "tiempo_estimado_min": {
             "type": "number",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Tiempo Estimado Min"
           },
           "productos_disponibles": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Productos Disponibles"
           },
           "productos_totales": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Productos Totales"
           },
           "productos_esenciales_disponibles": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Productos Esenciales Disponibles"
           },
           "productos_esenciales_totales": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Productos Esenciales Totales"
+            "title": "Productos Esenciales Totales",
+            "minimum": 0
           },
           "numero_supermercados": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Numero Supermercados"
           },
           "promociones_aplicables": {
@@ -556,7 +556,7 @@
             "distancia_adicional_km": 0.8,
             "distancia_km": 2.3,
             "numero_supermercados": 1,
-            "presupuesto": 50.0,
+            "presupuesto": 50,
             "productos_disponibles": 10,
             "productos_esenciales_disponibles": 6,
             "productos_esenciales_totales": 6,
@@ -660,8 +660,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 100.0,
-                "minimum": 0.0
+                "maximum": 100,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -722,23 +722,23 @@
           "version_reglas"
         ],
         "title": "RecommendationResponse",
-        "description": "Resultado explicable que devolver\u00e1 el sistema experto.",
+        "description": "Resultado explicable que devolverá el sistema experto.",
         "examples": [
           {
-            "accion_sugerida": "Comprar todo en esta alternativa.",
+            "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
             "clasificacion_conveniencia": "ALTA_CONVENIENCIA",
             "componentes_conveniencia": {
               "ahorro": 0.5625,
-              "disponibilidad": 1.0,
+              "disponibilidad": 1,
               "distancia": 0.96,
-              "promociones": 1.0,
+              "promociones": 1,
               "tiempo": 0.9
             },
             "explicacion": "Cumple el presupuesto y las condiciones principales.",
             "hechos_derivados": {
               "ahorro_alto": true,
               "dentro_presupuesto": true,
-              "porcentaje_productos_disponibles": 100.0,
+              "porcentaje_productos_disponibles": 100,
               "todos_esenciales_disponibles": true
             },
             "indice_conveniencia": 82.39,

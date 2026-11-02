@@ -54,6 +54,7 @@ def test_derives_very_exceeded_budget():
 def test_derives_missing_essential_products():
     facts = derive_facts(
         make_request(
+            productos_disponibles=9,
             productos_esenciales_disponibles=5,
             productos_esenciales_totales=6,
         )

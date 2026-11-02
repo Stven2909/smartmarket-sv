@@ -66,7 +66,9 @@ def test_very_exceeded_budget_returns_not_recommended():
 
 
 def test_missing_essential_products_returns_not_recommended():
-    response = post_recommendation(productos_esenciales_disponibles=5)
+    response = post_recommendation(
+        productos_disponibles=9, productos_esenciales_disponibles=5
+    )
 
     assert response.status_code == 200
     assert response.json()["nivel_recomendacion"] == "NO_RECOMENDABLE"

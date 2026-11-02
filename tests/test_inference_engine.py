@@ -56,7 +56,9 @@ def test_very_exceeded_budget_activates_r01():
 
 
 def test_missing_essentials_activates_r02():
-    result = run_inference(make_request(productos_esenciales_disponibles=5))
+    result = run_inference(
+        make_request(productos_disponibles=9, productos_esenciales_disponibles=5)
+    )
 
     assert "R02" in result["activated_rules"]
     assert result["level"] == "NO_RECOMENDABLE"

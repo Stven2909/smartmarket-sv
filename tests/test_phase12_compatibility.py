@@ -275,7 +275,7 @@ def test_laravel_optimizer_fields_are_rejected_by_python_contract(
     ("changes", "winning_rule"),
     [
         ({"costo_total": 56.0}, "R01"),
-        ({"productos_esenciales_disponibles": 5}, "R02"),
+        ({"productos_disponibles": 9, "productos_esenciales_disponibles": 5}, "R02"),
     ],
 )
 def test_critical_rule_responses_are_preserved(changes, winning_rule):

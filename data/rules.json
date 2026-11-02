@@ -85,8 +85,8 @@
     },
     "result": {
       "level": "EXCELENTE",
-      "action": "Comprar todo en esta alternativa.",
-      "explanation": "Cumple el presupuesto, incluye los esenciales y requiere un recorrido conveniente."
+      "action": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
+      "explanation": "Cumple presupuesto, productos esenciales y recorrido conveniente, pero pueden faltar productos opcionales."
     }
   },
   {
