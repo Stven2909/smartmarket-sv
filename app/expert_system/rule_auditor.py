@@ -15,7 +15,6 @@ from app.schemas.rule_audit import (
 )
 from app.schemas.versions import RULES_VERSION
 
-
 # Cada grupo forma una partición exhaustiva de hechos booleanos derivables.
 EXCLUSIVE_PARTITIONS = (
     (
