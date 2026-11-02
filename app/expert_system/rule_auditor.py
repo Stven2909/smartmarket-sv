@@ -1,6 +1,7 @@
 """Auditoría no destructiva de consistencia y solapamiento entre reglas."""
 
 from collections import Counter
+from functools import lru_cache
 from itertools import combinations, product
 
 from app.expert_system.classifiers import derive_facts
@@ -116,11 +117,22 @@ def _before(a: ProductionRule, b: ProductionRule) -> bool:
     return (a.priority, a.id) < (b.priority, b.id)
 
 
+@lru_cache(maxsize=1)
+def _cached_default_audit() -> RuleAuditResponse:
+    """Se calcula una sola vez por proceso; no se ejecuta durante el arranque."""
+
+    return audit_rules(load_rules())
+
+
 def audit_rules(rules: list[ProductionRule] | None = None) -> RuleAuditResponse:
     """Separa anomalías estructurales de conflictos previstos por prioridad."""
 
+    if rules is None:
+        # Se devuelve una copia para aislar a consumidores del estado compartido.
+        return _cached_default_audit().model_copy(deep=True)
+
     checked = sorted(
-        list(load_rules() if rules is None else rules),
+        list(rules),
         key=lambda r: (r.priority, r.id),
     )
     if not checked:
