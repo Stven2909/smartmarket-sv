@@ -59,7 +59,7 @@ Para ejecutar la prueba de aceptación:
 
 ```bash
 python -m pytest -q tests/test_rule_change_gate.py
-ruff check app demo tests
+ruff check app demo scripts tests
 ```
 
 Las pruebas verifican aceptación de cambios benignos, rechazo de regresiones críticas, rechazo de pérdida silenciosa de R01, detección de contradicciones, rechazo de JSON ilegible y generación del resumen.
