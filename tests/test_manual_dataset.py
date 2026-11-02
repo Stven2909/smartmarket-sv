@@ -3,6 +3,8 @@
 import csv
 import io
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -175,3 +177,22 @@ def test_comparison_tab_has_upload_option_without_contacting_render(monkeypatch)
     assert not app.exception
     assert any(radio.label == "Origen de las alternativas" for radio in app.radio)
     assert not app.exception
+
+
+def test_streamlit_entrypoint_imports_from_demo_directory():
+    """Reproduce la ruta de arranque de Streamlit Community Cloud."""
+
+    demo = Path(__file__).resolve().parents[1] / "demo"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import streamlit_app; assert callable(streamlit_app.import_dataset)",
+        ],
+        cwd=demo,
+        capture_output=True,
+        text=True,
+        timeout=25,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
