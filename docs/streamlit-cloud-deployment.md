@@ -52,7 +52,7 @@ proceso HTTP. Por ejemplo, en Render:
 
 1. Crear una cuenta e iniciar un nuevo **Web Service**.
 2. Seleccionar el fork de `smartmarket-sv`.
-3. Usar la rama `expert-system-python`.
+3. Usar la rama `main` del repositorio Python.
 4. Usar estos comandos:
 
    - Build command: `pip install -r requirements.txt`
@@ -62,8 +62,10 @@ proceso HTTP. Por ejemplo, en Render:
 6. Esperar el despliegue y copiar la URL HTTPS asignada.
 7. Verificar que `https://TU-API/health` responda con HTTP 200.
 
-El servicio no necesita PostgreSQL ni variables secretas para esta demo. Los
-escenarios y reglas se cargan desde los archivos JSON del repositorio.
+La demo con escenarios precargados no necesita PostgreSQL ni scraping. Las
+reglas y los escenarios sintéticos se cargan desde archivos JSON del repositorio.
+Si se activa `SMARTMARKET_API_KEY`, debe configurarse también en el cliente
+autorizado sin publicarla en archivos versionados.
 
 ## Publicar Streamlit Community Cloud
 
@@ -74,7 +76,7 @@ escenarios y reglas se cargan desde los archivos JSON del repositorio.
 4. Elegir:
 
    - Repository: el fork personal de `smartmarket-sv`.
-   - Branch: `expert-system-python`.
+   - Branch: `main`.
    - Main file path: `demo/streamlit_app.py`.
 
 5. Elegir un subdominio, por ejemplo `smartmarket-sv-demo`, si está
@@ -118,9 +120,14 @@ La demo permite:
 - Ver el nivel, la regla ganadora, las reglas activadas y la prioridad.
 - Ver los hechos derivados y la versión de reglas.
 - Preguntar al chatbot explicativo.
+- Comparar alternativas y examinar reglas, umbrales y análisis de sensibilidad.
 
-Los datos usados son simulados. La aplicación no consulta Laravel, no usa
-PostgreSQL, no usa scraping y no utiliza IA generativa.
+Los escenarios **precargados** son sintéticos. También es posible introducir
+hechos obtenidos a partir de **datos reales recopilados manualmente**. La
+procedencia y fecha de los datos reales se documentan por separado; la demo
+no comprueba esa procedencia. Streamlit no consulta Laravel, PostgreSQL ni
+supermercados, no hace scraping y no utiliza IA generativa para decidir.
+Consultar la [guía de fuentes y datos](fuentes-y-datos.md).
 
 ## Contrato entre Laravel y Python
 
