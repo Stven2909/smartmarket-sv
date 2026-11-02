@@ -193,7 +193,7 @@ Respuesta HTTP 200:
 {
   "request_id": "demo-001",
   "nivel_recomendacion": "EXCELENTE",
-  "accion_sugerida": "Comprar todo en esta alternativa.",
+  "accion_sugerida": "Priorizar esta alternativa y comprobar los productos opcionales pendientes.",
   "explicacion": "Cumple el presupuesto, incluye los esenciales y requiere un recorrido conveniente.",
   "reglas_activadas": ["R06", "R07"],
   "prioridad_aplicada": "CONVENIENCIA",
