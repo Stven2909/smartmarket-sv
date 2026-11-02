@@ -232,7 +232,9 @@ def call_chat_api(
     )
 
 
-def render_recommendation(result: dict[str, Any]) -> None:
+def render_recommendation(
+    result: dict[str, Any], *, widget_key: str = "laboratory"
+) -> None:
     """Panel de auditoría: conclusión, pesos, hechos y explicación de reglas."""
 
     level = result.get("nivel_recomendacion", "DESCONOCIDO")
@@ -338,7 +340,7 @@ def render_recommendation(result: dict[str, Any]) -> None:
         data=json.dumps(result, ensure_ascii=False, indent=2),
         file_name="smartmarket-evidencia.json",
         mime="application/json",
-        key=f"download_{result.get('request_id', 'default')}",
+        key=f"download_{widget_key}",
     )
 
 
@@ -467,8 +469,17 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         selected_payloads = [by_name[name]["facts"] for name in selected]
         if include_custom:
             selected_payloads.append(st.session_state["latest_facts"])
+        identifiers = [item["alternativa_id"] for item in selected_payloads]
+        budgets = {item["presupuesto"] for item in selected_payloads}
         if not 2 <= len(selected_payloads) <= 10:
             st.warning("Debes seleccionar entre 2 y 10 alternativas.")
+        elif len(identifiers) != len(set(identifiers)):
+            st.warning(
+                "Las alternativas deben tener identificadores únicos. "
+                "Cambia la ID del laboratorio o elimina el escenario repetido."
+            )
+        elif len(budgets) != 1:
+            st.warning("Todas las opciones deben compartir el mismo presupuesto.")
         elif any(validate_payload(item) for item in selected_payloads):
             st.warning("Revisa los datos de las alternativas: hay casos no válidos.")
         else:
@@ -515,7 +526,9 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         title = f"#{row['posicion']} · {row['alternativa_id']}"
         with st.expander(title):
             st.write(row.get("motivo_posicion", ""))
-            render_recommendation(row["recomendacion"])
+            render_recommendation(
+                row["recomendacion"], widget_key=f"comparison_{row['posicion']}"
+            )
 
 
 def render_knowledge_tab(base_url: str) -> None:
