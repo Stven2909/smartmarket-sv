@@ -289,3 +289,8 @@ El sistema experto Python actúa como un **servicio de inferencia independiente 
 ## Licencia
 
 Distribuido bajo la [licencia MIT](LICENSE).
+
+
+## Sincronización con el repositorio del equipo
+
+Las mejoras del servicio Python se desarrollan y validan primero en este fork. Para trasladarlas a la rama `expert-system-python` de `Stven2909/smartmarket-sv`, sin tocar `develop`, consulta [la guía de sincronización](docs/sincronizacion-upstream-expert.md). El script `scripts/sync_upstream_expert.ps1` comprueba el historial y solo permite un avance rápido sin sobrescribir commits.
