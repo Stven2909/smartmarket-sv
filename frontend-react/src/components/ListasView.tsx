@@ -8,9 +8,12 @@ import { productFromApi } from '../types/domain'
 import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 import { ProductCard } from './ProductCard'
 import { SearchBox } from './SearchBox'
-import { ExpertChat } from './ExpertChat'
+import { ExpertChatPanel } from './ExpertChatPanel'
 import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
 import { LocationConsentDialog } from './LocationConsentDialog'
+import { ExpertEvaluationToast } from './ExpertEvaluationToast'
+import { PriceProvenance } from './PriceProvenance'
+import { EXPERT_LEVEL_LABELS, omissionReasonLabel } from '../lib/expertLabels'
 
 type Tab = 'activa' | 'completada'
 
@@ -22,10 +25,15 @@ export function ListasView({ onListasChange }: Props) {
   const [tab, setTab] = useState<Tab>('activa')
   const [listas, setListas] = useState<ListaSummary[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const selectedIdRef = useRef<number | null>(null)
+  selectedIdRef.current = selectedId
   const [detalles, setDetalles] = useState<ListaDetalle[]>([])
   const [presupuesto, setPresupuesto] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const detailRequestId = useRef(0)
+  const [editorOpen, setEditorOpen] = useState(false)
 
   // formulario de nueva lista
   const [newNombre, setNewNombre] = useState('')
@@ -40,17 +48,32 @@ export function ListasView({ onListasChange }: Props) {
   const [comparacion, setComparacion] = useState<CompararResultado[] | null>(null)
   const [optimizacion, setOptimizacion] = useState<OptimizarResultado[] | null>(null)
   const [resultadoOptimizacionId, setResultadoOptimizacionId] = useState<number | null>(null)
+  const [optimizationLoading, setOptimizationLoading] = useState(false)
+  const [expertEvaluatedNotice, setExpertEvaluatedNotice] = useState(false)
+  const [comparisonLoading, setComparisonLoading] = useState(false)
+  const [comparisonOpen, setComparisonOpen] = useState(false)
+  const [chatSucursalId, setChatSucursalId] = useState<number | null>(null)
+  const [optimizationTimestamp, setOptimizationTimestamp] = useState<string | null>(null)
+  const [decisionStale, setDecisionStale] = useState(false)
+  const firstLocationInputRef = useRef<HTMLInputElement>(null)
+  const geolocationRequestId = useRef(0)
+  const optimizationRequestId = useRef(0)
+  const comparisonRequestId = useRef(0)
+  const expertNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [geolocating, setGeolocating] = useState(false)
   const [locationConsentOpen, setLocationConsentOpen] = useState(false)
   const [locationNotice, setLocationNotice] = useState<string | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [locationPanelOpen, setLocationPanelOpen] = useState(false)
+  const locationPanelRef = useRef<HTMLDetailsElement>(null)
   const [locationSource, setLocationSource] = useState<'device' | 'manual' | null>(null)
   const locationNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => () => {
     if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
+    if (expertNoticeTimer.current) clearTimeout(expertNoticeTimer.current)
   }, [])
 
   // promociones de la lista activa (Fase 5)
@@ -71,13 +94,31 @@ export function ListasView({ onListasChange }: Props) {
 
   async function switchTab(next: Tab) {
     if (next === tab) return
+    detailRequestId.current += 1
+    selectedIdRef.current = null
+    geolocationRequestId.current += 1
+    optimizationRequestId.current += 1
+    comparisonRequestId.current += 1
     setTab(next)
     setSelectedId(null)
+    setGeolocating(false)
     setDetalles([])
+    setEditorOpen(false)
+    setDetailLoading(false)
+    setOptimizationLoading(false)
+    setComparisonLoading(false)
     setComparacion(null)
     setOptimizacion(null)
     setResultadoOptimizacionId(null)
+    setChatSucursalId(null)
+    setOptimizationTimestamp(null)
+    setDecisionStale(false)
+    setQuery('')
+    setResults([])
+    setSearchError(null)
+    setComparisonOpen(false)
     setPromociones([])
+    setPromosLoading(false)
     setPromosError(null)
     setError(null)
     try {
@@ -107,29 +148,53 @@ export function ListasView({ onListasChange }: Props) {
   }
 
   async function selectLista(id: number) {
+    const requestId = ++detailRequestId.current
+    selectedIdRef.current = id
+    geolocationRequestId.current += 1
+    setGeolocating(false)
+    optimizationRequestId.current += 1
+    comparisonRequestId.current += 1
     setSelectedId(id)
+    setDetalles([])
+    setEditorOpen(false)
+    setDetailLoading(true)
+    setOptimizationLoading(false)
+    setComparisonLoading(false)
     setComparacion(null)
     setOptimizacion(null)
     setResultadoOptimizacionId(null)
+    setChatSucursalId(null)
+    setOptimizationTimestamp(null)
+    setDecisionStale(false)
+    setQuery('')
+    setResults([])
+    setSearchError(null)
+    setComparisonOpen(false)
     setPromociones([])
     setPromosError(null)
     setError(null)
+    setExpertEvaluatedNotice(false)
     try {
       const lista = await listsApi.fetchLista(id)
+      if (requestId !== detailRequestId.current) return
       setDetalles(lista.detalles)
+      setEditorOpen(lista.detalles.length === 0)
       setPresupuesto(lista.presupuesto)
       if (tab === 'activa') {
         setPromosLoading(true)
         try {
-          setPromociones(await listsApi.fetchPromocionesDeLista(id))
+          const data = await listsApi.fetchPromocionesDeLista(id)
+          if (requestId === detailRequestId.current) setPromociones(data)
         } catch (e) {
-          setPromosError(e instanceof ApiError ? e.message : 'No se pudieron cargar las promociones de esta lista.')
+          if (requestId === detailRequestId.current) setPromosError(e instanceof ApiError ? e.message : 'No se pudieron cargar las promociones de esta lista.')
         } finally {
-          setPromosLoading(false)
+          if (requestId === detailRequestId.current) setPromosLoading(false)
         }
       }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo cargar la lista.')
+      if (requestId === detailRequestId.current) setError(e instanceof ApiError ? e.message : 'No se pudo cargar la lista.')
+    } finally {
+      if (requestId === detailRequestId.current) setDetailLoading(false)
     }
   }
 
@@ -168,22 +233,37 @@ export function ListasView({ onListasChange }: Props) {
   }
 
   async function runSearch() {
+    const requestListId = selectedId
     setSearchError(null)
     try {
       const data = await buscarProductos(query)
-      setResults(data.data.map(productFromApi))
+      if (requestListId === selectedIdRef.current) setResults(data.data.map(productFromApi))
     } catch (e) {
-      setSearchError(e instanceof ApiError ? e.message : 'Error al buscar.')
+      if (requestListId === selectedIdRef.current) setSearchError(e instanceof ApiError ? e.message : 'Error al buscar.')
     }
+  }
+
+  function invalidateDecision() {
+    if (optimizacion !== null || comparacion !== null) setDecisionStale(true)
+    optimizationRequestId.current += 1
+    comparisonRequestId.current += 1
+    setComparacion(null)
+    setOptimizacion(null)
+    setResultadoOptimizacionId(null)
+    setChatSucursalId(null)
+    setOptimizationTimestamp(null)
+    setExpertEvaluatedNotice(false)
   }
 
   async function addProduct(productoId: number) {
     if (!selectedId) return
+    const listId = selectedId
+    invalidateDecision()
     setBusy(true)
     try {
-      await listsApi.addProductoToLista(selectedId, productoId)
-      const lista = await listsApi.fetchLista(selectedId)
-      setDetalles(lista.detalles)
+      await listsApi.addProductoToLista(listId, productoId)
+      const lista = await listsApi.fetchLista(listId)
+      if (selectedIdRef.current === listId) setDetalles(lista.detalles)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo agregar el producto.')
     } finally {
@@ -193,10 +273,12 @@ export function ListasView({ onListasChange }: Props) {
 
   async function changeCantidad(detalle: ListaDetalle, cantidad: number) {
     if (!selectedId || cantidad < 1) return
+    const listId = selectedId
+    invalidateDecision()
     try {
-      await listsApi.updateProductoEnLista(selectedId, detalle.id, cantidad, detalle.esencial)
-      const lista = await listsApi.fetchLista(selectedId)
-      setDetalles(lista.detalles)
+      await listsApi.updateProductoEnLista(listId, detalle.id, cantidad, detalle.esencial)
+      const lista = await listsApi.fetchLista(listId)
+      if (selectedIdRef.current === listId) setDetalles(lista.detalles)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo actualizar.')
     }
@@ -204,10 +286,12 @@ export function ListasView({ onListasChange }: Props) {
 
   async function toggleEsencial(detalle: ListaDetalle) {
     if (!selectedId) return
+    const listId = selectedId
+    invalidateDecision()
     try {
-      await listsApi.updateProductoEnLista(selectedId, detalle.id, detalle.cantidad, !detalle.esencial)
-      const lista = await listsApi.fetchLista(selectedId)
-      setDetalles(lista.detalles)
+      await listsApi.updateProductoEnLista(listId, detalle.id, detalle.cantidad, !detalle.esencial)
+      const lista = await listsApi.fetchLista(listId)
+      if (selectedIdRef.current === listId) setDetalles(lista.detalles)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo actualizar.')
     }
@@ -215,10 +299,15 @@ export function ListasView({ onListasChange }: Props) {
 
   async function removeDetalle(detalleId: number) {
     if (!selectedId) return
+    const listId = selectedId
+    invalidateDecision()
     try {
-      await listsApi.removeProductoDeLista(selectedId, detalleId)
-      const lista = await listsApi.fetchLista(selectedId)
-      setDetalles(lista.detalles)
+      await listsApi.removeProductoDeLista(listId, detalleId)
+      const lista = await listsApi.fetchLista(listId)
+      if (selectedIdRef.current === listId) {
+        setDetalles(lista.detalles)
+        if (lista.detalles.length === 0) setEditorOpen(true)
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo quitar el producto.')
     }
@@ -226,15 +315,26 @@ export function ListasView({ onListasChange }: Props) {
 
   async function runComparar() {
     if (!selectedId) return
+    const listId = selectedId
+    const requestId = ++comparisonRequestId.current
+    optimizationRequestId.current += 1
+    setComparisonLoading(true)
+    setOptimizationLoading(false)
     setComparacion(null)
     setOptimizacion(null)
     setResultadoOptimizacionId(null)
     setError(null)
+    setComparisonOpen(true)
+    setChatSucursalId(null)
+    setOptimizationTimestamp(null)
+    setDecisionStale(false)
     try {
-      const data = await listsApi.compararLista(selectedId)
-      setComparacion(data.resultados)
+      const data = await listsApi.compararLista(listId)
+      if (requestId === comparisonRequestId.current) setComparacion(data.resultados)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo comparar.')
+      if (requestId === comparisonRequestId.current) setError(e instanceof ApiError ? e.message : 'No se pudo comparar.')
+    } finally {
+      if (requestId === comparisonRequestId.current) setComparisonLoading(false)
     }
   }
 
@@ -242,27 +342,60 @@ export function ListasView({ onListasChange }: Props) {
     if (!selectedId) return
     const latValue = Number(lat)
     const lngValue = Number(lng)
-    if (!latValue || !lngValue) {
-      setLocationError('Agrega las coordenadas o usa tu ubicación para calcular la mejor alternativa.')
+    if (!lat.trim() || !lng.trim()) {
+      setLocationError(null)
+      setLocationPanelOpen(true)
+      requestAnimationFrame(() => {
+        locationPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        firstLocationInputRef.current?.focus({ preventScroll: true })
+      })
+      return
+    }
+    if (!Number.isFinite(latValue) || latValue < -90 || latValue > 90 || !Number.isFinite(lngValue) || lngValue < -180 || lngValue > 180) {
+      setLocationError('Revisa las coordenadas: latitud entre −90 y 90 y longitud entre −180 y 180.')
+      setLocationPanelOpen(true)
       return
     }
     setLocationError(null)
+    const listId = selectedId
+    const requestId = ++optimizationRequestId.current
+    comparisonRequestId.current += 1
     setComparacion(null)
     setOptimizacion(null)
     setResultadoOptimizacionId(null)
+    setChatSucursalId(null)
+    setOptimizationTimestamp(null)
+    setComparisonOpen(false)
     setError(null)
     setLocationNotice(null)
+    setExpertEvaluatedNotice(false)
+    setOptimizationLoading(true)
+    setComparisonLoading(false)
     try {
-      const data = await listsApi.optimizarLista(selectedId, latValue, lngValue)
+      const data = await listsApi.optimizarLista(listId, latValue, lngValue)
+      if (requestId !== optimizationRequestId.current) return
       setOptimizacion(data.resultados)
       setResultadoOptimizacionId(data.resultadoOptimizacionId)
+      const mejorEvaluada = data.resultados
+        .filter((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)
+        .sort((a, b) => a.score - b.score)[0]
+      setChatSucursalId(mejorEvaluada?.sucursalId ?? null)
+      setOptimizationTimestamp(new Date().toISOString())
+      setDecisionStale(false)
+      if (data.resultados.some((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)) {
+        setExpertEvaluatedNotice(true)
+        if (expertNoticeTimer.current) clearTimeout(expertNoticeTimer.current)
+        expertNoticeTimer.current = setTimeout(() => setExpertEvaluatedNotice(false), 5200)
+      }
       if (locationSource === 'device') {
         setLocationNotice('Ahora el sistema está usando tu ubicación para calcular la mejor alternativa.')
         if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
         locationNoticeTimer.current = setTimeout(() => setLocationNotice(null), 4500)
       }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo optimizar.')
+      if (requestId === optimizationRequestId.current) setError(e instanceof ApiError ? e.message : 'No se pudo optimizar.')
+    } finally {
+      if (requestId === optimizationRequestId.current) setOptimizationLoading(false)
     }
   }
 
@@ -272,6 +405,8 @@ export function ListasView({ onListasChange }: Props) {
 
   function confirmUseGeolocation() {
     setLocationConsentOpen(false)
+    const listId = selectedIdRef.current
+    const requestId = ++geolocationRequestId.current
     if (!('geolocation' in navigator)) {
       setLocationError('Tu navegador no admite ubicación. Puedes ingresar las coordenadas manualmente.')
       return
@@ -281,12 +416,14 @@ export function ListasView({ onListasChange }: Props) {
     setError(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (requestId !== geolocationRequestId.current || selectedIdRef.current !== listId) return
         setLat(pos.coords.latitude.toFixed(6))
         setLng(pos.coords.longitude.toFixed(6))
         setLocationSource('device')
         setGeolocating(false)
       },
       () => {
+        if (requestId !== geolocationRequestId.current || selectedIdRef.current !== listId) return
         setGeolocating(false)
         setLocationError('No pudimos obtener tu ubicación. Revisa el permiso o ingresa las coordenadas manualmente.')
       },
@@ -298,6 +435,7 @@ export function ListasView({ onListasChange }: Props) {
 
   return (
     <section className="real-basket-panel">
+      <ExpertEvaluationToast visible={expertEvaluatedNotice} />
       <div className="section-title-row">
         <div>
           <div className="eyebrow"><span />MIS LISTAS DE COMPRA</div>
@@ -384,73 +522,95 @@ export function ListasView({ onListasChange }: Props) {
       {selectedId !== null && (
         <>
           {selectedList && (
-            <div className="selected-list-heading">
+            <header className="selected-list-heading decision-list-heading" key={`heading-${selectedId}`}>
               <div>
                 <span className="eyebrow">{tab === 'completada' ? 'COMPRA DEL HISTORIAL' : 'TU LISTA'}</span>
                 <h2>{selectedList.nombre}</h2>
-              </div>
-              <span className="selected-list-count">
-                {selectedList.detallesCount} {selectedList.detallesCount === 1 ? 'producto' : 'productos'}
-              </span>
-            </div>
-          )}
-          <div className="real-basket-layout">
-            <div className="real-basket-items">
-              {detalles.length === 0 && (
-                <div className="empty-state compact">
-                  <span>🛒</span>
-                  <h3>Lista vacía</h3>
-                  <p>{isActiveTab ? 'Busca productos abajo y agrégalos a esta lista.' : 'Esta compra no tenía productos registrados.'}</p>
+                <div className="selected-list-meta">
+                  <span>{selectedList.detallesCount} {selectedList.detallesCount === 1 ? 'producto' : 'productos'}</span>
+                  <span>{selectedList.presupuesto != null ? `Presupuesto ${formatMoney(selectedList.presupuesto)}` : 'Sin presupuesto definido'}</span>
+                  {optimizationTimestamp && <span>Última optimización {new Intl.DateTimeFormat('es-SV', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(optimizationTimestamp))}</span>}
                 </div>
-              )}
-              {detalles.map((detalle) => (
-                <article key={detalle.id} className="product-card">
-                  <div className="product-main">
-                    <span className="product-emoji">🛒</span>
-                    <div className="product-title-line">
-                      <h3>{detalle.nombre}</h3>
-                      <p>{detalle.categoria}</p>
-                    </div>
-                    <span className={`limited-chip${detalle.esencial ? ' essential' : ''}`}>
-                      {detalle.esencial ? 'Esencial' : 'Opcional'}
-                    </span>
-                  </div>
-                  {isActiveTab ? (
-                    <>
-                      <div className="quantity-control">
-                        <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad - 1)}>-</button>
-                        <span>{detalle.cantidad}</span>
-                        <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad + 1)}>+</button>
-                      </div>
-                      <button type="button" className="link-button" onClick={() => toggleEsencial(detalle)}>
-                        Marcar {detalle.esencial ? 'opcional' : 'esencial'}
-                      </button>
-                      <button type="button" className="link-button danger" onClick={() => removeDetalle(detalle.id)}>
-                        Quitar
-                      </button>
-                    </>
-                  ) : (
-                    <span className="quantity-control"><b>{detalle.cantidad}</b> un.</span>
-                  )}
-                </article>
-              ))}
-
-              <div className="quick-total">
-                <span>Presupuesto: {presupuesto != null ? formatMoney(presupuesto) : 'sin definir'}</span>
               </div>
+            </header>
+          )}
+          <div className="real-basket-layout" key={`detail-${selectedId}`}>
+            <div className="real-basket-items">
+              {detailLoading && <div className="list-detail-loading" role="status"><i /> Cargando el contenido de tu lista…</div>}
+              {!detailLoading && (
+                <details className="list-section list-editor" open={editorOpen} onToggle={(event) => setEditorOpen(event.currentTarget.open)}>
+                  <summary>
+                    <span><b>Productos de la lista</b><small>{detalles.length} artículos · presupuesto {presupuesto != null ? formatMoney(presupuesto) : 'sin definir'}</small></span>
+                    <span className="disclosure-indicator" aria-hidden="true">⌄</span>
+                  </summary>
+                  <div className="list-section-content">
+                    {detalles.length === 0 && (
+                      <div className="empty-state compact">
+                        <span>🛒</span>
+                        <h3>Lista vacía</h3>
+                        <p>{isActiveTab ? 'Busca productos abajo y agrégalos a esta lista.' : 'Esta compra no tenía productos registrados.'}</p>
+                      </div>
+                    )}
+                    {detalles.map((detalle) => (
+                      <article key={detalle.id} className="product-card">
+                        <div className="product-main">
+                          <span className="product-emoji">🛒</span>
+                          <div className="product-title-line">
+                            <h3>{detalle.nombre}</h3>
+                            <p>{detalle.categoria}</p>
+                          </div>
+                          <span className={`limited-chip${detalle.esencial ? ' essential' : ''}`}>
+                            {detalle.esencial ? 'Esencial' : 'Opcional'}
+                          </span>
+                        </div>
+                        {isActiveTab ? (
+                          <>
+                            <div className="quantity-control">
+                              <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad - 1)}>-</button>
+                              <span>{detalle.cantidad}</span>
+                              <button type="button" onClick={() => changeCantidad(detalle, detalle.cantidad + 1)}>+</button>
+                            </div>
+                            <button type="button" className="link-button" onClick={() => toggleEsencial(detalle)}>
+                              Marcar {detalle.esencial ? 'opcional' : 'esencial'}
+                            </button>
+                            <button type="button" className="link-button danger" onClick={() => removeDetalle(detalle.id)}>Quitar</button>
+                          </>
+                        ) : <span className="quantity-control"><b>{detalle.cantidad}</b> un.</span>}
+                      </article>
+                    ))}
+                    {isActiveTab && (
+                      <>
+                        <div className="conversation-search">
+                          <SearchBox query={query} setQuery={setQuery} onSubmit={runSearch} placeholder="Agregar productos a esta lista…" />
+                        </div>
+                        {searchError && <div className="live-error"><b>Búsqueda fallida</b><span>{searchError}</span></div>}
+                        {results.length > 0 && (
+                          <div className="live-products">
+                            {results.map((product) => <ProductCard key={product.id} product={product} onAddToList={() => addProduct(product.id)} />)}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </details>
+              )}
 
               {isActiveTab && (
                 <>
                   <div className="category-filters list-primary-actions">
-                    <button type="button" className="add-button" onClick={runComparar}>Comparar precios</button>
+                    <button type="button" className="add-button" onClick={runComparar} disabled={detailLoading || detalles.length === 0 || comparisonLoading || optimizationLoading}>
+                      {comparisonLoading ? <><span className="button-spinner" aria-hidden="true" /> Comparando…</> : 'Comparar precios'}
+                    </button>
                     <div className="tooltip-anchor">
                       <button
                         type="button"
                         className="add-button optimize-action"
                         onClick={runOptimizar}
+                        disabled={detailLoading || detalles.length === 0 || optimizationLoading || comparisonLoading}
                         aria-describedby="optimize-purchase-tooltip"
+                        aria-busy={optimizationLoading}
                       >
-                        Optimizar compra
+                        {optimizationLoading ? <><span className="button-spinner" aria-hidden="true" /> Consultando experto…</> : 'Optimizar compra'}
                       </button>
                       <span id="optimize-purchase-tooltip" role="tooltip" className="action-tooltip">
                         Compara costo, distancia, tiempo y promociones; muestra la evaluación del Sistema Experto. Usa tu ubicación o coordenadas manuales.
@@ -460,6 +620,26 @@ export function ListasView({ onListasChange }: Props) {
                       Marcar como completada
                     </button>
                   </div>
+                  {optimizationLoading && (
+                    <div className="expert-loading-panel" role="status" aria-live="polite">
+                      <span className="expert-loading-orb" aria-hidden="true">🧠</span>
+                      <div><b>Generando recomendación</b><p>El Sistema Experto está evaluando precios, promociones y ubicación. Puede tardar unos segundos.</p></div>
+                      <span className="expert-loading-dots" aria-hidden="true"><i /><i /><i /></span>
+                    </div>
+                  )}
+                  {!optimizationLoading && optimizacion === null && comparacion === null && !decisionStale && detalles.length > 0 && (
+                    <section className="decision-pending-card" aria-label="Decisión de compra pendiente">
+                      <span aria-hidden="true">✦</span>
+                      <div><b>Tu análisis de compra aparecerá aquí</b><p>Optimiza la lista para comparar precio, distancia, tiempo, promociones y evaluación experta.</p></div>
+                    </section>
+                  )}
+                  {decisionStale && (
+                    <div className="decision-difference-note" role="status">
+                      <b>La lista cambió y la decisión anterior quedó desactualizada.</b>
+                      <span>Vuelve a optimizar para evaluar los productos y cantidades actuales.</span>
+                    </div>
+                  )}
+                  {comparisonLoading && <div className="live-loading" role="status"><i />Comparando precios de tu lista…</div>}
                   {locationError && (
                     <div className="location-inline-error" role="alert">
                       <span aria-hidden="true">!</span>
@@ -470,11 +650,16 @@ export function ListasView({ onListasChange }: Props) {
                     </div>
                   )}
 
-                  <div className="basket-location-panel">
-                    <span>UBICACIÓN OPCIONAL</span>
-                    <p>Para optimizar necesitamos latitud y longitud. No guardamos coordenadas.</p>
-                    <div className="basket-location-controls">
+                  <details className="list-section basket-location-panel" ref={locationPanelRef} open={locationPanelOpen} onToggle={(event) => setLocationPanelOpen(event.currentTarget.open)}>
+                    <summary>
+                      <span><b>Ubicación</b><small>{lat && lng ? 'Coordenadas listas para optimizar' : 'Necesaria para calcular distancia y tiempo'}</small></span>
+                      <span className="disclosure-indicator" aria-hidden="true">⌄</span>
+                    </summary>
+                    <div className="list-section-content">
+                      <p>Usamos tus coordenadas para calcular distancia y tiempo. No las guardamos en tu cuenta.</p>
+                      <div className="basket-location-controls">
                       <input
+                        ref={firstLocationInputRef}
                         type="text"
                         value={lat}
                         onChange={(e) => { setLat(e.target.value); setLocationSource('manual'); setLocationError(null) }}
@@ -489,19 +674,15 @@ export function ListasView({ onListasChange }: Props) {
                       <button type="button" className="add-button" onClick={useGeolocation} disabled={geolocating}>
                         {geolocating ? 'Obteniendo…' : 'Usar mi ubicación'}
                       </button>
+                      </div>
+                      {locationNotice && <div className="location-status-toast" role="status">📍 {locationNotice}</div>}
                     </div>
-                    {locationNotice && <div className="location-status-toast" role="status">📍 {locationNotice}</div>}
-                  </div>
+                  </details>
 
                   {(promosLoading || promociones.length > 0 || promosError) && (
-                    <div className="optimizer-panel" style={{ marginTop: 18 }}>
-                      <div className="optimizer-head">
-                        <span className="spark-icon">🏷️</span>
-                        <div>
-                          <span>PROMOCIONES DE ESTA LISTA</span>
-                          <h2>Ofertas de tus productos</h2>
-                        </div>
-                      </div>
+                    <details className="list-section promotions-section">
+                      <summary><span><b>Promociones de la lista</b><small>{promosLoading ? 'Buscando ofertas…' : `${promociones.length} ofertas encontradas`}</small></span><span className="disclosure-indicator" aria-hidden="true">⌄</span></summary>
+                      <div className="list-section-content">
                       {promosLoading && <div className="live-loading"><i />Buscando ofertas…</div>}
                       {!promosLoading && promosError && (
                         <div className="live-error"><b>Promociones no disponibles</b><span>{promosError}</span></div>
@@ -538,7 +719,8 @@ export function ListasView({ onListasChange }: Props) {
                           ))}
                         </div>
                       )}
-                    </div>
+                      </div>
+                    </details>
                   )}
                 </>
               )}
@@ -552,22 +734,18 @@ export function ListasView({ onListasChange }: Props) {
               )}
 
               {comparacion !== null && (
-                <div className="optimizer-panel">
-                  <div className="optimizer-head">
-                    <span className="spark-icon">💡</span>
-                    <div>
-                      <span>COMPARACIÓN DE PRECIOS</span>
-                      <h2>Costo por supermercado</h2>
-                    </div>
-                  </div>
+                <details className="list-section comparison-section" open={comparisonOpen} onToggle={(event) => setComparisonOpen(event.currentTarget.open)}>
+                  <summary><span><b>Comparación por supermercado</b><small>{comparacion.length} alternativas de precio</small></span><span className="disclosure-indicator" aria-hidden="true">⌄</span></summary>
+                  <div className="list-section-content">
                   {comparacion.length === 0 && (
                     <div className="empty-optimizer"><span>🛒</span><h3>Sin precios disponibles</h3></div>
                   )}
                   {comparacion.map((r) => (
-                    <article key={r.sucursalId} className="recommendation-card">
+                        <article key={r.sucursalId} className="recommendation-card">
                       <div>
                         <span className="recommendation-label">{r.supermercado}</span>
                         <span className="recommendation-store">{r.sucursal}</span>
+                            {r.sucursalId === [...comparacion].sort((a, b) => a.costoTotal - b.costoTotal)[0]?.sucursalId && <span className="lowest-price-tag">Precio más bajo</span>}
                         <small>
                           {r.esencialesDisponibles}/{r.esencialesTotales} esenciales
                           {r.beneficioPromociones > 0 && ` · ahorro ${formatMoney(r.beneficioPromociones)}`}
@@ -575,75 +753,88 @@ export function ListasView({ onListasChange }: Props) {
                         </small>
                       </div>
                       <b className="recommendation-total">{formatMoney(r.costoTotal)}</b>
+                          <PriceProvenance resultado={r} compact />
                     </article>
                   ))}
-                </div>
+                  </div>
+                </details>
               )}
 
               {optimizacion !== null && optimizacion.length > 0 && (
-                <div className="optimizer-panel">
-                  <div className="optimizer-head">
-                    <span className="spark-icon">🧠</span>
-                    <div>
-                      <span>ANÁLISIS DEL SISTEMA EXPERTO</span>
-                      <h2>Alternativas recomendadas</h2>
-                      <p>El optimizador ordena las opciones; el experto explica sus ventajas y condiciones.</p>
-                    </div>
-                  </div>
-                  {optimizacion.map((r) => (
-                    <article key={r.sucursalId} className={`recommendation-card${optimizacion[0].sucursalId === r.sucursalId ? ' best' : ''}`}>
-                      <div>
-                        <span className="recommendation-label">{r.supermercado}</span>
-                        <span className="recommendation-store">{r.sucursal}</span>
-                        <small>
-                          {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : '—'} · {r.tiempoMinutos != null ? `${r.tiempoMinutos} min` : '—'} · ahorro promos {formatMoney(r.beneficioPromociones)}
-                        </small>
-                        {r.expertRecommendation && (
-                          <>
-                            <ExpertRecommendationBadge recommendation={r.expertRecommendation} />
-                            {selectedId != null && (
-                              <ExpertChat
-                                listaId={selectedId}
-                                resultadoOptimizacionId={resultadoOptimizacionId}
-                                sucursalId={r.sucursalId}
-                              />
-                            )}
-                          </>
-                        )}
-                        {r.expertRecommendation?.chatbotAvailable === false && (
-                          <div style={{ marginTop: 4, fontSize: 10, color: 'var(--muted, #6b7280)', fontStyle: 'italic' }}>
-                            El asistente explicativo no está disponible temporalmente, pero la recomendación principal continúa disponible.
+                <section className="list-decision-panel" aria-label="Resultado de optimización">
+                  {(() => {
+                    const mejorScore = optimizacion[0]
+                    const menorPrecio = optimizacion.reduce((best, item) => item.costoTotal < best.costoTotal ? item : best, optimizacion[0])
+                    return (
+                      <>
+                        <div className="decision-panel-heading">
+                          <span aria-hidden="true">✦</span>
+                          <div><span className="eyebrow">DECISIÓN DE COMPRA</span><h2>Mejor alternativa según el optimizador</h2></div>
+                        </div>
+                        <article className="decision-winner-card">
+                          <div className="decision-winner-top"><span>MEJOR SCORE · {mejorScore.score.toFixed(2)}</span><span className="decision-winner-price">{formatMoney(mejorScore.costoTotal)}</span></div>
+                          <h3>{mejorScore.supermercado}</h3><p>{mejorScore.sucursal}</p>
+                          <div className="decision-criteria">
+                            <span>Score <b>{mejorScore.score.toFixed(2)}</b></span>
+                            <span>Distancia <b>{mejorScore.distanciaKm != null ? `${mejorScore.distanciaKm.toFixed(1)} km` : 'No disponible'}</b></span>
+                            <span>Tiempo <b>{mejorScore.tiempoMinutos != null ? `${Math.round(mejorScore.tiempoMinutos)} min` : 'No disponible'}</b></span>
+                            <span>Esenciales <b>{mejorScore.esencialesDisponibles}/{mejorScore.esencialesTotales}</b></span>
+                            <span>Ahorro por promociones <b>{formatMoney(mejorScore.beneficioPromociones)}</b></span>
+                          </div>
+                          <PriceProvenance resultado={mejorScore} />
+                        </article>
+                        {menorPrecio.sucursalId !== mejorScore.sucursalId && (
+                          <div className="decision-difference-note" role="note">
+                            <b>El precio más bajo está en {menorPrecio.supermercado}: {formatMoney(menorPrecio.costoTotal)}.</b>
+                            <span>El Score considera costo, distancia, tiempo y promociones; por eso puede recomendar otra alternativa.</span>
                           </div>
                         )}
-                        {!r.expertSystemAvailable && (
-                          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--muted, #6b7280)' }}>
-                            🧠 Sistema Experto no disponible
+
+                        <section className="decision-expert-section">
+                          <div className="decision-panel-heading"><span aria-hidden="true">🧠</span><div><span className="eyebrow">SISTEMA EXPERTO</span><h3>Por qué conviene esta alternativa</h3></div></div>
+                          {mejorScore.expertRecommendation ? (
+                            <ExpertRecommendationBadge recommendation={mejorScore.expertRecommendation} />
+                          ) : (
+                            <div className="expert-omission-note">
+                              <b>El experto no evaluó esta alternativa.</b>
+                              <span>{omissionReasonLabel(mejorScore.expertOmissionReason) ?? 'La evaluación del experto no está disponible; el ranking local sigue siendo válido.'}</span>
+                            </div>
+                          )}
+                          {selectedId != null && (
+                            <ExpertChatPanel
+                              listaId={selectedId}
+                              resultadoOptimizacionId={resultadoOptimizacionId}
+                              alternatives={optimizacion}
+                              selectedSucursalId={chatSucursalId}
+                              onSelectSucursal={setChatSucursalId}
+                            />
+                          )}
+                        </section>
+
+                        {optimizacion.length > 1 && <details className="list-section alternatives-section">
+                          <summary><span><b>Ver otras alternativas</b><small>{optimizacion.length} supermercados evaluados</small></span><span className="disclosure-indicator" aria-hidden="true">⌄</span></summary>
+                          <div className="list-section-content">
+                            {optimizacion.filter((item) => item.sucursalId !== mejorScore.sucursalId).map((r) => (
+                              <article key={r.sucursalId} className="recommendation-card">
+                                <div>
+                                  <span className="recommendation-label">{r.supermercado}</span><span className="recommendation-store">{r.sucursal}</span>
+                                  <small>Score {r.score.toFixed(2)} · {r.expertRecommendation ? (EXPERT_LEVEL_LABELS[r.expertRecommendation.nivelRecomendacion] ?? r.expertRecommendation.nivelRecomendacion) : `Nivel ${r.nivelOptimizacion}%`} · {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : 'Sin distancia'} · {r.tiempoMinutos != null ? `${Math.round(r.tiempoMinutos)} min` : 'Sin tiempo'} · ahorro promociones {formatMoney(r.beneficioPromociones)}</small>
+                                  <PriceProvenance resultado={r} compact />
+                                  {!r.expertSystemAvailable && <div className="expert-omission-note compact"><b>Sin evaluación experta</b><span>{omissionReasonLabel(r.expertOmissionReason) ?? 'El experto no respondió para esta alternativa.'}</span></div>}
+                                </div>
+                                <span className="recommendation-total">{r.expertRecommendation ? (EXPERT_LEVEL_LABELS[r.expertRecommendation.nivelRecomendacion] ?? r.expertRecommendation.nivelRecomendacion) : 'Evaluación local'}</span>
+                              </article>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                      <b className="recommendation-total">Score {r.score}</b>
-                    </article>
-                  ))}
-                </div>
+                        </details>}
+                      </>
+                    )
+                  })()}
+                </section>
               )}
             </div>
           </div>
 
-          {isActiveTab && (
-            <>
-              <div className="conversation-search">
-                <SearchBox query={query} setQuery={setQuery} onSubmit={runSearch} placeholder="Agregar productos a esta lista…" />
-              </div>
-              {searchError && <div className="live-error"><b>Búsqueda fallida</b><span>{searchError}</span></div>}
-              {results.length > 0 && (
-                <div className="live-products">
-                  {results.map((product) => (
-                    <ProductCard key={product.id} product={product} onAddToList={() => addProduct(product.id)} />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
         </>
       )}
     </section>

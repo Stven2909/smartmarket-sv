@@ -133,6 +133,9 @@ export type ApiCompararResultado = {
   productos_opcionales_totales: number
   todos_los_esenciales_disponibles: boolean
   dentro_del_presupuesto: boolean | null
+  procedencia_precios: 'sincronizados' | 'simulados' | 'mixtos' | 'manuales' | 'desconocidos'
+  origenes_precio: string[]
+  precios_actualizados_en: string | null
 }
 
 export type ApiComparar = {
@@ -150,6 +153,7 @@ export type ApiOptimizarResultado = ApiCompararResultado & {
   nivel_optimizacion: number
   recommendation: ApiExpertRecommendation | null
   expert_system_available: boolean
+  expert_omission_reason: string | null
 }
 
 export type ApiExpertRecommendation = {

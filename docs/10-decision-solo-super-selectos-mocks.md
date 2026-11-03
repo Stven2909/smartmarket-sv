@@ -49,6 +49,8 @@ maquetación, tiempos de espera) sin aportar valor proporcional al objetivo de l
 | `app/Console/Commands/PreciosSync.php` | Valida la lista blanca, rechaza fuentes deshabilitadas y, sin `--fuente`, solo recorre fuentes permitidas y habilitadas. |
 | `app/Console/Commands/PreciosProcesar.php` | Valida la lista blanca y procesa `super-selectos` por defecto. |
 | `database/seeders/MockSupermarketsSeeder.php` | Crea/reutiliza sucursales mock y genera precios deterministas para todos los productos activos. Registrado en `DatabaseSeeder`. |
+| `app/Services/Optimization/ComparisonService.php` | Propaga por alternativa la procedencia, los orígenes observados y la fecha de actualización más reciente de los precios. |
+| `frontend-react/src/components/PriceProvenance.tsx` | Explica en comparación y optimización si los precios son sincronizados, simulados, mixtos o manuales y cuándo se actualizaron. |
 | `tests/Feature/PreciosSyncCommandTest.php` | Cubre el rechazo de fuentes fuera de la lista blanca. |
 | `tests/Feature/PreciosProcesarCommandTest.php` | Cubre el procesamiento exclusivo de Super Selectos. |
 | `tests/Feature/MockSupermarketsSeederTest.php` | Cubre creación, no alteración de Super Selectos e idempotencia. |
@@ -69,8 +71,11 @@ maquetación, tiempos de espera) sin aportar valor proporcional al objetivo de l
 - Los precios de Walmart, Maxi Despensa, Don Juan y PriceSmart **no son reales**; son datos de
   demostración. No deben presentarse como precios de mercado ni usarse para conclusiones
   comerciales.
-- El frontend no muestra todavía el `origen_dato`; la distinción queda en la base de datos y en
-  la documentación. Si el mock se expone en una demo, debe aclararse verbalmente.
+- El frontend muestra la procedencia y fecha de los precios en comparación y optimización;
+  `origen_dato` sigue siendo la fuente de verdad en la base de datos.
+- Solo `html-super-selectos` se clasifica como sincronizado; `mock-seeder` y `manual` se
+  muestran como simulados y carga manual. Cualquier origen no reconocido se etiqueta como
+  desconocido hasta que se registre explícitamente.
 - Al desactivar los drivers VTEX, la cobertura de surtido real se reduce a Super Selectos.
 - Los precios mock no se actualizan solos: cambian únicamente al ejecutar el seeder.
 

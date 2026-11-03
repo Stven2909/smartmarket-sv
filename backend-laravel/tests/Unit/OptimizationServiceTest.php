@@ -245,6 +245,12 @@ class OptimizationServiceTest extends TestCase
         // La alternativa debe tener expert_system_available = false.
         $this->assertFalse($salida['resultados'][0]['expert_system_available']);
         $this->assertNull($salida['resultados'][0]['recommendation']);
+        $this->assertSame('presupuesto_null', $salida['resultados'][0]['expert_omission_reason']);
+        $this->assertSame('desconocidos', $salida['resultados'][0]['procedencia_precios']);
+
+        $guardado = ResultadoOptimizacion::findOrFail($salida['resultado_optimizacion_id']);
+        $this->assertSame('presupuesto_null', $guardado->resultado_json['resultados'][0]['expert_omission_reason']);
+        $this->assertSame('desconocidos', $guardado->resultado_json['resultados'][0]['procedencia_precios']);
     }
 
     public function test_distancia_null_omite_llamada_para_tienda_en_linea(): void

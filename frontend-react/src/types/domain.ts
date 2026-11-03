@@ -129,6 +129,9 @@ export type CompararResultado = {
   opcionalesTotales: number
   todosLosEsenciales: boolean
   dentroDelPresupuesto: boolean | null
+  procedenciaPrecios: 'sincronizados' | 'simulados' | 'mixtos' | 'manuales' | 'desconocidos'
+  origenesPrecio: string[]
+  preciosActualizadosEn: string | null
 }
 
 export type OptimizarResultado = CompararResultado & {
@@ -140,6 +143,7 @@ export type OptimizarResultado = CompararResultado & {
   nivelOptimizacion: number
   expertRecommendation: ExpertRecommendation | null
   expertSystemAvailable: boolean
+  expertOmissionReason: string | null
 }
 
 export type ExpertRecommendation = {
@@ -356,6 +360,9 @@ export function compararResultadoFromApi(r: ApiCompararResultado): CompararResul
     opcionalesTotales: r.productos_opcionales_totales,
     todosLosEsenciales: r.todos_los_esenciales_disponibles,
     dentroDelPresupuesto: r.dentro_del_presupuesto,
+    procedenciaPrecios: r.procedencia_precios,
+    origenesPrecio: r.origenes_precio,
+    preciosActualizadosEn: r.precios_actualizados_en,
   }
 }
 
@@ -389,6 +396,7 @@ export function optimizarResultadoFromApi(r: ApiOptimizarResultado): OptimizarRe
     nivelOptimizacion: r.nivel_optimizacion,
     expertRecommendation: r.recommendation ? expertRecommendationFromApi(r.recommendation) : null,
     expertSystemAvailable: r.expert_system_available,
+    expertOmissionReason: r.expert_omission_reason,
   }
 }
 

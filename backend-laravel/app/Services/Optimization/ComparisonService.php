@@ -64,6 +64,30 @@ class ComparisonService
             }
 
             $sucursal = $preciosSucursal->first()->sucursal;
+            $origenesPrecio = $preciosSucursal
+                ->pluck('origen_dato')
+                ->filter(fn ($origen) => is_string($origen) && trim($origen) !== '')
+                ->unique()
+                ->values()
+                ->all();
+            $procedencias = $preciosSucursal
+                ->map(fn (PrecioActual $precio): string => match ($precio->origen_dato) {
+                    'html-super-selectos' => 'sincronizados',
+                    'mock-seeder' => 'simulados',
+                    'manual' => 'manuales',
+                    default => 'desconocidos',
+                })
+                ->unique()
+                ->values();
+            $procedenciaPrecios = match ($procedencias->count()) {
+                0 => 'desconocidos',
+                1 => $procedencias->first(),
+                default => 'mixtos',
+            };
+            $preciosActualizadosEn = $preciosSucursal
+                ->pluck('fecha_actualizacion')
+                ->filter()
+                ->max();
 
             $resultados[] = [
                 'sucursal_id' => $sucursalId,
@@ -85,6 +109,9 @@ class ComparisonService
                 'dentro_del_presupuesto' => $lista->presupuesto === null
                     ? null
                     : $costoTotal <= $lista->presupuesto,
+                'procedencia_precios' => $procedenciaPrecios,
+                'origenes_precio' => $origenesPrecio,
+                'precios_actualizados_en' => $preciosActualizadosEn?->toIso8601String(),
             ];
         }
 

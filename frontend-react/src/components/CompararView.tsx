@@ -5,9 +5,12 @@ import { formatMoney } from '../lib/format'
 import { supermarketColor } from '../lib/presentation'
 import type { CompararResultado, ListaSummary, OptimizarResultado } from '../types/domain'
 import { Check, MapPin, Navigation, Plus, Trophy } from 'lucide-react'
-import { ExpertChat } from './ExpertChat'
+import { ExpertChatPanel } from './ExpertChatPanel'
 import { ExpertRecommendationBadge } from './ExpertRecommendationBadge'
 import { LocationConsentDialog } from './LocationConsentDialog'
+import { ExpertEvaluationToast } from './ExpertEvaluationToast'
+import { PriceProvenance } from './PriceProvenance'
+import { omissionReasonLabel } from '../lib/expertLabels'
 
 // Reverse geocoding con Nominatim/OSM (gratis, sin key). No es un dato del motor:
 // solo le da nombre humano a la ubicación del usuario. Si falla, se muestra
@@ -37,20 +40,28 @@ type Props = {
 export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   const [listas, setListas] = useState<ListaSummary[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const selectedIdRef = useRef<number | null>(null)
+  selectedIdRef.current = selectedId
   const [comparacion, setComparacion] = useState<CompararResultado[] | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [optimizacion, setOptimizacion] = useState<OptimizarResultado[] | null>(null)
   const [resultadoOptimizacionId, setResultadoOptimizacionId] = useState<number | null>(null)
+  const [chatSucursalId, setChatSucursalId] = useState<number | null>(null)
   const [ubicacionLabel, setUbicacionLabel] = useState<string | null>(null)
   const [geolocating, setGeolocating] = useState(false)
   const [locationConsentOpen, setLocationConsentOpen] = useState(false)
   const [locationNotice, setLocationNotice] = useState<string | null>(null)
   const locationNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [expertEvaluatedNotice, setExpertEvaluatedNotice] = useState(false)
+  const expertNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const geolocationRequestId = useRef(0)
+  const optimizationRequestId = useRef(0)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => () => {
     if (locationNoticeTimer.current) clearTimeout(locationNoticeTimer.current)
+    if (expertNoticeTimer.current) clearTimeout(expertNoticeTimer.current)
   }, [])
 
   const refreshListas = useCallback(async () => {
@@ -97,6 +108,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   )
   const winner = sorted[0]
   const runnerUp = sorted[1]
+  const precioMasBajo = winner
   const ahorroVsSiguiente = winner && runnerUp ? runnerUp.costoTotal - winner.costoTotal : 0
   const podium = useMemo(
     () => [runnerUp, winner, sorted[2]].filter((r): r is CompararResultado => Boolean(r)),
@@ -110,23 +122,30 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   )
   const rutaMejor = rutaOrdenada[0]
 
-  // "Nivel de optimización" del ganador: real, del motor, solo tras optimizar.
-  const nivelGanador = useMemo(() => {
-    if (!winner || !optimizacion) return null
-    const r = optimizacion.find((x) => x.sucursalId === winner.sucursalId)
-    return r ? r.nivelOptimizacion : null
-  }, [winner, optimizacion])
-
   async function runOptimizar(lat: number, lng: number): Promise<boolean> {
     if (!selectedId) return false
+    const listId = selectedId
+    const requestId = ++optimizationRequestId.current
     setError(null)
+    setExpertEvaluatedNotice(false)
+    setChatSucursalId(null)
     try {
-      const data = await listsApi.optimizarLista(selectedId, lat, lng)
+      const data = await listsApi.optimizarLista(listId, lat, lng)
+      if (requestId !== optimizationRequestId.current) return false
       setOptimizacion(data.resultados)
       setResultadoOptimizacionId(data.resultadoOptimizacionId)
+      const mejorEvaluada = data.resultados
+        .filter((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)
+        .sort((a, b) => a.score - b.score)[0]
+      setChatSucursalId(mejorEvaluada?.sucursalId ?? null)
+      if (data.resultados.some((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)) {
+        setExpertEvaluatedNotice(true)
+        if (expertNoticeTimer.current) clearTimeout(expertNoticeTimer.current)
+        expertNoticeTimer.current = setTimeout(() => setExpertEvaluatedNotice(false), 5200)
+      }
       return true
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'No se pudo optimizar la ruta.')
+      if (requestId === optimizationRequestId.current) setError(e instanceof ApiError ? e.message : 'No se pudo optimizar la ruta.')
       return false
     }
   }
@@ -137,6 +156,8 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
 
   function confirmUseGeolocation() {
     setLocationConsentOpen(false)
+    const listIdAtRequest = selectedIdRef.current
+    const requestId = ++geolocationRequestId.current
     if (!('geolocation' in navigator)) {
       setError('Tu navegador no soporta geolocalización.')
       return
@@ -146,12 +167,20 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     setLocationNotice(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (requestId !== geolocationRequestId.current || selectedIdRef.current !== listIdAtRequest) {
+          setGeolocating(false)
+          return
+        }
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
-        const labelPromise = reverseGeocode(lat, lng)
-        void labelPromise.then((label) => setUbicacionLabel(label ?? 'Tu ubicación actual'))
+        void reverseGeocode(lat, lng).then((label) => {
+          if (requestId === geolocationRequestId.current && selectedIdRef.current === listIdAtRequest) {
+            setUbicacionLabel(label ?? 'Tu ubicación actual')
+          }
+        })
 
         void runOptimizar(lat, lng).then((success) => {
+          if (requestId !== geolocationRequestId.current || selectedIdRef.current !== listIdAtRequest) return
           setGeolocating(false)
           if (!success) return
           setLocationNotice('Ahora el sistema está usando tu ubicación para calcular la mejor alternativa.')
@@ -160,6 +189,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
         })
       },
       () => {
+        if (requestId !== geolocationRequestId.current || selectedIdRef.current !== listIdAtRequest) return
         setGeolocating(false)
         setError('No pudimos obtener tu ubicación. Aceptá el permiso e intentá de nuevo.')
       },
@@ -168,14 +198,21 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
   }
 
   function selectLista(id: number) {
+    geolocationRequestId.current += 1
+    optimizationRequestId.current += 1
+    selectedIdRef.current = id
     setSelectedId(id)
+    setGeolocating(false)
     setDetailOpen(false)
     setUbicacionLabel(null)
     setLocationNotice(null)
+    setExpertEvaluatedNotice(false)
+    setChatSucursalId(null)
   }
 
   return (
     <div className="view compare-view" style={{ maxWidth: 860 }}>
+      <ExpertEvaluationToast visible={expertEvaluatedNotice} />
       <div className="page-heading">
         <div className="eyebrow"><span />COMPARAR</div>
         <h1>¿Dónde te conviene comprar hoy?</h1>
@@ -226,6 +263,8 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
           {winner && !loading && (
             <div className="compare-narrative" key={selectedId}>
               <div className="compare-stats">
+                <span className="stat-chip"><span>🏷️</span><span>Precio más bajo <b>{precioMasBajo.supermercado}</b></span></span>
+                {rutaMejor && <span className="stat-chip"><span>⚖️</span><span>Mejor Score <b>{rutaMejor.supermercado}</b></span></span>}
                 {runnerUp && (
                   <span className="stat-chip"><span>💰</span><span>Ahorras <b>{formatMoney(ahorroVsSiguiente)}</b></span></span>
                 )}
@@ -235,14 +274,22 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 )}
               </div>
 
+              {rutaMejor && precioMasBajo.sucursalId !== rutaMejor.sucursalId && (
+                <div className="decision-difference-note" role="note">
+                  <b>El precio más bajo y el mejor Score corresponden a supermercados distintos.</b>
+                  <span>El precio más bajo está en {precioMasBajo.supermercado} ({formatMoney(precioMasBajo.costoTotal)}); el Score combina costo, distancia, tiempo y promociones y favorece a {rutaMejor.supermercado}.</span>
+                </div>
+              )}
+
               {rutaMejor && (
                 <section className="expert-decision-panel" aria-label="Recomendación del Sistema Experto">
                   <div className="expert-decision-heading">
                     <span aria-hidden="true">🧠</span>
                     <div>
                       <span className="eyebrow">ANÁLISIS DEL SISTEMA EXPERTO</span>
-                      <h2>Qué piensa el experto de la mejor alternativa</h2>
+                      <h2>La mejor alternativa según el Score</h2>
                       <p>{rutaMejor.supermercado} · {rutaMejor.sucursal}</p>
+                      <p className="compare-score-line">Score {rutaMejor.score.toFixed(2)} · Nivel de optimización {rutaMejor.nivelOptimizacion}%</p>
                     </div>
                   </div>
                   <p className="expert-decision-context">El optimizador ordena las opciones por costo, distancia y tiempo. El experto explica la conveniencia de cada alternativa con sus reglas.</p>
@@ -252,17 +299,22 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                       {rutaMejor.expertRecommendation.chatbotAvailable === false && (
                         <p className="expert-unavailable-note">El asistente explicativo no está disponible temporalmente; los datos de precio y ruta siguen disponibles.</p>
                       )}
-                      <ExpertChat
-                        listaId={selectedId!}
-                        resultadoOptimizacionId={resultadoOptimizacionId}
-                        sucursalId={rutaMejor.sucursalId}
-                      />
                     </>
                   ) : (
                     <div className="expert-unavailable-note">
-                      El Sistema Experto no está disponible. La alternativa se ordenó con los datos de costo, distancia y promociones.
+                      {rutaMejor.expertOmissionReason
+                        ? `El experto omitió esta alternativa: ${omissionReasonLabel(rutaMejor.expertOmissionReason)}`
+                        : 'El Sistema Experto no está disponible. La alternativa se ordenó con los datos de costo, distancia y promociones.'}
                     </div>
                   )}
+                  <ExpertChatPanel
+                    listaId={selectedId!}
+                    resultadoOptimizacionId={resultadoOptimizacionId}
+                    alternatives={rutaOrdenada}
+                    selectedSucursalId={chatSucursalId}
+                    onSelectSucursal={setChatSucursalId}
+                  />
+                  <PriceProvenance resultado={rutaMejor} />
                 </section>
               )}
 
@@ -270,8 +322,8 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 <div className="podium-heading">
                   <span className="spark-icon"><Trophy size={20} /></span>
                   <div>
-                    <span className="eyebrow">RECOMENDACIÓN</span>
-                    <h2>Tu compra ya tiene un ganador.</h2>
+                    <span className="eyebrow">PRECIO MÁS BAJO</span>
+                    <h2>Esta alternativa tiene el menor costo.</h2>
                     <p>Comparado con los precios y promociones de hoy.</p>
                   </div>
                 </div>
@@ -285,7 +337,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                         className={`podium-place${isWinner ? ' winner' : ''}`}
                         style={{ animationDelay: `${i * 90}ms` }}
                       >
-                        <span className="podium-medal">{isWinner ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
+                        <span className="podium-medal">{isWinner ? '🥇' : r.sucursalId === runnerUp?.sucursalId ? '🥈' : '🥉'}</span>
                         <span className="store-badge" style={{ background: supermarketColor(r.supermercado) }}>
                           {r.supermercado.slice(0, 2).toUpperCase()}
                         </span>
@@ -294,7 +346,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                         {isWinner ? (
                           <>
                             <span className="podium-price winner-price">{formatMoney(r.costoTotal)}</span>
-                            <span className="podium-label">Tu mejor opción hoy</span>
+                            <span className="podium-label">Precio más bajo</span>
                           </>
                         ) : (
                           <>
@@ -302,29 +354,21 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                             <span className="podium-vs">{runnerUp && winner ? `+${formatMoney(r.costoTotal - winner.costoTotal)} vs mejor` : ''}</span>
                           </>
                         )}
+                        <PriceProvenance resultado={r} compact />
                       </article>
                     )
                   })}
                 </div>
 
                 <div className="winner-foot">
-                  <span className="winner-seal"><Check size={14} /> Recomendado por SmartMarket</span>
-                  {nivelGanador != null && (
-                    <div className="confidence">
-                      <div className="confidence-label">
-                        <span>Nivel de optimización</span>
-                        <b>{Math.round(nivelGanador)}%</b>
-                      </div>
-                      <div className="confidence-bar"><i style={{ width: `${nivelGanador}%` }} /></div>
-                    </div>
-                  )}
+                  <span className="winner-seal"><Check size={14} /> Menor precio de la lista</span>
                 </div>
               </section>
 
               <section className="why-panel">
                 <div className="why-head">
                   <span className="eyebrow">LA DECISIÓN</span>
-                  <h3>¿Por qué ganó {winner.supermercado}?</h3>
+                  <h3>Detalle del precio más bajo</h3>
                 </div>
                 <ul className="why-list">
                   {runnerUp && ahorroVsSiguiente > 0 && (
@@ -379,10 +423,11 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                         </div>
                       </div>
                       <span>{r.esencialesDisponibles}/{r.esencialesTotales}</span>
-                      <span className="saving-price" style={{ justifyContent: 'flex-end' }}>
+                      <div className="saving-price" style={{ justifyContent: 'flex-end' }}>
                         <b>{formatMoney(r.costoTotal)}</b>
                         {r.beneficioPromociones > 0 && <small className="saving">ahorro {formatMoney(r.beneficioPromociones)}</small>}
-                      </span>
+                        <PriceProvenance resultado={r} compact />
+                      </div>
                     </div>
                   ))}
                 </section>

@@ -158,7 +158,29 @@ cubriendo sistemáticamente los escenarios relevantes del dominio:
 | Tiempo de traslado | Poco / Mucho |
 | Ahorro | Bajo / Medio / Alto |
 
-De esa combinación surgen las siguientes reglas base (formato `SI... ENTONCES...`):
+### Reglas activas en la implementación (R01–R08)
+
+El servicio Python desplegado usa ocho reglas. La tabla siguiente da las etiquetas temáticas que
+presenta la interfaz; las condiciones exactas y sus umbrales viven en `data/rules.json` del
+repositorio independiente del Sistema Experto y no se deben inferir desde este resumen.
+
+| ID | Etiqueta que muestra la interfaz |
+|---|---|
+| R01 | Presupuesto muy excedido |
+| R02 | Faltan productos esenciales |
+| R03 | Distancia lejana con poco ahorro |
+| R04 | Tiempo alto con poco ahorro |
+| R05 | Compra fragmentada |
+| R06 | Alternativa conveniente |
+| R07 | Promociones relevantes |
+| R08 | Ahorro alto con dos paradas |
+
+### Diseño original (R1–R15; referencia histórica)
+
+Las siguientes reglas documentan el diseño académico inicial. No corresponden uno a uno con los
+identificadores vigentes R01–R08 ni describen necesariamente los umbrales usados por el servicio.
+
+De la combinación de escenarios original surgen las siguientes reglas de diseño (formato `SI... ENTONCES...`):
 
 ```
 R1  Opción ideal
