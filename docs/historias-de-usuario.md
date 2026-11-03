@@ -29,6 +29,8 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-17 | Comparar código base y propuesto con escenarios fijos | Alta | Implementada |
 | HU-18 | Validar el contrato enviado por Laravel sin tocar develop | Alta | Implementada |
 | HU-19 | Medir rendimiento y memoria sin solicitudes remotas | Media | Implementada |
+| HU-20 | Validar desbordamientos numéricos, readiness y cierre seguro en producción | Alta | Implementada; requiere configurar secretos al desplegar |
+| HU-21 | Detectar cambios del contrato Laravel leyendo develop sin modificarlo | Alta | Implementada en CI |
 
 ## Historias y criterios de aceptación
 
@@ -270,3 +272,12 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 ### Definición de terminado
 
 Una historia se considera terminada cuando tiene implementación acotada, pruebas automáticas verdes, contratos documentados y una comprobación funcional en Streamlit cuando modifica la interfaz. Estar propuesta o documentada no equivale a estar implementada.
+
+
+## HU-20 y HU-21 — Protección de la inferencia y compatibilidad con Laravel
+
+Como propietario del servicio Python, quiero rechazar entradas que produzcan valores derivados no finitos y detectar cambios de los 14 hechos de entrada, para entregar recomendaciones consistentes sin asumir responsabilidades del ETL y del optimizador Laravel.
+
+**Criterios de aceptación:** `POST /api/v1/recommend` conserva 14 campos de entrada y 16 de salida, rechaza desbordamientos con 422, usa la API key en producción con fallo seguro ante secreto ausente y expone `/ready` sin abrir conexión permanente. La CI lee el código de `develop` y compara los nombres de campo, endpoint y cabecera sin escribir en el repositorio del compañero. Las pruebas de integración siguen siendo sintéticas; se exige coordinación manual para desplegar los secretos.
+
+**Evidencia:** `tests/test_operational_contract_hardening.py`, `scripts/check_laravel_contract.py` y `docs/contrato-integracion-develop-2026-11-03.md`.

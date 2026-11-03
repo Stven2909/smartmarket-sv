@@ -44,6 +44,9 @@ jobs:
       - name: Tests
         run: pytest -q
 
+      - name: Verify current Laravel develop contract (read-only)
+        run: python -m scripts.check_laravel_contract --upstream
+
       - name: Gate - Rule regressions on pull requests
         if: github.event_name == 'pull_request'
         env:

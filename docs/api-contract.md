@@ -352,8 +352,9 @@ inventar índice, regla ganadora ni reglas perdedoras:
 
 El contrato puede consumirse mediante Swagger en `/docs`, PowerShell,
 `requests` de Python o el HTTP Client de Laravel. Laravel debe configurar un
-timeout aproximado de tres segundos, un retry limitado y una respuesta de
-respaldo. Si Python no responde, Laravel conserva costo, ahorro, score,
+timeout y reintentos acordes con su despliegue, y una respuesta de
+respaldo. En el `develop` del 2026-11-03 la configuración predeterminada es
+15 segundos y 3 intentos; el servicio Python no controla esas cifras. Si Python no responde, Laravel conserva costo, ahorro, score,
 distancia, tiempo, disponibilidad y sucursal; solo deja `recommendation` en
 `null` y `expert_system_available` en `false`.
 
@@ -365,3 +366,10 @@ verifica los campos nuevos (`winning_rule`, `losing_rules`, `trace`, índice y
 versiones), reglas críticas, recomendación nula, valores nulos obligatorios,
 campos prohibidos y repetibilidad. Un cambio de Laravel o React debe conservar
 este contrato antes de integrarse.
+
+
+## Seguridad de despliegue y comprobación de reglas (HU-20/HU-21)
+
+En producción, configurar `SMARTMARKET_ENV=production` y `SMARTMARKET_API_KEY` en el entorno de Python; Laravel debe enviar `EXPERT_SYSTEM_API_KEY` con el mismo secreto. Si el entorno se declara productivo pero falta la clave, las rutas de inferencia devuelven HTTP 503 en vez de quedar abiertas. `GET /health` sigue ligero; `GET /ready` comprueba si la base de conocimiento puede cargarse y devuelve 503 cuando no está lista. `request_id` y `alternativa_id` admiten hasta 256 caracteres; los valores numéricos finitos que desbordan los cálculos derivados se rechazan con 422. La compatibilidad con el `develop` público de Laravel puede comprobarse, sin modificarlo, usando `python -m scripts.check_laravel_contract --upstream`.
+
+Detalles y límites: [Contrato e integración HU-20/HU-21](contrato-integracion-develop-2026-11-03.md).

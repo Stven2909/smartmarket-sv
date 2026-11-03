@@ -29,7 +29,7 @@ def data():
 
 def test_laravel_fixture_is_traceable_and_has_frozen_fourteen_fields():
     fixture = data()
-    assert "513946f7de5028fc65773ddca6888b03fd249381" in fixture["fuente_laravel"]
+    assert "1cc886ad45a0bfbac156717ffc7ff6e10fbd716d" in fixture["fuente_laravel"]
     assert "ExpertSystemService.php" in fixture["fuente_cliente"]
     keys = set(RecommendationRequest.model_fields)
     assert len(keys) == 14

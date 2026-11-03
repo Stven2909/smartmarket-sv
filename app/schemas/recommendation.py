@@ -1,3 +1,4 @@
+from math import isfinite
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -124,8 +125,8 @@ class RecommendationRequest(BaseModel):
         json_schema_extra={"examples": [RECOMMENDATION_REQUEST_EXAMPLE]},
     )
 
-    request_id: str = Field(min_length=1)
-    alternativa_id: str = Field(min_length=1)
+    request_id: str = Field(min_length=1, max_length=256)
+    alternativa_id: str = Field(min_length=1, max_length=256)
     costo_total: float = Field(ge=0)
     presupuesto: float = Field(gt=0)
     ahorro: float = Field(ge=0)
@@ -148,6 +149,19 @@ class RecommendationRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_product_counts(self) -> "RecommendationRequest":
+        # Pydantic rechaza NaN e infinitos recibidos, pero incluso dos floats
+        # finitos pueden desbordar al calcular los hechos derivados. Evitamos
+        # devolver HTTP 500 por un payload numéricamente imposible.
+        exceso_pct = (
+            (self.costo_total - self.presupuesto) / self.presupuesto * 100.0
+        )
+        if not isfinite(exceso_pct) or not isfinite(
+            self.presupuesto - self.costo_total
+        ):
+            raise ValueError(
+                "costo_total y presupuesto producen cálculos fuera de rango"
+            )
+
         if self.productos_disponibles > self.productos_totales:
             raise ValueError("productos_disponibles no puede superar productos_totales")
 
