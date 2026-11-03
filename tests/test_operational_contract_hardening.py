@@ -7,9 +7,9 @@ import pytest
 from pydantic import ValidationError
 
 from app.api import health_routes
+from app.expert_system.rule_loader import RuleLoaderError
 from app.main import app
 from app.schemas.recommendation import RecommendationRequest
-from app.expert_system.rule_loader import RuleLoaderError
 from scripts.check_laravel_contract import payload_fields_from_php, validate_php_contract
 
 VALID = {
@@ -150,6 +150,7 @@ def test_read_only_contract_checker_detects_drift(change):
 def test_read_only_contract_checker_detects_endpoint_and_key_drift():
     producer = php_payload(list(RecommendationRequest.model_fields))
     with pytest.raises(ValueError, match="endpoint|envía"):
-        validate_php_contract(producer, PHP_CLIENT.replace("/api/v1/recommend", "/api/v2/recommend"))
+        changed = PHP_CLIENT.replace("/api/v1/recommend", "/api/v2/recommend")
+        validate_php_contract(producer, changed)
     with pytest.raises(ValueError, match="X-API-Key"):
         validate_php_contract(producer, PHP_CLIENT.replace("X-API-Key", "X-Legacy-Key"))
