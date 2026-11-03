@@ -168,7 +168,6 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (requestId !== geolocationRequestId.current || selectedIdRef.current !== listIdAtRequest) {
-          setGeolocating(false)
           return
         }
         const lat = pos.coords.latitude

@@ -818,7 +818,7 @@ export function ListasView({ onListasChange }: Props) {
                               <article key={r.sucursalId} className="recommendation-card">
                                 <div>
                                   <span className="recommendation-label">{r.supermercado}</span><span className="recommendation-store">{r.sucursal}</span>
-                                  <small>Score {r.score.toFixed(2)} · {r.expertRecommendation ? (EXPERT_LEVEL_LABELS[r.expertRecommendation.nivelRecomendacion] ?? r.expertRecommendation.nivelRecomendacion) : `Nivel ${r.nivelOptimizacion}%`} · {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : 'Sin distancia'} · {r.tiempoMinutos != null ? `${Math.round(r.tiempoMinutos)} min` : 'Sin tiempo'} · ahorro promociones {formatMoney(r.beneficioPromociones)}</small>
+                                  <small>Score {r.score.toFixed(2)} · {r.expertRecommendation ? 'Evaluación experta' : `Nivel ${r.nivelOptimizacion}%`} · {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : 'Sin distancia'} · {r.tiempoMinutos != null ? `${Math.round(r.tiempoMinutos)} min` : 'Sin tiempo'} · ahorro promociones {formatMoney(r.beneficioPromociones)}</small>
                                   <PriceProvenance resultado={r} compact />
                                   {!r.expertSystemAvailable && <div className="expert-omission-note compact"><b>Sin evaluación experta</b><span>{omissionReasonLabel(r.expertOmissionReason) ?? 'El experto no respondió para esta alternativa.'}</span></div>}
                                 </div>
