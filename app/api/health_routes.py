@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+
+from app.expert_system.rule_loader import RuleLoaderError, load_rules
 
 router = APIRouter(tags=["health"])
 
@@ -22,3 +24,20 @@ router = APIRouter(tags=["health"])
 )
 def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "smartmarket-expert-service"}
+
+
+@router.get(
+    "/ready",
+    summary="Comprueba que la base de reglas esté lista para inferencia",
+    responses={503: {"description": "Base de conocimiento no disponible."}},
+)
+def readiness_check() -> dict[str, str]:
+    try:
+        if not load_rules():
+            raise RuleLoaderError("La base de conocimiento no tiene reglas.")
+    except RuleLoaderError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="La base de reglas del sistema experto no está disponible.",
+        ) from exc
+    return {"status": "ready", "service": "smartmarket-expert-service"}
