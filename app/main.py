@@ -17,6 +17,11 @@ from app.api.sensitivity_routes import router as sensitivity_router
 from app.schemas.versions import CONTRACT_VERSION
 
 API_KEY_ENV = "SMARTMARKET_API_KEY"
+ENVIRONMENT_ENV = "SMARTMARKET_ENV"
+
+
+def is_production() -> bool:
+    return os.getenv(ENVIRONMENT_ENV, "").strip().lower() in {"production", "prod"}
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
@@ -24,14 +29,20 @@ _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 def require_api_key(api_key: str | None = Security(_api_key_header)) -> None:
     expected = os.getenv(API_KEY_ENV, "").strip()
 
-    # ponytail: sin variable de entorno la API queda abierta a propósito (dev local)
+    # Local sin clave para desarrollo. En producción, fallar cerrado:
+    # una configuración incompleta nunca debe exponer la inferencia.
     if not expected:
+        if is_production():
+            raise HTTPException(
+                status_code=503,
+                detail="El servicio experto no tiene autenticación configurada.",
+            )
         return
     if not api_key or not secrets.compare_digest(api_key, expected):
         raise HTTPException(status_code=401, detail="API key inválida o ausente.")
 
 
-_protected = bool(os.getenv(API_KEY_ENV, "").strip())
+_protected = is_production() or bool(os.getenv(API_KEY_ENV, "").strip())
 
 app = FastAPI(
     title="SmartMarket SV Expert Service",
