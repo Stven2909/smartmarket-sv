@@ -351,7 +351,10 @@ inventar índice, regla ganadora ni reglas perdedoras:
 ## Compatibilidad y fallback
 
 El contrato puede consumirse mediante Swagger en `/docs`, PowerShell,
-`requests` de Python o el HTTP Client de Laravel. Laravel debe configurar un\ntimeout y reintentos acordes con su despliegue, y una respuesta de\nrespaldo. En el `develop` del 2026-11-03 la configuración predeterminada es\n15 segundos y 3 intentos; el servicio Python no controla esas cifras. Si Python no responde, Laravel conserva costo, ahorro, score,
+`requests` de Python o el HTTP Client de Laravel. Laravel debe configurar un
+timeout y reintentos acordes con su despliegue, y una respuesta de
+respaldo. En el `develop` del 2026-11-03 la configuración predeterminada es
+15 segundos y 3 intentos; el servicio Python no controla esas cifras. Si Python no responde, Laravel conserva costo, ahorro, score,
 distancia, tiempo, disponibilidad y sucursal; solo deja `recommendation` en
 `null` y `expert_system_available` en `false`.
 
