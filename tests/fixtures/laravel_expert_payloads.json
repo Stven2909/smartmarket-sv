@@ -1,6 +1,6 @@
 {
-  "fuente_laravel": "https://github.com/Stven2909/smartmarket-sv/blob/513946f7de5028fc65773ddca6888b03fd249381/backend-laravel/app/Services/Optimization/OptimizationService.php",
-  "fuente_cliente": "https://github.com/Stven2909/smartmarket-sv/blob/513946f7de5028fc65773ddca6888b03fd249381/backend-laravel/app/Services/ExpertSystemService.php",
+  "fuente_laravel": "https://github.com/Stven2909/smartmarket-sv/blob/1cc886ad45a0bfbac156717ffc7ff6e10fbd716d/backend-laravel/app/Services/Optimization/OptimizationService.php",
+  "fuente_cliente": "https://github.com/Stven2909/smartmarket-sv/blob/1cc886ad45a0bfbac156717ffc7ff6e10fbd716d/backend-laravel/app/Services/ExpertSystemService.php",
   "tipo": "casos_sinteticos_reproducen_formato_php_no_llamadas_reales",
   "validos": [
     {
