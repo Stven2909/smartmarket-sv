@@ -46,7 +46,7 @@ def send(method: str, path: str, **kwargs) -> httpx.Response:
     [
         {"costo_total": 1e308, "presupuesto": 1e-308},
         {"costo_total": 1e308, "presupuesto": 1.0},
-        {"costo_total": 1e-300, "presupuesto": 1e308},
+        {"costo_total": 1e100, "presupuesto": 1e-300},
     ],
 )
 def test_extreme_finite_numbers_do_not_break_inference(changes):
