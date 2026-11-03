@@ -69,7 +69,10 @@ def _fetch_upstream(path: str) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--upstream", action="store_true", help="Read current public develop from GitHub")
+    parser.add_argument(
+        "--upstream", action="store_true",
+        help="Read current public develop from GitHub",
+    )
     parser.add_argument("--producer-file", type=Path, help="Local OptimizationService.php")
     parser.add_argument("--client-file", type=Path, help="Local ExpertSystemService.php")
     args = parser.parse_args(argv)
