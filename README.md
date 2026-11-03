@@ -294,3 +294,8 @@ Distribuido bajo la [licencia MIT](LICENSE).
 ## Sincronización con el repositorio del equipo
 
 Las mejoras del servicio Python se desarrollan y validan primero en este fork. Para trasladarlas a la rama `expert-system-python` de `Stven2909/smartmarket-sv`, sin tocar `develop`, consulta [la guía de sincronización](docs/sincronizacion-upstream-expert.md). El script `scripts/sync_upstream_expert.ps1` comprueba el historial y solo permite un avance rápido sin sobrescribir commits.
+
+
+### Integración con Laravel develop (solo lectura)
+
+El motor Python únicamente valida hechos, infiere y devuelve resultados; no obtiene precios ni modifica el optimizador del compañero. Revisa [la verificación HU-20/HU-21 y las instrucciones de producción](docs/contrato-integracion-develop-2026-11-03.md). Para comprobar el contrato público del `develop` actual sin modificarlo: `python -m scripts.check_laravel_contract --upstream`.
