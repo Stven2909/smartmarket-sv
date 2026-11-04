@@ -147,7 +147,7 @@ def test_http_response_exposes_same_decision_and_new_rules_version():
     assert result.status_code == 200
     payload = result.json()
     assert payload["winning_rule"] == "R11"
-    assert payload["version_reglas"] == "1.1.0"
+    assert payload["version_reglas"] == "1.2.0"
     assert payload["version_contrato"] == "1.0.0"
-    assert len(payload["trace"]) == 11
+    assert len(payload["trace"]) == 13
     assert len(payload) == 16
