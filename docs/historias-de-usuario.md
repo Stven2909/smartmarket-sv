@@ -34,6 +34,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-22 | Identificar la base exacta de reglas usada en cada inferencia | Media | Implementada |
 | HU-23 | Proteger la comunicación Laravel-Python con rotación y no-cache | Alta | Implementada; activar secretos en Render y Laravel |
 | HU-24 | Permitir inferencias de hasta 50 alternativas por solicitud | Media | Implementada, opcional para Laravel |
+| HU-25 | Verificar coherencia entre reglas, hechos, explicación, dictamen e índice | Alta | Implementada en pruebas de regresión |
 
 ## Historias y criterios de aceptación
 
@@ -315,3 +316,12 @@ Como cliente de la API del sistema experto, quiero enviar varias alternativas v�
 **Fuera de alcance:** elegir la mejor opción, sumar costos, obtener precios, ordenar resultados por conveniencia comercial y cambios en `develop`.
 
 **Evidencia:** `tests/test_batch_recommendation.py` y [contrato del endpoint por lotes](inferencia-lotes-hu24.md).
+
+
+## HU-25 — Coherencia de dictamen y explicación
+
+Como responsable del servicio Python, quiero detectar incoherencias entre hechos derivados, trazas de condiciones, resolución de conflictos, respuesta textual y el índice, para evitar recomendaciones contradictorias aunque cada componente individual responda correctamente.
+
+**Aceptación:** pruebas con los escenarios documentados, 200 combinaciones representativas y casos R01–R08 con/sin ganador. La auditoría independiente `scripts/check_inference_consistency.py` detecta alteraciones provocadas en `winning_rule`, `losing_rules`, `reglas_activadas`, `trace`, `nivel_recomendacion`, `accion_sugerida`, `explicacion`, hechos e índice. No se introduce validación redundante dentro del camino HTTP ni se cambian las reglas o los 14/16 campos del contrato.
+
+**Evidencia:** [HU-25 y límites](hu25-coherencia-inferencia.md), `tests/test_inference_consistency.py`.
