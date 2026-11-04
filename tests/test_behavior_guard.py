@@ -74,9 +74,9 @@ def test_loss_of_critical_activation_blocks_even_when_level_stays_rejected():
 
 
 def test_new_critical_rules_are_blocking_even_if_level_stays_rejected():
-    assert CRITICAL_IDS == frozenset({
+    assert frozenset({
         "R01", "R02", "R03", "R04", "R05", "R09", "R10", "R12"
-    })
+    }) == CRITICAL_IDS
     _, baseline = snapshots()
     for rule_id in ("R09", "R10", "R12"):
         proposed = json.loads(json.dumps(baseline))
