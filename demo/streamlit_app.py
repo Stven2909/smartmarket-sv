@@ -360,42 +360,37 @@ def call_diagnosis_api(
     return _post_json("/api/v1/diagnosis", {"alternativa": alternative}, base_url)
 
 
-def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
-    """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
-    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/knowledge"
+def _get_json(path: str, base_url: str | None = None) -> dict[str, Any]:
+    headers = api_auth_headers()
+    url = _service_url(path, base_url, has_secret=bool(headers))
     try:
         response = requests.get(
-            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
+            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=headers,
+            allow_redirects=False,
         )
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
             response.status_code,
         )
-    return response.json()
+    return _json_dict(response)
+
+
+def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
+    """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
+    return _get_json("/api/v1/knowledge", base_url)
 
 
 def call_rule_audit_api(base_url: str | None = None) -> dict[str, Any]:
     """Consulta el informe de consistencia sin evaluar ni modificar compras."""
-    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/rule-audit"
-    try:
-        response = requests.get(
-            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
-        )
-    except requests.Timeout as exc:
-        raise ApiClientError("La auditoría tardó demasiado en responder.") from exc
-    except requests.RequestException as exc:
-        raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
-    if response.status_code >= 400:
-        raise ApiClientError(
-            f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
-            response.status_code,
-        )
-    return response.json()
+    return _get_json("/api/v1/rule-audit", base_url)
 
 
 def call_evidence_report_api(
@@ -403,7 +398,8 @@ def call_evidence_report_api(
 ) -> bytes:
     """Solicita un PDF real; la interfaz no replica el motor experto."""
 
-    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/evidence-report"
+    headers = api_auth_headers()
+    url = _service_url("/api/v1/evidence-report", base_url, has_secret=bool(headers))
     payload = {
         "procedencia": "sintetico",
         "escenarios": [
@@ -414,12 +410,15 @@ def call_evidence_report_api(
     try:
         response = requests.post(
             url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS,
-            headers=api_auth_headers(),
+            headers=headers,
+            allow_redirects=False,
         )
     except requests.Timeout as exc:
         raise ApiClientError("La generación del informe tardó demasiado.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
