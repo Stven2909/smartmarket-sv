@@ -54,7 +54,13 @@ def test_benign_priority_change_is_allowed_but_reported(tmp_path):
 
 
 def test_critical_promotion_overrides_are_blocked_in_full_grid(tmp_path):
-    proposed = save_modified(tmp_path, change_priority("R02", 9))
+    def unsafe(rules):
+        next(rule for rule in rules if rule["id"] == "R02")["priority"] = 9
+        next(rule for rule in rules if rule["id"] == "R08")["conditions"].pop(
+            "todos_esenciales_disponibles"
+        )
+
+    proposed = save_modified(tmp_path, unsafe)
     result = check_changes(RULES, proposed, SCENARIOS)
     assert result["resultado"] == "BLOQUEADO"
     assert result["metricas"]["casos"] == 3411
