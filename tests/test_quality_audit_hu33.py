@@ -16,7 +16,7 @@ from scripts.audit_decision_quality import (
 
 def test_quality_audit_includes_documented_cases_and_targeted_boundaries():
     cases = quality_cases()
-    assert len(cases) == 17 + len(TARGETED) == 24
+    assert len(cases) == 17 + len(TARGETED) == 25
     ids = [name for name, _ in cases]
     assert len(ids) == len(set(ids))
     assert {"r07-trayecto-extremo", "r08-trayecto-extremo",
@@ -26,7 +26,7 @@ def test_quality_audit_includes_documented_cases_and_targeted_boundaries():
 def test_quality_audit_finds_cases_to_review_without_fabricating_rejection():
     result = audit_quality(quality_cases())
     assert result["resultado"] == "APROBADO"
-    assert result["total"] == 24
+    assert result["total"] == 25
     assert result["total_violaciones"] == 0
     assert result["favorables"] > 0
     assert result["alertas"]["TRAYECTO_A_REVISAR"] > 0
@@ -60,7 +60,7 @@ def test_cli_creates_readable_report_with_no_secret_or_production_write(tmp_path
     target = tmp_path / "hu33-audit.json"
     assert main(["--json-output", str(target)]) == 0
     result = json.loads(target.read_text(encoding="utf-8"))
-    assert result["total"] == 24
+    assert result["total"] == 25
     assert result["tipo_datos"] == "SINTETICOS_NO_ETIQUETADOS"
     assert result["resultado"] == "APROBADO"
 
