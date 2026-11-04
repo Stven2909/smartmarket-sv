@@ -49,7 +49,7 @@ def test_same_facts_always_produce_identical_explanations_and_trace(item):
     a = recommend(item).model_dump()
     b = recommend(item).model_dump()
     assert a == b
-    assert len(a["trace"]) == 8
+    assert len(a["trace"]) == 11
     assert 0 <= a["indice_conveniencia"] <= 100
 
 
