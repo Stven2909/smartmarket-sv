@@ -115,7 +115,8 @@ class FakeResponse:
 def test_ideal_scenario_can_be_sent_to_api(monkeypatch):
     captured = {}
 
-    def fake_post(url, json, timeout, headers=None):
+    def fake_post(url, json, timeout, headers=None, allow_redirects=True):
+        assert allow_redirects is False
         captured.update({"url": url, "json": json, "timeout": timeout, "headers": headers})
         return FakeResponse(200, {"nivel_recomendacion": "EXCELENTE"})
 
