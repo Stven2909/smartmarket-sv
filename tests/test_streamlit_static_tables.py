@@ -91,3 +91,53 @@ def test_streamlit_secrets_fallback_is_supported_without_exposing_key(monkeypatc
     )
     assert demo.api_auth_headers() == {"X-API-Key": "private-test-value"}
     assert demo.api_base_url() == "https://example-render.invalid"
+
+
+class StatusResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
+def test_verification_of_secret_checks_both_authenticated_and_anonymous_requests(monkeypatch):
+    calls = []
+
+    monkeypatch.setattr(
+        demo, "api_auth_headers", lambda: {"X-API-Key": "hidden-test-key"}
+    )
+
+    def authorized(base_url):
+        calls.append(("authorized", base_url))
+        return {"rules": []}
+
+    def anonymous_probe(url, *, timeout, allow_redirects):
+        assert "X-API-Key" not in url
+        assert allow_redirects is False
+        calls.append(("anonymous", url))
+        return StatusResponse(401)
+
+    monkeypatch.setattr(demo, "call_knowledge_api", authorized)
+    monkeypatch.setattr(demo.requests, "get", anonymous_probe)
+    demo.verify_api_authentication("https://api.example.test")
+    assert calls == [
+        ("authorized", "https://api.example.test"),
+        ("anonymous", "https://api.example.test/api/v1/knowledge"),
+    ]
+
+
+def test_verification_refuses_successful_unauthenticated_access(monkeypatch):
+    monkeypatch.setattr(
+        demo, "api_auth_headers", lambda: {"X-API-Key": "hidden-test-key"}
+    )
+    monkeypatch.setattr(demo, "call_knowledge_api", lambda base_url: {"rules": []})
+    monkeypatch.setattr(
+        demo.requests, "get",
+        lambda url, *, timeout, allow_redirects: StatusResponse(200),
+    )
+    with pytest.raises(demo.ApiClientError, match="no confirmó"):
+        demo.verify_api_authentication("https://api.example.test")
+
+
+def test_verification_requires_streamlit_server_secret(monkeypatch):
+    monkeypatch.setattr(demo, "api_auth_headers", lambda: {})
+    with pytest.raises(demo.ApiClientError, match="SMARTMARKET_API_KEY"):
+        demo.verify_api_authentication("https://api.example.test")
