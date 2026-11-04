@@ -11,7 +11,7 @@ import os
 import sys
 from pathlib import Path
 
-CRITICAL_IDS = frozenset({"R01", "R02", "R03", "R04", "R05"})
+CRITICAL_IDS = frozenset({"R01", "R02", "R03", "R04", "R05", "R09", "R10", "R12"})
 EXPECTED_INPUTS = frozenset(
     {
         "request_id", "alternativa_id", "costo_total", "presupuesto", "ahorro",

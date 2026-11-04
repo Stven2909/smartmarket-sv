@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from scripts.behavior_guard import (
+    CRITICAL_IDS,
     EXPECTED_INPUTS,
     capture,
     compare,
@@ -69,6 +70,26 @@ def test_loss_of_critical_activation_blocks_even_when_level_stays_rejected():
     assert report["resultado"] == "BLOQUEADO"
     assert report["metricas"]["perdidas_proteccion"] == 1
     assert report["metricas"]["regresiones_criticas"] == 0
+
+
+
+def test_new_critical_rules_are_blocking_even_if_level_stays_rejected():
+    assert frozenset({
+        "R01", "R02", "R03", "R04", "R05", "R09", "R10", "R12"
+    }) == CRITICAL_IDS
+    _, baseline = snapshots()
+    for rule_id in ("R09", "R10", "R12"):
+        proposed = json.loads(json.dumps(baseline))
+        affected = next(
+            case for case in proposed["casos"] if rule_id in case["activadas"]
+        )
+        affected["activadas"].remove(rule_id)
+        # A lost critical activation matters even when some OTHER critical
+        # rule still keeps the final recommendation non-favorable.
+        report = compare(baseline, proposed)
+        assert report["resultado"] == "BLOQUEADO", rule_id
+        assert report["metricas"]["perdidas_proteccion"] == 1, rule_id
+
 
 
 def test_weight_shift_above_ten_points_is_blocked():

@@ -69,7 +69,7 @@ def test_recommendation_keeps_body_contract_and_exposes_fingerprint_header():
     assert len(result.json()) == 16
     assert parsed.request_id == PAYLOAD["request_id"]
     assert parsed.winning_rule == "R06"
-    assert parsed.version_reglas == "1.3.1"
+    assert parsed.version_reglas == "1.3.2"
 
 
 def test_ready_and_knowledge_expose_same_deployment_fingerprint():

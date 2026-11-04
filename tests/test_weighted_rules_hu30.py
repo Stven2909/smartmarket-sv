@@ -7,7 +7,10 @@ import pytest
 
 from app.expert_system.classifiers import derive_facts
 from app.expert_system.convenience_config import DEFAULT_CONVENIENCE_CONFIG
-from app.expert_system.convenience_index import calculate_convenience_index
+from app.expert_system.convenience_index import (
+    calculate_convenience_index,
+    meets_convenience_threshold,
+)
 from app.schemas.recommendation import RecommendationRequest, RecommendationResponse
 from app.services.recommendation_service import recommend
 from scripts.check_inference_consistency import check_inference_consistency
@@ -134,8 +137,12 @@ def test_weights_are_normalized_and_boolean_facts_follow_same_index():
         assert facts["conveniencia_no_baja"] is (
             score["clasificacion_conveniencia"] != "BAJA_CONVENIENCIA"
         )
-        assert facts["conveniencia_solida"] is (
-            score["indice_conveniencia"] >= 60
+        raw_score = 100 * sum(
+            score["pesos"][factor] * component
+            for factor, component in score["componentes_conveniencia"].items()
+        )
+        assert facts["conveniencia_solida"] is meets_convenience_threshold(
+            raw_score, 60
         )
 
 

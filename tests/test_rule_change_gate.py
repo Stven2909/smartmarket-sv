@@ -186,7 +186,7 @@ def test_gate_script_and_workflow_are_wired_for_pull_requests():
         encoding="utf-8"
     )
     assert "pull_request:" in workflow
-    assert "Gate - Rule regressions on pull requests" in workflow
+    assert "Gate - Rule regressions on PRs and main" in workflow
     assert "github.event.pull_request.base.sha" in workflow
     assert "python -m scripts.check_rule_regression" in workflow
     assert "data/rules.json" in workflow

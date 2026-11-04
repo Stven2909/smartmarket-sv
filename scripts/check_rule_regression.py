@@ -165,7 +165,7 @@ def check_changes(
         "ejemplos": (critical_examples + ordinary_examples)[:15],
         "advertencias": [
             "Se comparan las mismas entradas con dos bases aisladas de reglas.",
-            "Las pérdidas de cobertura de reglas R01–R05 son bloqueantes "
+            "Las pérdidas de protección R01–R05, R09, R10 y R12 son bloqueantes "
             "incluso cuando el resultado sigue siendo NO_RECOMENDABLE.",
             "Una muestra sin cambios no demuestra equivalencia universal.",
             "Este control no modifica data/rules.json ni las reglas en Render.",
