@@ -175,7 +175,7 @@ def test_derived_fact_names_have_one_checked_contract():
     facts = derive_facts(make_request())
 
     assert set(facts) == DERIVED_FACT_NAMES
-    assert THRESHOLDS_VERSION == "1.3.0"
+    assert THRESHOLDS_VERSION == "1.3.1"
     assert THRESHOLDS["ahorro_bajo_max"] == 3.0
 
 
