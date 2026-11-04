@@ -39,6 +39,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-27 | Limitar el uso de la demo pública sin reducir la cuota de Laravel | Alta | Implementada; se activa con clave Streamlit independiente |
 | HU-28 | Corregir casos de cobertura insuficiente y agregar compra equilibrada sin promociones | Alta | Implementada en reglas 1.1.0; verificar regresiones |
 | HU-29 | Distinguir cobertura parcial con o sin esenciales declarados | Alta | Implementada en reglas 1.2.0, validación pendiente de cierre |
+| HU-30 | Aprovechar los cinco pesos del índice en tres reglas explicables | Alta | Implementada y sujeta a validación de CI |
 
 ## Historias y criterios de aceptación
 
@@ -365,3 +366,12 @@ Como responsable del sistema experto, quiero evitar dictámenes EXCELENTE cuando
 **Criterios de aceptación:** agregar R12 (sin esenciales y cobertura inferior al 80 %, crítica) y R13 (esenciales completos, cobertura inferior al 80 %, presupuesto y traslado razonables, BUENA), probar la frontera 80 %, mantener las reglas críticas prioritarias, conservar el contrato 14/16 y ampliar la cobertura de Streamlit a trece reglas en lotes permitidos.
 
 **Evidencia:** `tests/test_coverage_guards_hu29.py`, `data/scenarios_hu29.json` y [documentación HU-29](hu29-cobertura-reglas.md). El umbral es una decisión del prototipo, no un dato estadístico; las reglas requieren contraste con compras reales.
+
+
+## HU-30 — Puntuación ponderada que influye en decisiones justificables
+
+Como responsable del motor, quiero que los cinco pesos explícitos de ahorro, disponibilidad, distancia, tiempo y promociones tengan efectos reales en escenarios de compra que antes quedaban provisionales, sin permitir que un índice alto oculte el incumplimiento de reglas críticas.
+
+**Criterios de aceptación:** R14 reconoce compras completas con ahorro alto y conveniencia ponderada alta (≥75), R15 considera compras completas con poco ahorro si el balance es al menos 50, y R16 permite compras con todos los esenciales y cobertura de al menos 80 % si su índice alcanza 60, siempre bajo restricciones concretas de presupuesto, parada, recorrido y promociones. Pruebas comparan pares de escenarios con diferentes índices pero las mismas condiciones de negocio relevantes y comprueban que las protecciones críticas continúen ganando. La matriz Streamlit cubre R01–R16 en dos peticiones HTTP con 9 y 8 escenarios, sin cambiar el contrato de 14/16 campos.
+
+**Evidencia:** `tests/test_weighted_rules_hu30.py`, `data/scenarios_hu30.json` y [HU-30 — políticas, pesos y límites](hu30-reglas-ponderadas.md). Los pesos son del prototipo y todavía necesitan calibración con compras reales; las nuevas reglas no convierten el índice en una probabilidad.
