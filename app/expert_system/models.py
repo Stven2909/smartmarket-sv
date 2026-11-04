@@ -18,7 +18,7 @@ DERIVED_FACT_NAMES = frozenset(
         "algun_producto_disponible",
         "cobertura_muy_baja",
         "sin_esenciales_definidos",
-        "cobertura_alerta_sin_esenciales",
+        "cobertura_parcial_relevante",
         "distancia_razonable",
         "tiempo_razonable",
         "todos_productos_disponibles",
