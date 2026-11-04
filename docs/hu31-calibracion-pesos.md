@@ -50,6 +50,22 @@ La CI ejecuta la calibración completa para cada commit y PR y publica una tabla
 
 No se deben presentar porcentajes de cambios sobre la rejilla como si fueran tasas de acierto o proporciones de compradores. Hay sesgo deliberado hacia extremos y fronteras. Tampoco conviene elegir el perfil que produce más recomendaciones positivas: eso podría empeorar la calidad de las decisiones.
 
+## Resultado medido de CI en la rejilla completa
+
+La ejecución de GitHub Actions revisó **3421 escenarios sintéticos** (17 documentados + 3404 de frontera) con los cinco perfiles. Se observaron estos cambios **frente a los pesos actuales**:
+
+| Perfil | Cambios de nivel | Cambios de regla ganadora | Reglas críticas vulneradas |
+|---|---:|---:|---:|
+| Actual | 0 | 0 | 0 |
+| Priorizar ahorro | 4 | 4 | 0 |
+| Priorizar disponibilidad | 1 | 1 | 0 |
+| Priorizar movilidad | 1 | 1 | 0 |
+| Priorizar promociones | 5 | 5 | 0 |
+
+Fuente reproducible: `python -m scripts.calibrate_convenience_weights --with-grid` en la CI de la rama HU-31, ejecución de GitHub Actions `41774578360`. **Estos conteos no son tasas de acierto ni prevalencias reales.** La rejilla incluye muchos escenarios en los que una protección crítica decide con independencia de los pesos. Eso explica que las variaciones de dictamen sean reducidas en comparación con el total.
+
+Conclusión práctica: los pesos sí tienen un impacto en ciertas decisiones ponderadas, pero el motor mantiene la prioridad de cobertura, presupuesto y seguridad. **No hay evidencia para cambiar el vector actual de pesos en producción.**
+
 ## Hallazgos de ingeniería
 
 1. Antes de la mejora, la condición de R16 (`conveniencia_solida`) comparaba la puntuación **redondeada a dos decimales**. Un valor real de 59.996 puntos podía mostrarse como 60.00 y disparar una regla que exige al menos 60. Se compara ahora la puntuación original, mientras se mantiene el número redondeado para la presentación.
