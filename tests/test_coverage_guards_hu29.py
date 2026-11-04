@@ -53,7 +53,7 @@ def test_without_defined_essentials_low_coverage_is_critical_even_if_r06_matches
 @pytest.mark.parametrize(
     "available,active",
     [
-        (0, False),   # R09 and R10 already protect empty inventories.
+        (0, True),    # R09 has higher precedence for an empty inventory.
         (4, True),
         (5, True),
         (7, True),
