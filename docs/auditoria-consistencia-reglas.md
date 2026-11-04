@@ -19,11 +19,11 @@ Se emplean los valores representativos siguientes (no son datos de supermercados
 | Ahorro | Bajo, medio, alto |
 | Distancia adicional | Corta, media, lejana |
 | Tiempo | Bajo, medio, alto |
-| Productos | Todos, faltan opcionales, faltan esenciales, faltan ambos, sin esenciales |
+| Productos | Todos, faltan opcionales, faltan esenciales, faltan ambos, sin esenciales, ninguno disponible y uno de cuatro disponible |
 | Supermercados | 1, 2, 3 |
 | Promociones | No, sí |
 
-El producto cartesiano da **2430 escenarios sintéticos**. Cada entrada pasa por `RecommendationRequest` y `derive_facts` igual que el motor. Se comprueban todas las combinaciones de estas *clases*, pero no todos los números, listas reales ni futuras extensiones del clasificador.
+El producto cartesiano da **3402 escenarios sintéticos**. Cada entrada pasa por `RecommendationRequest` y `derive_facts` igual que el motor. Se comprueban todas las combinaciones de estas *clases*, pero no todos los números, listas reales ni futuras extensiones del clasificador.
 
 ## Tipos de hallazgos
 
@@ -65,7 +65,7 @@ python -m pytest -q
 ruff check app demo tests
 ```
 
-Las pruebas incluyen reglas artificiales duplicadas, contradictorias o sombreadas, comprobación de solapamientos reales de R01–R08, determinismo, ejemplos reproducibles, autenticación HTTP y la interfaz Streamlit. Ningún test modifica la base de producción.
+Las pruebas incluyen reglas artificiales duplicadas, contradictorias o sombreadas, comprobación de solapamientos reales de R01–R11, determinismo, ejemplos reproducibles, autenticación HTTP y la interfaz Streamlit. Ningún test modifica la base de producción.
 
 ## Límites
 
