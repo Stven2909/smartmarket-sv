@@ -29,6 +29,7 @@ EXCLUSIVE_PARTITIONS = (
     ("distancia_cercana", "distancia_media", "distancia_lejana"),
     ("tiempo_bajo", "tiempo_medio", "tiempo_alto"),
     ("una_parada", "dos_paradas", "compra_fragmentada"),
+    ("ningun_producto_disponible", "algun_producto_disponible"),
 )
 
 # Relaciones garantizadas por validación de conteos y por derive_facts.
@@ -44,6 +45,8 @@ NUMERIC_FACTS = frozenset(
 IMPLICATIONS = (
     ("todos_productos_disponibles", "todos_esenciales_disponibles"),
     ("faltan_esenciales", "faltan_productos"),
+    ("cobertura_muy_baja", "faltan_productos"),
+    ("ningun_producto_disponible", "cobertura_muy_baja"),
 )
 
 
@@ -77,6 +80,8 @@ def _representative_requests():
         (3, 4, 1, 2),  # Falta un esencial
         (2, 4, 1, 2),  # Faltan esenciales y opcionales
         (3, 4, 0, 0),  # Lista sin esenciales
+        (0, 4, 0, 0),  # Ningún producto disponible y ninguno esencial
+        (1, 4, 0, 0),  # Disponibilidad menor de 50 % sin esenciales
     )
     for cost, saving, extra_km, minutes, stock, stores, promotion in product(
         (40.0, 53.0, 56.0),

@@ -41,7 +41,7 @@ def test_budget_slightly_exceeded_has_explicit_provisional_explanation():
     assert "supera ligeramente" in report.explicacion
     assert "provisional" in report.explicacion
     assert "Ajustar" in report.accion_sugerida
-    assert len(report.trace) == 8
+    assert len(report.trace) == 11
 
 
 def test_exact_budget_threshold_remains_provisional_and_above_is_critical():
@@ -54,7 +54,7 @@ def test_exact_budget_threshold_remains_provisional_and_above_is_critical():
 
 
 def test_normal_unmatched_case_keeps_existing_generic_fallback():
-    report = recommend(case())
+    report = recommend(case(productos_disponibles=9))
     assert report.winning_rule is None
     assert report.accion_sugerida == "Comparar con otras alternativas antes de decidir."
     assert "Ninguna regla" in report.explicacion
@@ -75,14 +75,49 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
     assert coverage["no_winner"] == 1
     assert coverage["conflicts"] >= 1
     assert {row["Regla"] for row in coverage["rules"]} == {
-        f"R{index:02}" for index in range(1, 9)
+        f"R{index:02}" for index in range(1, 12)
     }
-    assert all(row["Activaciones"] >= 1 for row in coverage["rules"])
-    assert all(row["Victorias"] >= 1 for row in coverage["rules"])
+    # The legacy nine-scenario view has coverage for the original rules.
+    # New R09–R11 cases are isolated to avoid the 10-alternative API cap.
+    historical = [row for row in coverage["rules"] if row["Regla"] <= "R08"]
+    assert all(row["Activaciones"] >= 1 for row in historical)
+    assert all(row["Victorias"] >= 1 for row in historical)
+    new = [row for row in coverage["rules"] if row["Regla"] >= "R09"]
+    assert all(row["Activaciones"] == 0 for row in new)
     assert all(row["Ganadora"] for row in coverage["scenarios"])
     assert any(
         row["Ganadora"] == "Sin regla" for row in coverage["scenarios"]
     )
+
+
+def test_full_eleven_rule_coverage_uses_two_valid_comparison_batches():
+    basic = load_scenarios()
+    extras = load_scenarios(
+        Path(__file__).resolve().parents[1] / "data" / "scenarios_hu28.json"
+    )
+    assert len(basic) == 9 and len(extras) == 3
+
+    def compare(rows):
+        return compare_alternatives(
+            ComparisonRequest(
+                alternativas=[
+                    RecommendationRequest.model_validate(item["facts"])
+                    for item in rows
+                ]
+            )
+        ).model_dump(mode="json")
+
+    first = compare(basic)
+    second = compare(extras)
+    merged = {**first, "ranking": first["ranking"] + second["ranking"]}
+    report = build_coverage_report(merged, basic + extras)
+    assert report["total"] == 12
+    assert report["no_winner"] == 1
+    assert {row["Regla"] for row in report["rules"]} == {
+        f"R{i:02}" for i in range(1, 12)
+    }
+    assert all(row["Activaciones"] >= 1 for row in report["rules"])
+    assert all(row["Victorias"] >= 1 for row in report["rules"])
 
 
 def test_streamlit_coverage_controls_load_without_network():

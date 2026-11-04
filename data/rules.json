@@ -113,12 +113,62 @@
     "conditions": {
       "dos_paradas": true,
       "ahorro_alto": true,
-      "dentro_presupuesto": true
+      "dentro_presupuesto": true,
+      "todos_esenciales_disponibles": true
     },
     "result": {
       "level": "BUENA",
       "action": "Dividir la compra únicamente si el ahorro compensa el traslado.",
       "explanation": "La división en dos supermercados puede justificarse por el ahorro alto y el cumplimiento del presupuesto."
+    }
+  },
+  {
+    "id": "R09",
+    "name": "Ningún producto disponible",
+    "priority": 2,
+    "category": "DISPONIBILIDAD",
+    "conditions": {
+      "ningun_producto_disponible": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Buscar una tienda que tenga al menos parte de la lista antes de desplazarse.",
+      "explanation": "La alternativa no tiene disponible ningún producto de la lista."
+    }
+  },
+  {
+    "id": "R10",
+    "name": "Disponibilidad extremadamente baja",
+    "priority": 2,
+    "category": "DISPONIBILIDAD",
+    "conditions": {
+      "algun_producto_disponible": true,
+      "cobertura_muy_baja": true
+    },
+    "result": {
+      "level": "NO_RECOMENDABLE",
+      "action": "Buscar una alternativa con mejor cobertura de la lista antes de considerarla conveniente.",
+      "explanation": "La alternativa cubre menos de la mitad de los productos solicitados."
+    }
+  },
+  {
+    "id": "R11",
+    "name": "Compra completa y equilibrada sin promociones",
+    "priority": 7,
+    "category": "CONVENIENCIA",
+    "conditions": {
+      "dentro_presupuesto": true,
+      "todos_productos_disponibles": true,
+      "una_parada": true,
+      "distancia_razonable": true,
+      "tiempo_razonable": true,
+      "ahorro_bajo": false,
+      "promociones_relevantes": false
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Considerar esta alternativa completa y comparar el costo final con otras tiendas.",
+      "explanation": "La compra está completa, respeta el presupuesto y requiere un recorrido razonable, incluso sin promociones."
     }
   }
 ]

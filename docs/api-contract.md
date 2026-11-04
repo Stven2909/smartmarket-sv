@@ -1,7 +1,7 @@
 # Contrato público de la API Python
 
 Versión del contrato: `1.0.0`  
-Versión de reglas: `1.0.0`
+Versión de reglas: `1.1.0`
 
 El contrato generado por FastAPI está en [openapi.json](openapi.json). Laravel
 es el orquestador; Python valida hechos, deriva valores internos, evalúa
@@ -148,7 +148,7 @@ La respuesta combina la decisión del motor con información auxiliar:
     "todos_esenciales_disponibles": true,
     "porcentaje_productos_disponibles": 100.0
   },
-  "version_reglas": "1.0.0",
+  "version_reglas": "1.1.0",
   "version_contrato": "1.0.0",
   "winning_rule": "R06",
   "losing_rules": ["R07"],
@@ -251,7 +251,7 @@ recomienda enviar también `request_id` para conservar la trazabilidad.
     "reglas_activadas": ["R06", "R07"],
     "prioridad_aplicada": "CONVENIENCIA",
     "hechos_derivados": {"dentro_presupuesto": true},
-    "version_reglas": "1.0.0",
+    "version_reglas": "1.1.0",
     "version_contrato": "1.0.0"
   }
 }
@@ -377,6 +377,11 @@ Detalles y límites: [Contrato e integración HU-20/HU-21](contrato-integracion-
 
 ## Identidad criptográfica del conocimiento (HU-22)
 
-Las respuestas correctas `POST /api/v1/recommend`, `GET /api/v1/knowledge` y `GET /ready` contienen una cabecera `X-Expert-Rules-SHA256` con 64 dígitos hexadecimales. Es el SHA-256 de las definiciones validadas de R01–R08 en JSON canónico. Permite distinguir cambios efectivos en reglas aun si `version_reglas` continúa en `1.0.0`. **No** modifica el cuerpo ni los campos del contrato Laravel; las aplicaciones existentes pueden ignorar la cabecera.
+Las respuestas correctas `POST /api/v1/recommend`, `GET /api/v1/knowledge` y `GET /ready` contienen una cabecera `X-Expert-Rules-SHA256` con 64 dígitos hexadecimales. Es el SHA-256 de las definiciones validadas de R01–R11 en JSON canónico. Permite distinguir cambios efectivos en reglas incluso si una futura versión declarada no identifica por sí sola un cambio de contenido. **No** modifica el cuerpo ni los campos del contrato Laravel; las aplicaciones existentes pueden ignorar la cabecera.
 
 Ejemplo de inspección: `curl -i https://TU-API/ready`. El hash se obtiene desde caché en memoria y se renueva tras reiniciar el proceso que carga nuevas reglas. [Diseño y límites](hu22-huella-reglas.md).
+
+
+### Ampliación de reglas 1.1.0 (HU-28)
+
+R09 (`NO_RECOMENDABLE`) indica disponibilidad cero; R10 (`NO_RECOMENDABLE`) indica menos de 50 % de productos disponibles con alguno presente. R11 (`BUENA`) cubre compra completa en una sola tienda, dentro del presupuesto, ahorro ≥3, distancia adicional ≤5 km y tiempo ≤30 minutos, sin promociones aplicables. R08 exige ahora todos los esenciales disponibles. Ninguno agrega campos obligatorios: [criterios y escenarios HU-28](hu28-ampliacion-reglas.md).

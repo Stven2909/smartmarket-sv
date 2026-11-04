@@ -1,4 +1,4 @@
-"""HU-11: análisis preventivo sin cambiar las decisiones de R01–R08."""
+"""HU-11: análisis preventivo sin cambiar las decisiones de R01–R11."""
 
 import asyncio
 from pathlib import Path
@@ -36,11 +36,11 @@ def finding_types(report):
 def test_current_rules_have_no_structural_findings():
     report = audit_rules()
     assert report.version_reglas
-    assert report.reglas_evaluadas == 8
-    assert report.escenarios_sinteticos == 2430
+    assert report.reglas_evaluadas == 11
+    assert report.escenarios_sinteticos == 3402
     assert not report.hallazgos
     assert {row.regla for row in report.cobertura} == {
-        f"R{number:02}" for number in range(1, 9)
+        f"R{number:02}" for number in range(1, 12)
     }
     assert all(row.activaciones > 0 for row in report.cobertura)
 
@@ -195,7 +195,7 @@ def test_get_audit_http_and_original_contract_are_unchanged():
     response = get("/api/v1/rule-audit")
     assert response.status_code == 200
     parsed = RuleAuditResponse.model_validate(response.json())
-    assert parsed.reglas_evaluadas == 8
+    assert parsed.reglas_evaluadas == 11
     spec = get("/openapi.json").json()
     assert "/api/v1/rule-audit" in spec["paths"]
     assert len(spec["components"]["schemas"]["RecommendationRequest"]["properties"]) == 14
@@ -232,5 +232,5 @@ def test_streamlit_audit_button_fetches_real_asgi_report(monkeypatch):
     button.click()
     at.run(timeout=20)
     assert not at.exception
-    assert at.session_state["rule_audit_report"]["reglas_evaluadas"] == 8
-    assert at.session_state["rule_audit_report"]["escenarios_sinteticos"] == 2430
+    assert at.session_state["rule_audit_report"]["reglas_evaluadas"] == 11
+    assert at.session_state["rule_audit_report"]["escenarios_sinteticos"] == 3402

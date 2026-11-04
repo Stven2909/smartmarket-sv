@@ -18,25 +18,25 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Evaluación de alternativas:** clasifica una compra como `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
 - **Inferencia por lotes (HU-24):** opcionalmente recibe hasta 50 alternativas en una sola solicitud HTTP, preserva su orden, IDs y evaluación independiente, sin calcular ni cambiar el ranking de Laravel.
 - **Despliegue ligero:** Streamlit instala solo las dependencias de la interfaz y calcula únicamente la pestaña activa; Render difiere el motor PDF y cachea las reglas estáticas y la auditoría bajo demanda.
-- **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
+- **Motor de reglas R01–R11:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
 - **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
-- **Control de coherencia HU-25:** una auditoría de pruebas contrasta hechos derivados, condiciones de las ocho reglas, resolución de prioridades, dictamen, explicación e índice; no consume recursos durante peticiones HTTP.
+- **Control de coherencia HU-25:** una auditoría de pruebas contrasta hechos derivados, condiciones de las once reglas, resolución de prioridades, dictamen, explicación e índice; no consume recursos durante peticiones HTTP.
 - **Identificación exacta de reglas (HU-22):** devuelve la huella SHA-256 de las definiciones vigentes en la cabecera HTTP `X-Expert-Rules-SHA256` de `/api/v1/recommend`, `/api/v1/knowledge` y `/ready`; sin campos adicionales en JSON ni trabajo en segundo plano.
 - **Cobertura de reglas:** ejecuta nueve escenarios de prueba y muestra activaciones, victorias, conflictos y casos sin regla en la interfaz.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
 - **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
 - **Importación CSV/JSON (HU-15):** Streamlit valida hasta 750 filas y distingue datos manuales, escenarios sintéticos y referencias web, sin añadir campos al motor.
 - **Pruebas basadas en propiedades (HU-16):** Hypothesis comprueba determinismo, condiciones excluyentes, prioridades críticas y monotonía del índice auxiliar.
-- **Regresión de código (HU-17):** compara en procesos aislados el commit base y el candidato sobre 2469 escenarios, detectando cambios de umbrales, pesos y activación crítica.
+- **Regresión de código (HU-17):** compara en procesos aislados el commit base y el candidato sobre 3441 escenarios, detectando cambios de umbrales, pesos y activación crítica.
 - **Compatibilidad Laravel (HU-18):** valida mediante HTTP en memoria los 14 hechos y respuestas esperadas a partir de casos sintéticos basados en el contrato PHP de Steven.
 - **Benchmark del motor (HU-19):** mide mediana, p95 y memoria en CI sin despertar Render.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
 - **Diagnóstico experto:** identifica riesgos críticos y condiciones pendientes de las reglas favorables, sin modificar los hechos recibidos.
-- **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 2430 escenarios sintéticos.
+- **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 3402 escenarios sintéticos.
 - **Comparador de versiones (HU-13):** identifica cambios de dictamen, ganador, activaciones y explicación entre dos bases de reglas sin modificar la versión publicada.
-- **Control de regresiones en CI (HU-14):** revisa propuestas de cambio en `data/rules.json` sobre 2439 casos sintéticos y falla cuando detecta pérdidas de protección crítica o nuevas anomalías estructurales.
-- **Informe académico PDF (HU-12):** integra ranking, trazas de las ocho reglas, sensibilidad, versiones y auditoría en un documento descargable.
+- **Control de regresiones en CI (HU-14):** revisa propuestas de cambio en `data/rules.json` sobre 3411 casos sintéticos y falla cuando detecta pérdidas de protección crítica o nuevas anomalías estructurales.
+- **Informe académico PDF (HU-12):** integra ranking, trazas de las once reglas, sensibilidad, versiones y auditoría en un documento descargable.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **Paneles resistentes en Streamlit Cloud:** sustituye todas las métricas dinámicas por tarjetas HTML seguras, adapta el diseño a móvil y evita mostrar resultados obsoletos ante errores.
@@ -63,7 +63,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
              │                    │                     │
     ┌────────▼────────┐  ┌────────▼────────┐  ┌─────────▼────────┐
     │ Motor experto   │  │ Comparador      │  │ Chatbot          │
-    │ R01–R08         │  │ determinista    │  │ explicativo      │
+    │ R01–R11         │  │ determinista    │  │ explicativo      │
     └────────┬────────┘  └─────────────────┘  └──────────────────┘
              │
     ┌────────▼──────────────────────────────────────┐
@@ -85,7 +85,7 @@ El motor evalúa las reglas en **una sola pasada**; no realiza encadenamiento it
 
 ### Base de reglas
 
-Las ocho reglas se almacenan en [`data/rules.json`](data/rules.json).
+Las once reglas se almacenan en [`data/rules.json`](data/rules.json).
 
 | Regla | Criterio principal | Resultado |
 |---|---|---|
@@ -96,7 +96,12 @@ Las ocho reglas se almacenan en [`data/rules.json`](data/rules.json).
 | R05 | Compra distribuida entre tres o más supermercados | `NO_RECOMENDABLE` |
 | R06 | Presupuesto, esenciales, distancia, tiempo y una parada favorables | `EXCELENTE` |
 | R07 | Presupuesto y esenciales cubiertos con promociones aplicables | `BUENA` |
-| R08 | Dos supermercados con ahorro alto y presupuesto respetado | `BUENA` |
+| R08 | Dos supermercados con ahorro alto, esenciales completos y presupuesto respetado | `BUENA` |
+| R09 | Ningún producto disponible | `NO_RECOMENDABLE` |
+| R10 | Cobertura inferior al 50 % de productos, con alguno disponible | `NO_RECOMENDABLE` |
+| R11 | Compra completa en una tienda, trayecto ≤5 km y ≤30 min, ahorro ≥3 y sin promociones | `BUENA` |
+
+**Ampliación HU-28:** R09 y R10 protegen contra una falsa recomendación favorable cuando existe disponibilidad nula o inferior a la mitad; R11 permite una alternativa completa, equilibrada y sin promociones. R08 ya no se activa si faltan productos esenciales. Los nuevos umbrales son criterios del prototipo que deberán validarse con casos reales. La matriz de cobertura de Streamlit verifica las once reglas mediante dos solicitudes de nueve y tres escenarios, respetando los límites del endpoint. `RULES_VERSION=1.1.0`, mientras que `CONTRACT_VERSION=1.0.0` y el payload Laravel siguen iguales. [Diseño, límites y pruebas](docs/hu28-ampliacion-reglas.md).
 
 Si ninguna regla se activa, el sistema devuelve provisionalmente `NO_RECOMENDABLE` e indica que se requiere comparar otras opciones. Cuando el presupuesto se supera ligeramente (hasta el 10 %) sin activar otras reglas, la explicación y la acción indican explícitamente esa condición; no se inventa una regla ganadora. La regla R06 no presupone que todos los productos opcionales estén disponibles.
 

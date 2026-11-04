@@ -2,7 +2,7 @@
 
 ## Visión y límites
 
-Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP los hechos de cada alternativa, valida su estructura, aplica ocho reglas de producción y devuelve conclusiones trazables. Su propósito es **explicar y contrastar decisiones** y permitir pruebas reproducibles, no recopilar información de supermercados ni modificar la optimización propia de Laravel.
+Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP los hechos de cada alternativa, valida su estructura, aplica once reglas de producción y devuelve conclusiones trazables. Su propósito es **explicar y contrastar decisiones** y permitir pruebas reproducibles, no recopilar información de supermercados ni modificar la optimización propia de Laravel.
 
 **Alcance de estas historias:** servicio Python, API FastAPI, Streamlit como laboratorio de demostración y pruebas. No contemplan cambios en `develop`, bases de datos comerciales, extracción automática de precios ni evaluación de especialistas externos. Los escenarios de prueba son sintéticos. En la integración, Laravel proporciona los hechos; Python no los captura.
 
@@ -37,6 +37,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-25 | Verificar coherencia entre reglas, hechos, explicación, dictamen e índice | Alta | Implementada en pruebas de regresión |
 | HU-26 | Endurecer Render, separar claves de servicio y escanear dependencias | Alta | Implementada; 4 comprobaciones externas de acceso correctas |
 | HU-27 | Limitar el uso de la demo pública sin reducir la cuota de Laravel | Alta | Implementada; se activa con clave Streamlit independiente |
+| HU-28 | Corregir casos de cobertura insuficiente y agregar compra equilibrada sin promociones | Alta | Implementada en reglas 1.1.0; verificar regresiones |
 
 ## Historias y criterios de aceptación
 
@@ -59,7 +60,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Criterios de aceptación:**
 - La respuesta indica `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
-- Las ocho reglas aparecen evaluadas en `trace`, con razones de coincidencia o incumplimiento.
+- Las once reglas aparecen evaluadas en `trace`, con razones de coincidencia o incumplimiento.
 - Si se activan varias, la menor prioridad numérica determina la ganadora; hay un desempate determinista por ID.
 - El índice de conveniencia no revoca una regla crítica.
 
@@ -170,7 +171,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 - Se detectan restricciones mutuamente incompatibles de los hechos derivados y hechos numéricos usados como booleanos.
 - Las reglas sombreadas se identifican cuando otra regla más general y de mayor prioridad impide que ganen.
 - Los solapamientos legítimos, como R06 y R07, se informan con un ejemplo sintético y con la prioridad que resuelve el conflicto, sin presentarlos automáticamente como errores.
-- La auditoría emplea 2430 casos sintéticos representativos, aclara sus límites y no modifica reglas ni decisiones.
+- La auditoría emplea 3402 casos sintéticos representativos, aclara sus límites y no modifica reglas ni decisiones.
 - Se puede visualizar y descargar el informe desde **Base de conocimiento** de Streamlit; se respeta `X-API-Key` cuando está configurada.
 
 **Evidencia:** `tests/test_rule_auditor.py`, [metodología de auditoría](auditoria-consistencia-reglas.md).
@@ -181,7 +182,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Criterios de aceptación:**
 - El endpoint `POST /api/v1/evidence-report` acepta de 2 a 10 escenarios con IDs únicos y presupuesto compartido.
-- Genera un PDF paginado con fecha UTC, versiones, cobertura, ranking, trazas R01–R08, pesos, umbrales, auditoría y sensibilidad por alternativa.
+- Genera un PDF paginado con fecha UTC, versiones, cobertura, ranking, trazas R01–R11, pesos, umbrales, auditoría y sensibilidad por alternativa.
 - El reporte declara si los casos fueron etiquetados como sintéticos o su procedencia no está verificada.
 - La respuesta es `application/pdf`, con descarga HTTP y `Cache-Control: no-store`; no se persiste en servidor.
 - La ruta requiere `X-API-Key` cuando la protección de la API está configurada.
@@ -213,7 +214,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Criterios de aceptación:**
 - El workflow CI ejecuta la comparación automáticamente en pull requests si cambia `data/rules.json`.
-- Compara el archivo real del commit base del PR contra la propuesta utilizando los nueve casos de demostración y 2430 escenarios sintéticos representativos.
+- Compara el archivo real del commit base del PR contra la propuesta utilizando los nueve casos de demostración y 3402 escenarios sintéticos representativos.
 - Marca el job de CI como fallido cuando una compra antes rechazada por R01–R05 pasa a favorable o cuando se pierde la activación de una regla crítica.
 - Rechaza anomalías estructurales nuevas, JSON inválido y snapshots inconsistentes.
 - Permite cambios no críticos e informa diferencias sin bloquearlos injustificadamente.
@@ -255,7 +256,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 
 **Como** mantenedor, **quiero** comprobar dos commits distintos sobre exactamente los mismos hechos **para** detectar cambios peligrosos aunque no se haya editado `rules.json`.
 
-**Aceptación:** 2469 escenarios entre clases y fronteras, importaciones de dos worktrees aislados, detección de pérdidas R01–R05, degradaciones de seguridad, saltos de índice mayores de 10 puntos y contrato inalterado. Los cambios menores se informan sin bloquearlos. El CI no modifica producción.
+**Aceptación:** 3441 escenarios entre clases y fronteras, importaciones de dos worktrees aislados, detección de pérdidas R01–R05, degradaciones de seguridad, saltos de índice mayores de 10 puntos y contrato inalterado. Los cambios menores se informan sin bloquearlos. El CI no modifica producción.
 
 ## HU-18 — Pruebas de integración por contrato Laravel
 
@@ -324,7 +325,7 @@ Como cliente de la API del sistema experto, quiero enviar varias alternativas v�
 
 Como responsable del servicio Python, quiero detectar incoherencias entre hechos derivados, trazas de condiciones, resolución de conflictos, respuesta textual y el índice, para evitar recomendaciones contradictorias aunque cada componente individual responda correctamente.
 
-**Aceptación:** pruebas con los escenarios documentados, 200 combinaciones representativas y casos R01–R08 con/sin ganador. La auditoría independiente `scripts/check_inference_consistency.py` detecta alteraciones provocadas en `winning_rule`, `losing_rules`, `reglas_activadas`, `trace`, `nivel_recomendacion`, `accion_sugerida`, `explicacion`, hechos e índice. No se introduce validación redundante dentro del camino HTTP ni se cambian las reglas o los 14/16 campos del contrato.
+**Aceptación:** pruebas con los escenarios documentados, 200 combinaciones representativas y casos R01–R11 con/sin ganador. La auditoría independiente `scripts/check_inference_consistency.py` detecta alteraciones provocadas en `winning_rule`, `losing_rules`, `reglas_activadas`, `trace`, `nivel_recomendacion`, `accion_sugerida`, `explicacion`, hechos e índice. No se introduce validación redundante dentro del camino HTTP ni se cambian las reglas o los 14/16 campos del contrato.
 
 **Evidencia:** [HU-25 y límites](hu25-coherencia-inferencia.md), `tests/test_inference_consistency.py`.
 
@@ -345,3 +346,12 @@ Como responsable del servicio Python, quiero una cuota por minuto para el consum
 **Aceptación:** si Streamlit usa un secreto distinto del principal, solo ese consumidor tiene un límite local por minuto (60 por defecto, ajustable de 1 a 600), sin timers ni tareas residentes. Al alcanzar el límite devuelve HTTP 429 con `Retry-After`. El servidor permite automáticamente nuevas peticiones al expirar la ventana. Las claves Laravel y de rotación siguen operativas. Una configuración de cuota inválida no desactiva la protección; si las dos claves son iguales, no se limita el token compartido para no castigar a Laravel. El código, las pruebas y el README explican que se requiere activar la clave independiente en Render y Streamlit Cloud.
 
 **Evidencia:** `tests/test_streamlit_rate_limit.py` y [HU-27 — límites y configuración](hu27-proteccion-demo-publica.md).
+
+
+## HU-28 — Nuevas reglas de cobertura y compra equilibrada
+
+Como consumidor de recomendaciones Python, quiero rechazar alternativas sin stock o con menos del 50 % de cobertura, y reconocer compras completas y económicas sin promociones dentro de un recorrido razonable. Así las reglas dejan de considerar «excelente» una tienda prácticamente vacía y no requieren promociones para reconocer una compra viable.
+
+**Aceptación:** R09 y R10 activan conclusiones críticas distintas para cero disponibilidad y 1–49 %; R11 devuelve `BUENA` con todos los productos, presupuesto respetado, una parada, ahorro ≥3, distancia adicional ≤5 km y tiempo ≤30 min, sin promociones. R08 deja de presentar una activación favorable si faltan esenciales. Se conserva el contrato HTTP 14/16 campos; `RULES_VERSION` sube a `1.1.0` pero `CONTRACT_VERSION` se mantiene en `1.0.0`. Escenarios nuevos separados para no exceder los límites HTTP de diez alternativas.
+
+**Evidencia:** `tests/test_new_rule_cases_hu28.py`, `data/scenarios_hu28.json`, comparación de reglas en CI y [documentación de HU-28](hu28-ampliacion-reglas.md).

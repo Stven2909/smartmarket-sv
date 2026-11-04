@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Permitir al desarrollador experimentar con una nueva versión de las reglas R01–R08 **antes de publicarla**, utilizando exactamente los mismos hechos de entrada y manteniendo el contrato original de Laravel.
+Permitir al desarrollador experimentar con una nueva versión de las reglas R01–R11 **antes de publicarla**, utilizando exactamente los mismos hechos de entrada y manteniendo el contrato original de Laravel.
 
 El comparador no edita `data/rules.json`, no modifica el motor público, no fusiona ramas ni tiene acceso a los precios de supermercados. Las reglas se evalúan mediante `run_inference_with_rules`: la misma inferencia, clasificador, resolución de conflictos e índice del servicio vigente, pero con conjuntos aislados de reglas.
 

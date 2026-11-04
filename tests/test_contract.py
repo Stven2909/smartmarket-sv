@@ -99,6 +99,7 @@ CONTRACT_CASES = [
             "ahorro": 5,
             "distancia_adicional_km": 4,
             "tiempo_estimado_min": 30,
+            "productos_disponibles": 9,
             "promociones_aplicables": False,
         },
         "NO_RECOMENDABLE",

@@ -4,11 +4,14 @@ from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
 # hechos resultantes, sin repetir estas comparaciones numéricas.
-THRESHOLDS_VERSION = "1.0.0"
+THRESHOLDS_VERSION = "1.1.0"
 
 THRESHOLDS = {
     "presupuesto_exceso_max_pct": 10.0,
     "ahorro_bajo_max": 3.0,
+    "cobertura_muy_baja_max_pct": 50.0,
+    "distancia_razonable_max_km": 5.0,
+    "tiempo_razonable_max_min": 30.0,
     "ahorro_alto_min": 10.0,
     "distancia_cercana_max_km": 2.0,
     "distancia_media_max_km": 8.0,
@@ -42,6 +45,18 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
     )
     presupuesto_muy_excedido = (
         porcentaje_exceso_presupuesto > THRESHOLDS["presupuesto_exceso_max_pct"]
+    )
+
+    ningun_producto_disponible = request.productos_disponibles == 0
+    algun_producto_disponible = request.productos_disponibles > 0
+    cobertura_muy_baja = (
+        porcentaje_productos_disponibles < THRESHOLDS["cobertura_muy_baja_max_pct"]
+    )
+    distancia_razonable = (
+        request.distancia_adicional_km <= THRESHOLDS["distancia_razonable_max_km"]
+    )
+    tiempo_razonable = (
+        request.tiempo_estimado_min <= THRESHOLDS["tiempo_razonable_max_min"]
     )
 
     todos_productos_disponibles = request.productos_disponibles == request.productos_totales
@@ -79,6 +94,11 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
         "dentro_presupuesto": dentro_presupuesto,
         "presupuesto_ligeramente_excedido": presupuesto_ligeramente_excedido,
         "presupuesto_muy_excedido": presupuesto_muy_excedido,
+        "ningun_producto_disponible": ningun_producto_disponible,
+        "algun_producto_disponible": algun_producto_disponible,
+        "cobertura_muy_baja": cobertura_muy_baja,
+        "distancia_razonable": distancia_razonable,
+        "tiempo_razonable": tiempo_razonable,
         "todos_productos_disponibles": todos_productos_disponibles,
         "faltan_productos": not todos_productos_disponibles,
         "todos_esenciales_disponibles": todos_esenciales_disponibles,

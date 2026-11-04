@@ -2,9 +2,9 @@
 
 ## Propósito
 
-Comprobar que los escenarios de prueba ejercitan las ocho reglas del sistema experto y hacen visibles los conflictos y los casos sin regla. Esta es una **verificación funcional de escenarios sintéticos**, no una medición de precisión sobre compras reales.
+Comprobar que los escenarios de prueba ejercitan las once reglas del sistema experto y hacen visibles los conflictos y los casos sin regla. Esta es una **verificación funcional de escenarios sintéticos**, no una medición de precisión sobre compras reales.
 
-La matriz utiliza los nueve escenarios de `data/scenarios.json` y consulta `POST /api/v1/compare` para ejecutar el motor con los mismos hechos que procesa `POST /api/v1/recommend`. No recopila datos, no consulta Laravel y no agrega endpoints.
+La matriz histórica utiliza los nueve escenarios de `data/scenarios.json` y consulta `POST /api/v1/compare` para ejecutar el motor con los mismos hechos que procesa `POST /api/v1/recommend`. No recopila datos, no consulta Laravel y no agrega endpoints.
 
 ## Escenarios incluidos
 
@@ -19,6 +19,8 @@ La matriz utiliza los nueve escenarios de `data/scenarios.json` y consulta `POST
 | Promociones relevantes | R07 | BUENA |
 | Dos supermercados con ahorro alto | R08 | BUENA |
 | Caso sin regla dominante | Ninguna | NO_RECOMENDABLE provisional |
+
+**Casos complementarios HU-28:** `data/scenarios_hu28.json` contiene tres escenarios que ejercitan R09 (ningún producto), R10 (cobertura del 20 %) y R11 (compra completa equilibrada sin promoción). Se ejecutan por separado en tests y no se concatenan a una solicitud de comparación que limita a diez alternativas.
 
 El escenario ideal activa tanto R06 como R07, y debe ganar R06 por su mayor prioridad. El caso sin regla dominante conserva `winning_rule = null`; no se inventa una regla adicional.
 
@@ -49,3 +51,6 @@ ruff check app demo tests
 ```
 
 El objetivo es demostrar la **coherencia del software frente a casos definidos**. La matriz no certifica que los umbrales o las preferencias representen las decisiones de todos los compradores.
+
+
+La matriz básica de nueve casos cubre las reglas históricas R01–R08. La interfaz reúne su resultado con los tres casos adicionales R09–R11 en **dos solicitudes de comparación** independientes, sin alterar los límites HTTP; el auditor `GET /api/v1/rule-audit` utiliza 3402 combinaciones representativas de las once reglas.

@@ -9,7 +9,7 @@ Se ejecuta desde `scripts/check_inference_consistency.py` y se prueba en `tests/
 ## Invariantes comprobados
 
 - Se devuelve el mismo `request_id` de la solicitud y exactamente los hechos derivados del clasificador.
-- La `trace` contiene las 8 reglas, en el orden estable por ID, con las mismas condiciones que el JSON validado. Cada `actual`, `expected` y `matched` corresponde a un hecho y una condición real.
+- La `trace` contiene las 11 reglas, en el orden estable por ID, con las mismas condiciones que el JSON validado. Cada `actual`, `expected` y `matched` corresponde a un hecho y una condición real.
 - Las condiciones coincidentes y las pendientes forman la partición correcta. El estado `activated` y su motivo concuerdan con esa evaluación.
 - `reglas_activadas` coincide con las activaciones de la traza; `winning_rule` se obtiene por prioridad e ID; `losing_rules` respeta el orden de resolución de conflictos.
 - Si existe regla ganadora, `nivel_recomendacion`, `accion_sugerida`, `prioridad_aplicada` y el comienzo de `explicacion` corresponden exactamente a esa regla.
@@ -18,7 +18,7 @@ Se ejecuta desde `scripts/check_inference_consistency.py` y se prueba en `tests/
 
 ## Alcance de las pruebas
 
-La suite revisa los escenarios documentados, una muestra determinista de 200 combinaciones tomadas de la grilla representativa, las decisiones R01–R08 y el caso sin regla. También modifica intencionalmente cada campo relevante de una respuesta, así como las condiciones de una traza, para confirmar que el verificador denuncia las inconsistencias.
+La suite revisa los escenarios documentados, una muestra determinista de 200 combinaciones tomadas de la grilla representativa, las decisiones R01–R11 y el caso sin regla. También modifica intencionalmente cada campo relevante de una respuesta, así como las condiciones de una traza, para confirmar que el verificador denuncia las inconsistencias.
 
 ```bash
 pytest -q tests/test_inference_consistency.py

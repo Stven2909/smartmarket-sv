@@ -192,7 +192,7 @@ def _summary(
     story.append(_paragraph(origin, styles["body"]))
     story.append(
         _paragraph(
-            "El informe reúne hechos recibidos, decisiones R01-R08, condiciones "
+            "El informe reúne hechos recibidos, decisiones R01-R11, condiciones "
             "auditadas, ranking, sensibilidad y verificación de consistencia. "
             "El índice auxiliar no modifica la regla ganadora. "
             "Las pruebas son deterministas y no acreditan precisión comercial.",
@@ -214,7 +214,7 @@ def _summary(
     story.append(
         _paragraph(
             f"Sin regla ganadora: {no_rule}. Casos con varias reglas activas: "
-            f"{overlaps}. Reglas activadas en el conjunto: {len(active)}/8.",
+            f"{overlaps}. Reglas activadas en el conjunto: {len(active)}/11.",
             styles["body"],
         )
     )
@@ -425,7 +425,7 @@ def _scenario_details(bundle: EvidenceBundle, story: list, styles: dict) -> None
                 styles["small"],
             )
         )
-        _heading(story, "Trazabilidad de las ocho reglas", styles, sub=True)
+        _heading(story, "Trazabilidad de las once reglas", styles, sub=True)
         story.append(
             _table(
                 [["Regla", "Se activó", "Incumplimientos"]]
@@ -511,7 +511,7 @@ def generate_evidence_pdf(request: EvidenceReportRequest) -> bytes:
         "hechos suministrados y las reglas cargadas al momento de generarlo.",
         "La procedencia de los hechos es una declaración del solicitante; "
         "Python no comprueba precios, inventarios ni establecimientos.",
-        "Los 2430 escenarios de la auditoría son sintéticos y representan "
+        "Los 3402 escenarios de la auditoría son sintéticos y representan "
         "regiones de los umbrales. No demuestran exactitud comercial ni una "
         "verificación lógica universal de todos los datos posibles.",
         "Las variaciones de sensibilidad no son predicciones, probabilidades "
