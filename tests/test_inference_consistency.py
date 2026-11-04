@@ -1,4 +1,4 @@
-"""HU-25: R01-R08 decisions, traces and narratives cannot silently disagree."""
+"""HU-25: R01-R11 decisions, traces and narratives cannot silently disagree."""
 
 import json
 from pathlib import Path
@@ -74,7 +74,7 @@ def test_two_hundred_representative_combinations_have_coherent_explanations():
         ({"numero_supermercados": 2}, "R08"),
         (
             {"distancia_adicional_km": 4.0, "tiempo_estimado_min": 30.0,
-             "promociones_aplicables": False},
+             "promociones_aplicables": False, "productos_disponibles": 9},
             None,
         ),
     ],
