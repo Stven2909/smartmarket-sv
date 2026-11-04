@@ -126,6 +126,7 @@ def test_no_rule_activated_uses_controlled_default():
             ahorro=5,
             distancia_adicional_km=4,
             tiempo_estimado_min=30,
+            productos_disponibles=9,
             numero_supermercados=1,
             promociones_aplicables=False,
         )
