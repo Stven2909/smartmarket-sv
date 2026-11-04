@@ -53,4 +53,4 @@ ruff check app demo tests
 El objetivo es demostrar la **coherencia del software frente a casos definidos**. La matriz no certifica que los umbrales o las preferencias representen las decisiones de todos los compradores.
 
 
-La matriz básica de nueve casos cubre las reglas históricas R01–R08. Los tres casos adicionales verifican las nuevas R09–R11 sin alterar los límites HTTP; el auditor `GET /api/v1/rule-audit` utiliza 3402 combinaciones representativas de las once reglas.
+La matriz básica de nueve casos cubre las reglas históricas R01–R08. La interfaz reúne su resultado con los tres casos adicionales R09–R11 en **dos solicitudes de comparación** independientes, sin alterar los límites HTTP; el auditor `GET /api/v1/rule-audit` utiliza 3402 combinaciones representativas de las once reglas.
