@@ -55,7 +55,9 @@ def test_ideal_diagnosis_identifies_active_rules_without_risks():
     assert diagnosis.nivel_actual == "EXCELENTE"
     assert diagnosis.regla_ganadora == "R06"
     assert diagnosis.riesgos_criticos == []
-    assert {row.regla for row in diagnosis.oportunidades} == {"R06", "R07", "R08", "R11", "R13", "R14", "R15", "R16"}
+    assert {row.regla for row in diagnosis.oportunidades} == {
+        "R06", "R07", "R08", "R11", "R13", "R14", "R15", "R16"
+    }
     assert [row.regla for row in diagnosis.oportunidades[:2]] == ["R06", "R07"]
     assert all(not row.faltantes for row in diagnosis.oportunidades[:2])
     assert item.model_dump() == baseline
