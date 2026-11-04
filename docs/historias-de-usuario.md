@@ -33,6 +33,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-21 | Detectar cambios del contrato Laravel leyendo develop sin modificarlo | Alta | Implementada en CI |
 | HU-22 | Identificar la base exacta de reglas usada en cada inferencia | Media | Implementada |
 | HU-23 | Proteger la comunicación Laravel-Python con rotación y no-cache | Alta | Implementada; activar secretos en Render y Laravel |
+| HU-24 | Permitir inferencias de hasta 50 alternativas por solicitud | Media | Implementada, opcional para Laravel |
 
 ## Historias y criterios de aceptación
 
@@ -303,3 +304,14 @@ Como responsable del servicio de inferencia, quiero verificar la identidad de la
 **Límite:** la API key valida la **aplicación llamante**, no la sesión del usuario; corresponde a Laravel proteger listas de compra y credenciales de sus usuarios. La demo pública Streamlit no se vuelve privada por proteger FastAPI. El despliegue productivo requiere `SMARTMARKET_ENV`, `SMARTMARKET_API_KEY` y `EXPERT_SYSTEM_API_KEY` coordinados antes de declararse protegido.
 
 **Evidencia:** `tests/test_api_security_boundaries.py` y [guía de seguridad HU-23](seguridad-api-hu23.md). No se modifica `develop` del compañero.
+
+
+## HU-24 — Inferencia por lotes sin optimización económica
+
+Como cliente de la API del sistema experto, quiero enviar varias alternativas válidas en una sola solicitud, para reducir la cantidad de llamadas de red, conservar los resultados individuales y permitir que Laravel integre esta alternativa cuando la necesite.
+
+**Criterios de aceptación:** `POST /api/v1/recommend/batch` acepta 1–50 objetos del mismo `RecommendationRequest`, con `request_id` únicos y `extra=forbid`. Devuelve `resultados` en el orden original; cada elemento debe ser igual a la respuesta del endpoint individual de 16 campos. La ruta aplica `X-API-Key` y cabeceras de seguridad y mantiene `X-Expert-Rules-SHA256`. Ante un elemento inválido o un lote demasiado grande, rechaza toda la entrada con 422, sin escrituras o resultados parciales. El cliente Laravel no necesita cambiar para seguir llamando a `POST /api/v1/recommend`.
+
+**Fuera de alcance:** elegir la mejor opción, sumar costos, obtener precios, ordenar resultados por conveniencia comercial y cambios en `develop`.
+
+**Evidencia:** `tests/test_batch_recommendation.py` y [contrato del endpoint por lotes](inferencia-lotes-hu24.md).

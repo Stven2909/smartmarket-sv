@@ -3,6 +3,10 @@ from fastapi import APIRouter, HTTPException, Response
 from app.expert_system.inference_engine import InferenceError
 from app.expert_system.rule_loader import RuleLoaderError
 from app.expert_system.rules_fingerprint import current_rules_fingerprint
+from app.schemas.batch_recommendation import (
+    BatchRecommendationRequest,
+    BatchRecommendationResponse,
+)
 from app.schemas.recommendation import (
     RECOMMENDATION_CRITICAL_RESPONSE_EXAMPLE,
     RECOMMENDATION_RESPONSE_EXAMPLE,
@@ -71,6 +75,40 @@ def create_recommendation(
         # Observabilidad no invasiva: no se agregan campos al JSON de respuesta.
         response.headers["X-Expert-Rules-SHA256"] = current_rules_fingerprint()
         return result
+    except RuleLoaderError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="La base de reglas del sistema experto no está disponible.",
+        ) from exc
+    except InferenceError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Error controlado del motor de inferencia: {exc}",
+        ) from exc
+
+
+@router.post(
+    "/recommend/batch",
+    response_model=BatchRecommendationResponse,
+    summary="Infiere varias alternativas independientes en una petición",
+    description=(
+        "Recibe entre 1 y 50 alternativas con los 14 hechos habituales, "
+        "las valida como un lote, infiere cada opción y conserva su orden. "
+        "No modifica el ranking económico ni elige una mejor alternativa."
+    ),
+    responses={
+        422: {"description": "Al menos una alternativa contiene hechos inválidos."},
+        503: {"description": "Base de reglas no disponible."},
+    },
+)
+def create_batch_recommendations(
+    request: BatchRecommendationRequest,
+    response: Response,
+) -> BatchRecommendationResponse:
+    try:
+        results = [recommend(option) for option in request.alternativas]
+        response.headers["X-Expert-Rules-SHA256"] = current_rules_fingerprint()
+        return BatchRecommendationResponse(resultados=results)
     except RuleLoaderError as exc:
         raise HTTPException(
             status_code=503,

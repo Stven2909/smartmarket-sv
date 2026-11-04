@@ -16,6 +16,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 ## Funcionalidades
 
 - **Evaluación de alternativas:** clasifica una compra como `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
+- **Inferencia por lotes (HU-24):** opcionalmente recibe hasta 50 alternativas en una sola solicitud HTTP, preserva su orden, IDs y evaluación independiente, sin calcular ni cambiar el ranking de Laravel.
 - **Despliegue ligero:** Streamlit instala solo las dependencias de la interfaz y calcula únicamente la pestaña activa; Render difiere el motor PDF y cachea las reglas estáticas y la auditoría bajo demanda.
 - **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
@@ -166,6 +167,7 @@ La documentación Swagger/OpenAPI está disponible cuando no se configura una cl
 |---|---|---|
 | `GET` | `/health` | Comprueba la disponibilidad del servicio |
 | `POST` | `/api/v1/recommend` | Evalúa una alternativa y devuelve una recomendación explicable |
+| `POST` | `/api/v1/recommend/batch` | Infiere 1–50 alternativas por petición sin reordenarlas (opcional) |
 | `POST` | `/api/v1/compare` | Compara entre 2 y 10 alternativas |
 | `GET` | `/api/v1/knowledge` | Consulta reglas, umbrales, pesos y versiones |
 | `GET` | `/api/v1/rule-audit` | Audita consistencia, duplicados y solapamientos en modo lectura |
@@ -303,4 +305,4 @@ Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los
 
 En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
-[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md).
+[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md) · [Inferencia por lotes HU-24](docs/inferencia-lotes-hu24.md).
