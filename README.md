@@ -20,6 +20,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
 - **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
+- **Identificación exacta de reglas (HU-22):** devuelve la huella SHA-256 de las definiciones vigentes en la cabecera HTTP `X-Expert-Rules-SHA256` de `/api/v1/recommend`, `/api/v1/knowledge` y `/ready`; sin campos adicionales en JSON ni trabajo en segundo plano.
 - **Cobertura de reglas:** ejecuta nueve escenarios de prueba y muestra activaciones, victorias, conflictos y casos sin regla en la interfaz.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
 - **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
@@ -291,11 +292,10 @@ El sistema experto Python actúa como un **servicio de inferencia independiente 
 Distribuido bajo la [licencia MIT](LICENSE).
 
 
-## Sincronización con el repositorio del equipo
+## Sincronización y alcance de integración
 
-Las mejoras del servicio Python se desarrollan y validan primero en este fork. Para trasladarlas a la rama `expert-system-python` de `Stven2909/smartmarket-sv`, sin tocar `develop`, consulta [la guía de sincronización](docs/sincronizacion-upstream-expert.md). El script `scripts/sync_upstream_expert.ps1` comprueba el historial y solo permite un avance rápido sin sobrescribir commits.
+Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los mismos commits en la rama `expert-system-python` del compañero, sin modificar `develop`, utiliza la [guía de sincronización segura](docs/sincronizacion-upstream-expert.md) y `scripts/sync_upstream_expert.ps1`: verifica el historial y publica solo por avance rápido, sin `--force`. La rama espejo `expert-system-python` de **nuestro fork** puede mantenerse igual a `main`, pero eso **no sustituye** la publicación en el repositorio del equipo.
 
+En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
-### Integración con Laravel develop (solo lectura)
-
-El motor Python únicamente valida hechos, infiere y devuelve resultados; no obtiene precios ni modifica el optimizador del compañero. Revisa [la verificación HU-20/HU-21 y las instrucciones de producción](docs/contrato-integracion-develop-2026-11-03.md). Para comprobar el contrato público del `develop` actual sin modificarlo: `python -m scripts.check_laravel_contract --upstream`.
+[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md).

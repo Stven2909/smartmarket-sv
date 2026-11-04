@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from app.expert_system.inference_engine import InferenceError
+from app.expert_system.rule_loader import RuleLoaderError
+from app.expert_system.rules_fingerprint import current_rules_fingerprint
 from app.schemas.recommendation import (
     RECOMMENDATION_CRITICAL_RESPONSE_EXAMPLE,
     RECOMMENDATION_RESPONSE_EXAMPLE,
@@ -57,13 +59,23 @@ router = APIRouter(prefix="/api/v1", tags=["recommendations"])
         500: {
             "description": "Error interno no controlado del servicio.",
         },
+        503: {"description": "La base de reglas no está disponible."},
     },
 )
 def create_recommendation(
     request: RecommendationRequest,
+    response: Response,
 ) -> RecommendationResponse:
     try:
-        return recommend(request)
+        result = recommend(request)
+        # Observabilidad no invasiva: no se agregan campos al JSON de respuesta.
+        response.headers["X-Expert-Rules-SHA256"] = current_rules_fingerprint()
+        return result
+    except RuleLoaderError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="La base de reglas del sistema experto no está disponible.",
+        ) from exc
     except InferenceError as exc:
         raise HTTPException(
             status_code=422,

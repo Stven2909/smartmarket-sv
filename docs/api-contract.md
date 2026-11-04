@@ -373,3 +373,10 @@ este contrato antes de integrarse.
 En producción, configurar `SMARTMARKET_ENV=production` y `SMARTMARKET_API_KEY` en el entorno de Python; Laravel debe enviar `EXPERT_SYSTEM_API_KEY` con el mismo secreto. Si el entorno se declara productivo pero falta la clave, las rutas de inferencia devuelven HTTP 503 en vez de quedar abiertas. `GET /health` sigue ligero; `GET /ready` comprueba si la base de conocimiento puede cargarse y devuelve 503 cuando no está lista. `request_id` y `alternativa_id` admiten hasta 256 caracteres; los valores numéricos finitos que desbordan los cálculos derivados se rechazan con 422. La compatibilidad con el `develop` público de Laravel puede comprobarse, sin modificarlo, usando `python -m scripts.check_laravel_contract --upstream`.
 
 Detalles y límites: [Contrato e integración HU-20/HU-21](contrato-integracion-develop-2026-11-03.md).
+
+
+## Identidad criptográfica del conocimiento (HU-22)
+
+Las respuestas correctas `POST /api/v1/recommend`, `GET /api/v1/knowledge` y `GET /ready` contienen una cabecera `X-Expert-Rules-SHA256` con 64 dígitos hexadecimales. Es el SHA-256 de las definiciones validadas de R01–R08 en JSON canónico. Permite distinguir cambios efectivos en reglas aun si `version_reglas` continúa en `1.0.0`. **No** modifica el cuerpo ni los campos del contrato Laravel; las aplicaciones existentes pueden ignorar la cabecera.
+
+Ejemplo de inspección: `curl -i https://TU-API/ready`. El hash se obtiene desde caché en memoria y se renueva tras reiniciar el proceso que carga nuevas reglas. [Diseño y límites](hu22-huella-reglas.md).
