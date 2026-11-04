@@ -93,14 +93,14 @@ def test_travel_flags_match_existing_exact_rule_boundaries(
     assert ("el trayecto de" in response.explicacion) is should_warn
 
 
-def test_excellent_with_less_than_80_percent_available_explains_limitations():
+def test_excellent_with_incomplete_list_explains_limitations():
     response = recommend(
         scenario(
             ahorro=1,
             distancia_km=1,
             distancia_adicional_km=1,
             tiempo_estimado_min=10,
-            productos_disponibles=5,
+            productos_disponibles=8,
             productos_esenciales_disponibles=1,
             productos_esenciales_totales=1,
             promociones_aplicables=False,
@@ -108,8 +108,8 @@ def test_excellent_with_less_than_80_percent_available_explains_limitations():
     )
     assert response.nivel_recomendacion == "EXCELENTE"
     assert response.winning_rule == "R06"
-    assert flags_for(response) == (LOW_INDEX, INCOMPLETE_EXCELLENT)
-    assert "solo 50.0% de los productos" in response.explicacion
+    assert flags_for(response) == (INCOMPLETE_EXCELLENT,)
+    assert "solo 80.0% de los productos" in response.explicacion
     assert "no a la lista completa" in response.explicacion
 
 
