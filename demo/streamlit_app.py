@@ -203,7 +203,7 @@ def _response_detail(response: requests.Response) -> str:
 def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
     url = f"{(base_url or api_base_url()).rstrip('/')}/health"
     try:
-        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers())
+        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
