@@ -1,0 +1,65 @@
+[
+  {
+    "id": "sin-productos",
+    "name": "Ningún producto disponible",
+    "description": "Lista sin esenciales marcados y ninguna línea disponible; evita un falso EXCELENTE.",
+    "facts": {
+      "request_id": "scenario-sin-productos",
+      "alternativa_id": "tienda-sin-productos",
+      "costo_total": 0,
+      "presupuesto": 50,
+      "ahorro": 0,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 0,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 0,
+      "productos_esenciales_totales": 0,
+      "numero_supermercados": 1,
+      "promociones_aplicables": true
+    }
+  },
+  {
+    "id": "cobertura-muy-baja",
+    "name": "Cobertura inferior a la mitad",
+    "description": "Apenas dos de diez productos disponibles, sin esenciales marcados.",
+    "facts": {
+      "request_id": "scenario-cobertura-muy-baja",
+      "alternativa_id": "tienda-cobertura-muy-baja",
+      "costo_total": 15,
+      "presupuesto": 50,
+      "ahorro": 5,
+      "distancia_km": 2.3,
+      "distancia_adicional_km": 0.8,
+      "tiempo_estimado_min": 12,
+      "productos_disponibles": 2,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 0,
+      "productos_esenciales_totales": 0,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "compra-equilibrada-sin-promocion",
+    "name": "Compra completa con recorrido equilibrado",
+    "description": "Compra completa en una tienda, distancia adicional 4 km, 30 minutos y ahorro suficiente sin promociones.",
+    "facts": {
+      "request_id": "scenario-compra-equilibrada-sin-promocion",
+      "alternativa_id": "tienda-compra-equilibrada-sin-promocion",
+      "costo_total": 45,
+      "presupuesto": 50,
+      "ahorro": 5,
+      "distancia_km": 5,
+      "distancia_adicional_km": 4,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  }
+]
