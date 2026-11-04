@@ -15,6 +15,7 @@ from app.api.rule_audit_routes import router as rule_audit_router
 from app.api.rule_regression_routes import router as rule_regression_router
 from app.api.sensitivity_routes import router as sensitivity_router
 from app.schemas.versions import CONTRACT_VERSION
+from app.security.request_size import RequestBodySizeLimitMiddleware
 
 API_KEY_ENV = "SMARTMARKET_API_KEY"
 STREAMLIT_API_KEY_ENV = "SMARTMARKET_API_KEY_STREAMLIT"
@@ -98,8 +99,6 @@ async def add_api_security_headers(request, call_next):
         response.headers["Vary"] = ", ".join(fields)
     return response
 
-
-from app.security.request_size import RequestBodySizeLimitMiddleware
 
 app.add_middleware(RequestBodySizeLimitMiddleware)
 
