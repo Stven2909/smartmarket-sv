@@ -107,9 +107,11 @@ def check_inference_consistency(
         if answer.prioridad_aplicada != "SIN_REGLA":
             errors.append("Sin regla, prioridad_aplicada debe ser SIN_REGLA")
 
-    if any(rule.id in CRITICAL_RULE_IDS for rule in active):
-        if answer.nivel_recomendacion != "NO_RECOMENDABLE":
-            errors.append("Una regla crítica activada exige NO_RECOMENDABLE")
+    if (
+        any(rule.id in CRITICAL_RULE_IDS for rule in active)
+        and answer.nivel_recomendacion != "NO_RECOMENDABLE"
+    ):
+        errors.append("Una regla crítica activada exige NO_RECOMENDABLE")
 
     convenience = calculate_convenience_index(request)
     if answer.indice_conveniencia != convenience["indice_conveniencia"]:
