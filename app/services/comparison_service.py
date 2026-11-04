@@ -44,6 +44,7 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
     ]
     ranked = sorted(evaluated, key=_sort_key)
     alternatives: list[RankedAlternative] = []
+    flagged_count = 0
     for position, (alternative_id, cost, result) in enumerate(ranked, start=1):
         critical = bool(set(result.reglas_activadas) & CRITICAL_RULE_IDS)
         if critical:
@@ -63,6 +64,7 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
             convenience_classification=result.clasificacion_conveniencia,
         )
         if quality_flags:
+            flagged_count += 1
             reason += " La opción requiere revisar advertencias comerciales en su explicación."
         alternatives.append(
             RankedAlternative(
@@ -94,14 +96,6 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
             "Comprueba que corresponden a la misma lista antes de interpretar el ranking."
         )
 
-    flagged_count = sum(
-        bool(decision_quality_flags(
-            level=row.recomendacion.nivel_recomendacion,
-            facts=row.recomendacion.hechos_derivados,
-            convenience_classification=row.recomendacion.clasificacion_conveniencia,
-        ))
-        for row in alternatives
-    )
     if flagged_count:
         warnings.append(
             f"{flagged_count} alternativa(s) favorables tienen advertencias "
