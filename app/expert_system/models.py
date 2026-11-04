@@ -40,6 +40,7 @@ DERIVED_FACT_NAMES = frozenset(
         "promociones_relevantes",
         "conveniencia_alta",
         "conveniencia_no_baja",
+        "conveniencia_solida",
         "diferencia_presupuesto",
         "porcentaje_exceso_presupuesto",
         "porcentaje_productos_disponibles",
