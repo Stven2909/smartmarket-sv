@@ -16,6 +16,7 @@ from app.api.rule_regression_routes import router as rule_regression_router
 from app.api.sensitivity_routes import router as sensitivity_router
 from app.schemas.versions import CONTRACT_VERSION
 from app.security.request_size import RequestBodySizeLimitMiddleware
+from app.security.streamlit_rate_limit import streamlit_rate_limit_retry_after
 
 API_KEY_ENV = "SMARTMARKET_API_KEY"
 STREAMLIT_API_KEY_ENV = "SMARTMARKET_API_KEY_STREAMLIT"
@@ -65,6 +66,17 @@ def require_api_key(api_key: str | None = Security(_api_key_header)) -> None:
     valid_previous = secrets.compare_digest(supplied, previous) if previous else False
     if not (valid_current | valid_streamlit | valid_previous):
         raise HTTPException(status_code=401, detail="API key inválida o ausente.")
+
+    # A separate Streamlit secret lets us protect the public demo without
+    # throttling the Laravel backend's own requests.
+    if valid_streamlit and not (valid_current or valid_previous):
+        retry_after = streamlit_rate_limit_retry_after()
+        if retry_after is not None:
+            raise HTTPException(
+                status_code=429,
+                detail="La demo ha superado su cuota temporal. Reintenta más tarde.",
+                headers={"Retry-After": str(retry_after)},
+            )
 
 
 _protected = (
