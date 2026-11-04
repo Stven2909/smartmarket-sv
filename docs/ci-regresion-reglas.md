@@ -10,7 +10,7 @@ Se integra en el job `test` de `.github/workflows/ci.yml`, que ya ejecuta Ruff y
 
 1. Extrae la **versión base real del PR**, `github.event.pull_request.base.sha:data/rules.json`, mediante Git (nunca confunde una etiqueta de versión con los datos publicados).
 2. Carga y valida ambas bases con `load_rules` y `RuleSnapshot`, usando el modelo de reglas del motor.
-3. Evalúa las mismas **nueve alternativas sintéticas** de `data/scenarios.json` y **2430 escenarios de clases representativas** que emplea el auditor. Total: **2439 casos de prueba**.
+3. Evalúa las mismas **nueve alternativas sintéticas** de `data/scenarios.json` y **3402 escenarios de clases representativas** que emplea el auditor. Total: **3411 casos de prueba**.
 4. Por cada caso utiliza la comparación HU-13, que reutiliza la inferencia vigente y su resolución por prioridad.
 5. Escribe el resultado en GitHub Actions **Job Summary**, con métricas y hasta quince ejemplos de cambios. Opcionalmente genera un archivo JSON local para diagnóstico.
 
