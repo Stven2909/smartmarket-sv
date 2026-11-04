@@ -7,7 +7,7 @@
 - **Código confirmado:** se examinaron los middleware, validación de `X-API-Key`, enrutamiento, cliente HTTP de Streamlit y los límites de los esquemas.
 - **Pruebas reproducibles:** `tests/test_security_hardening_hu26.py` y `tests/test_security_external_probe.py` comprueban la autenticación, los límites de tamaño y el comportamiento de un verificador externo sin claves.
 - **Dependencias:** `.github/workflows/python-security-audit.yml` ejecuta `pip-audit` sobre las dependencias instaladas para FastAPI y Streamlit. Las alertas del auditor representan vulnerabilidades reportadas, no pruebas de explotación.
-- **Verificación del hosting:** esta revisión NO implica que se hayan ejecutado escáneres intrusivos ni pruebas de carga en Render. El entorno de auditoría no consiguió conectarse directamente a la URL pública de Render; las comprobaciones de producción siguen pendientes en una red que tenga acceso. No declarar el sitio libre de vulnerabilidades sin ese paso.
+- **Verificación del hosting:** se completó una comprobación externa de **solo lectura**, con una única solicitud GET por endpoint, contra el servicio público de Render: `/health` respondió **200**; `/api/v1/knowledge` sin cabecera respondió **401**, con `Cache-Control: no-store` y `X-Content-Type-Options: nosniff`; `/docs` y `/openapi.json` respondieron **404**. No se utilizaron claves, escaneos de puertos, carga, fuerza bruta ni reintentos. Los resultados prueban estas cuatro barreras básicas en ese momento, no la ausencia de otras vulnerabilidades.
 
 ## Hallazgos y controles
 
@@ -19,7 +19,7 @@
 | Medio — vulnerabilidades de dependencias | Sin comprobación contra avisos de seguridad publicados en los workflows anteriores | Un nuevo trabajo de GitHub Actions ejecuta `pip-audit --local` en cada PR y fusión de `main` |
 | Bajo — exposición en navegador | Los endpoints ya usaban `Cache-Control: no-store` y `X-Content-Type-Options: nosniff` | Se añaden `Referrer-Policy: no-referrer` y `X-Frame-Options: DENY` a las respuestas de `/api/v1/*` |
 | Pendiente — abuso de recursos | Streamlit público permite al visitante solicitar inferencias usando la credencial del servidor | Evaluar un límite de peticiones por cliente/servicio y controles de acceso de la demo, sin castigar arbitrariamente a todas las personas bajo la misma IP compartida |
-| Pendiente — entorno de producción | Render puede reiniciarse por inactividad y los logs/servicio están fuera del alcance de las pruebas de CI | Revisar despliegues, eventos, logs y métricas de Render desde el workspace correcto, sin usar fuerza bruta ni saturación |
+| Parcial — entorno de producción | Las cuatro pruebas públicas respondieron correctamente, pero no se revisaron procesos, métricas, eventos ni logs internos del host | Revisar despliegues, eventos, logs y métricas desde el workspace confirmado de Render, sin usar fuerza bruta ni saturación |
 
 ## Claves separadas (opcional y compatible)
 
@@ -53,7 +53,7 @@ Desde una terminal con salida a Internet, sin introducir ni enviar ninguna API k
 python -m scripts.security_probe --base-url https://sistema-experto-fork.onrender.com
 ```
 
-El script hace **solo cuatro solicitudes GET** (sin bucles ni reintentos): `/health` debe devolver 200; `/api/v1/knowledge` debe devolver 401 sin clave; `/docs` y `/openapi.json` deben devolver 404. Una respuesta 200 en conocimiento u OpenAPI es motivo para revisar inmediatamente la configuración del servicio. 503 al consultar conocimiento también indica una configuración incorrecta o servicio no preparado. La prueba no busca CVEs en el sistema operativo ni acredita ausencia de vulnerabilidades.
+El script hace **solo cuatro solicitudes GET** (sin bucles ni reintentos): `/health` debe devolver 200; `/api/v1/knowledge` debe devolver 401 sin clave; `/docs` y `/openapi.json` deben devolver 404. Una respuesta 200 en conocimiento u OpenAPI es motivo para revisar inmediatamente la configuración del servicio. 503 al consultar conocimiento también indica una configuración incorrecta o servicio no preparado. **Resultado observado:** las cuatro respuestas coincidieron con lo esperado. La prueba no busca CVEs en el sistema operativo ni acredita ausencia de vulnerabilidades.
 
 ## Limitaciones
 
