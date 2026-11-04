@@ -17,6 +17,7 @@ from app.api.sensitivity_routes import router as sensitivity_router
 from app.schemas.versions import CONTRACT_VERSION
 
 API_KEY_ENV = "SMARTMARKET_API_KEY"
+PREVIOUS_API_KEY_ENV = "SMARTMARKET_API_KEY_PREVIOUS"
 ENVIRONMENT_ENV = "SMARTMARKET_ENV"
 
 
@@ -27,22 +28,37 @@ _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def require_api_key(api_key: str | None = Security(_api_key_header)) -> None:
-    expected = os.getenv(API_KEY_ENV, "").strip()
+    """Accept only the configured service secret (or a temporary rotation key).
 
-    # Local sin clave para desarrollo. En producción, fallar cerrado:
-    # una configuración incompleta nunca debe exponer la inferencia.
+    This authenticates Laravel-to-Python calls, not the end user's Laravel session.
+    """
+    expected = os.getenv(API_KEY_ENV, "").strip()
+    previous = os.getenv(PREVIOUS_API_KEY_ENV, "").strip()
+
+    # Never let a leftover rotation secret act as the primary configuration.
     if not expected:
-        if is_production():
+        if is_production() or previous:
             raise HTTPException(
                 status_code=503,
-                detail="El servicio experto no tiene autenticación configurada.",
+                detail="El servicio experto no está disponible.",
             )
         return
-    if not api_key or not secrets.compare_digest(api_key, expected):
+
+    supplied = api_key or ""
+    valid_current = secrets.compare_digest(supplied, expected)
+    # Always evaluate the second comparison when present; never return a key.
+    valid_previous = (
+        secrets.compare_digest(supplied, previous) if previous else False
+    )
+    if not (valid_current or valid_previous):
         raise HTTPException(status_code=401, detail="API key inválida o ausente.")
 
 
-_protected = is_production() or bool(os.getenv(API_KEY_ENV, "").strip())
+_protected = (
+    is_production()
+    or bool(os.getenv(API_KEY_ENV, "").strip())
+    or bool(os.getenv(PREVIOUS_API_KEY_ENV, "").strip())
+)
 
 app = FastAPI(
     title="SmartMarket SV Expert Service",
@@ -52,6 +68,21 @@ app = FastAPI(
     redoc_url=None if _protected else "/redoc",
     openapi_url=None if _protected else "/openapi.json",
 )
+
+@app.middleware("http")
+async def add_api_security_headers(request, call_next):
+    """Prevent intermediaries or browsers from caching personal expert results."""
+    response = await call_next(request)
+    if request.url.path.startswith("/api/v1/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        existing_vary = response.headers.get("Vary", "")
+        fields = [item.strip() for item in existing_vary.split(",") if item.strip()]
+        if "x-api-key" not in {field.lower() for field in fields}:
+            fields.append("X-API-Key")
+        response.headers["Vary"] = ", ".join(fields)
+    return response
+
 
 app.include_router(health_router)
 app.include_router(recommendation_router, dependencies=[Security(require_api_key)])
