@@ -22,7 +22,13 @@ ENVIRONMENT_ENV = "SMARTMARKET_ENV"
 
 
 def is_production() -> bool:
-    return os.getenv(ENVIRONMENT_ENV, "").strip().lower() in {"production", "prod"}
+    """Any explicitly deployed environment must require a service key.
+
+    Missing environment is kept open only for backward-compatible local demos.
+    An unexpected value (including a typo of production) must not fail open.
+    """
+    environment = os.getenv(ENVIRONMENT_ENV, "").strip().lower()
+    return environment not in {"", "local", "dev", "development", "test", "testing"}
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
