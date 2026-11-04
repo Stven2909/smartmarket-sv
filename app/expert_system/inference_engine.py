@@ -1,11 +1,11 @@
 from typing import Any
 
 from app.expert_system.classifiers import derive_facts
+from app.expert_system.conflict_resolver import resolve_conflicts
 from app.expert_system.convenience_config import (
     DEFAULT_CONVENIENCE_CONFIG,
     ConvenienceConfig,
 )
-from app.expert_system.conflict_resolver import resolve_conflicts
 from app.expert_system.convenience_index import enrich_inference_result
 from app.expert_system.explanation_builder import build_inference_result
 from app.expert_system.models import ProductionRule
