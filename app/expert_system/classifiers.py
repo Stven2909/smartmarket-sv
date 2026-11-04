@@ -94,6 +94,7 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
     weighted = calculate_convenience_index(request)
     conveniencia_alta = weighted["clasificacion_conveniencia"] == "ALTA_CONVENIENCIA"
     conveniencia_no_baja = weighted["clasificacion_conveniencia"] != "BAJA_CONVENIENCIA"
+    conveniencia_solida = weighted["indice_conveniencia"] >= 60.0
 
     una_parada = request.numero_supermercados == 1
     dos_paradas = request.numero_supermercados == 2
@@ -131,6 +132,7 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
         "promociones_relevantes": request.promociones_aplicables,
         "conveniencia_alta": conveniencia_alta,
         "conveniencia_no_baja": conveniencia_no_baja,
+        "conveniencia_solida": conveniencia_solida,
         "diferencia_presupuesto": diferencia_presupuesto,
         "porcentaje_exceso_presupuesto": porcentaje_exceso_presupuesto,
         "porcentaje_productos_disponibles": porcentaje_productos_disponibles,
