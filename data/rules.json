@@ -205,5 +205,71 @@
       "action": "Considerar la tienda solo tras revisar los productos opcionales faltantes y comparar sus precios con otras opciones.",
       "explanation": "Los productos esenciales están cubiertos, pero faltan más del 20% de los productos de la lista. Conviene comprobar el costo de completar la compra antes de priorizarla."
     }
+  },
+  {
+    "id": "R14",
+    "name": "Compra completa con alto balance ponderado y viaje moderado",
+    "priority": 7,
+    "category": "CONVENIENCIA_PONDERADA",
+    "conditions": {
+      "dentro_presupuesto": true,
+      "todos_productos_disponibles": true,
+      "una_parada": true,
+      "distancia_media": true,
+      "tiempo_medio": true,
+      "ahorro_alto": true,
+      "promociones_relevantes": false,
+      "conveniencia_alta": true
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Considerar esta compra completa si el ahorro comprobado compensa el traslado moderado.",
+      "explanation": "La compra está completa y dentro del presupuesto; el ahorro elevado, la distancia y el tiempo producen un índice ponderado alto aunque el recorrido no sea el más corto."
+    }
+  },
+  {
+    "id": "R15",
+    "name": "Compra completa sin descuento con balance ponderado suficiente",
+    "priority": 7,
+    "category": "CONVENIENCIA_PONDERADA",
+    "conditions": {
+      "dentro_presupuesto": true,
+      "todos_productos_disponibles": true,
+      "una_parada": true,
+      "distancia_media": true,
+      "tiempo_medio": true,
+      "ahorro_bajo": true,
+      "promociones_relevantes": false,
+      "conveniencia_no_baja": true
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Valorar esta alternativa completa y comparar si el traslado tiene un costo adicional relevante.",
+      "explanation": "Aunque el ahorro es bajo y no hay promociones, la compra completa mantiene un balance ponderado suficiente de disponibilidad, distancia y tiempo."
+    }
+  },
+  {
+    "id": "R16",
+    "name": "Compra casi completa con ahorro intermedio y balance ponderado suficiente",
+    "priority": 7,
+    "category": "CONVENIENCIA_PONDERADA",
+    "conditions": {
+      "dentro_presupuesto": true,
+      "sin_esenciales_definidos": false,
+      "todos_esenciales_disponibles": true,
+      "faltan_productos": true,
+      "cobertura_parcial_relevante": false,
+      "una_parada": true,
+      "distancia_razonable": true,
+      "tiempo_razonable": true,
+      "ahorro_medio": true,
+      "promociones_relevantes": false,
+      "conveniencia_no_baja": true
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Considerar la alternativa solo tras revisar los opcionales pendientes y el costo de completar la compra.",
+      "explanation": "Cubre todos los esenciales y al menos el 80% de la lista; el ahorro intermedio y el tiempo y distancia razonables sostienen una conveniencia ponderada suficiente, pero aún faltan opcionales."
+    }
   }
 ]
