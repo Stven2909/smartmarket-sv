@@ -32,7 +32,7 @@ R08 (dos supermercados con ahorro alto) ahora también requiere `todos_esenciale
 
 Los nueve escenarios históricos de `data/scenarios.json` siguen siendo el conjunto pequeño para los endpoints opcionales de comparación, diagnóstico y exportación (límite de 10 alternativas por solicitud). El caso «sin regla» ahora tiene **un opcional pendiente**, para seguir evaluando el retorno provisional.
 
-Los tres casos nuevos están separados en `data/scenarios_hu28.json`: sin stock, 20 % de cobertura y compra equilibrada sin promoción. **No** se envían los doce en una única solicitud a endpoints que limitan la lista a diez. Se evalúan individualmente por el contrato original.
+Los tres casos nuevos están separados en `data/scenarios_hu28.json`: sin stock, 20 % de cobertura y compra equilibrada sin promoción. **No** se envían los doce en una única solicitud a endpoints que limitan la lista a diez. En la pestaña **Base de conocimiento → Evaluar cobertura** se comprueban ambos conjuntos mediante **dos solicitudes separadas de comparación** (nueve y tres alternativas). Así se ven activaciones y victorias de R01–R11 sin aumentar los límites públicos.
 
 El auditor de reglas extiende su rejilla representativa de **2430 a 3402 escenarios** para incluir cero productos y cobertura inferior al 50 %. El control de cambios basado en reglas revisa **3411 casos** (3402 de rejilla y nueve clásicos). El control de comportamiento de código incluye las clases y límites adicionales.
 
