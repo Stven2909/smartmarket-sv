@@ -123,11 +123,18 @@ export type CompararResultado = {
   costoTotal: number
   beneficioPromociones: number
   productosConPromocion: number
+  productosDisponibles: number
+  productosTotales: number
+  productosFaltantes: number
   esencialesDisponibles: number
   esencialesTotales: number
+  esencialesFaltantes: number
   opcionalesDisponibles: number
   opcionalesTotales: number
+  opcionalesFaltantes: number
   todosLosEsenciales: boolean
+  listaCompleta: boolean
+  coberturaProductos: number
   dentroDelPresupuesto: boolean | null
   procedenciaPrecios: 'sincronizados' | 'simulados' | 'mixtos' | 'manuales' | 'desconocidos'
   origenesPrecio: string[]
@@ -345,6 +352,13 @@ export function detalleFromApi(d: ApiDetalle): ListaDetalle {
 }
 
 export function compararResultadoFromApi(r: ApiCompararResultado): CompararResultado {
+  const productosDisponibles = r.productos_disponibles
+    ?? (r.productos_esenciales_disponibles + r.productos_opcionales_disponibles)
+  const productosTotales = r.productos_totales
+    ?? (r.productos_esenciales_totales + r.productos_opcionales_totales)
+  const productosFaltantes = r.productos_faltantes ?? Math.max(0, productosTotales - productosDisponibles)
+  const listaCompleta = r.lista_completa ?? productosFaltantes === 0
+
   return {
     sucursalId: r.sucursal_id,
     sucursal: r.sucursal,
@@ -354,11 +368,21 @@ export function compararResultadoFromApi(r: ApiCompararResultado): CompararResul
     costoTotal: r.costo_total,
     beneficioPromociones: r.beneficio_promociones,
     productosConPromocion: r.productos_con_promocion,
+    productosDisponibles,
+    productosTotales,
+    productosFaltantes,
     esencialesDisponibles: r.productos_esenciales_disponibles,
     esencialesTotales: r.productos_esenciales_totales,
+    esencialesFaltantes: r.productos_esenciales_faltantes
+      ?? Math.max(0, r.productos_esenciales_totales - r.productos_esenciales_disponibles),
     opcionalesDisponibles: r.productos_opcionales_disponibles,
     opcionalesTotales: r.productos_opcionales_totales,
+    opcionalesFaltantes: r.productos_opcionales_faltantes
+      ?? Math.max(0, r.productos_opcionales_totales - r.productos_opcionales_disponibles),
     todosLosEsenciales: r.todos_los_esenciales_disponibles,
+    listaCompleta,
+    coberturaProductos: r.cobertura_productos
+      ?? (productosTotales > 0 ? Math.round((productosDisponibles / productosTotales) * 1000) / 10 : 100),
     dentroDelPresupuesto: r.dentro_del_presupuesto,
     procedenciaPrecios: r.procedencia_precios,
     origenesPrecio: r.origenes_precio,

@@ -30,7 +30,7 @@ class ProductoRawResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $pendientes = static::getModel()::where('estado', 'pendiente')->count();
+        $pendientes = static::getModel()::whereIn('estado', ['pendiente', 'revision_manual'])->count();
 
         return $pendientes > 0 ? (string) $pendientes : null;
     }

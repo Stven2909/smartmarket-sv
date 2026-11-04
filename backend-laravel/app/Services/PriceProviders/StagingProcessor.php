@@ -29,6 +29,11 @@ class StagingProcessor
     // Umbral aprobado en doc 06 §4: similar_text >= 85% sobre texto normalizado.
     private const UMBRAL_SIMILITUD = 85.0;
 
+    // Si el mejor y el segundo candidato están a menos de este margen (y ambos
+    // superan el umbral), el match es ambiguo: no se auto-vincula ni se publica.
+    // La fila queda en estado "revision_manual" para que una persona decida.
+    private const MARGEN_AMBIGUEDAD = 4.0;
+
     // Límite físico de la columna productos.nombre (staging admite 220).
     private const NOMBRE_PRODUCTO_MAX = 170;
 
@@ -42,10 +47,21 @@ class StagingProcessor
     /** @var array<string, int> nombre normalizado => producto_id */
     private array $indiceNombres = [];
 
+    /** @var array<string, ?string> nombre normalizado => firma de unidad */
+    private array $indiceUnidades = [];
+
+    /** @var array<string, true> nombres normalizados que apuntan a más de un producto */
+    private array $nombresDuplicados = [];
+
+    /** @var array<string, true> alias normalizados que apuntan a más de un producto */
+    private array $aliasDuplicados = [];
+
+    private bool $indicesCargados = false;
+
     /**
      * Procesa las filas pendientes de staging y devuelve los conteos de la corrida.
      *
-     * @return array{procesados: int, publicados: int, nuevos_productos: int, alias_nuevos: int, errores: int}
+     * @return array{procesados: int, publicados: int, nuevos_productos: int, alias_nuevos: int, revision_manual: int, errores: int}
      */
     public function procesar(?string $fuente = null, ?int $limite = null, bool $dryRun = false): array
     {
@@ -70,7 +86,7 @@ class StagingProcessor
      * mismos conteos y misma trazabilidad de errores que procesar().
      *
      * @param  iterable<ProductoRaw>  $filas
-     * @return array{procesados: int, publicados: int, nuevos_productos: int, alias_nuevos: int, errores: int}
+     * @return array{procesados: int, publicados: int, nuevos_productos: int, alias_nuevos: int, revision_manual: int, errores: int}
      */
     public function procesarFilas(iterable $filas, bool $dryRun = false): array
     {
@@ -81,6 +97,7 @@ class StagingProcessor
             'publicados' => 0,
             'nuevos_productos' => 0,
             'alias_nuevos' => 0,
+            'revision_manual' => 0,
             'errores' => 0,
         ];
 
@@ -114,13 +131,36 @@ class StagingProcessor
             throw new RuntimeException('precio_invalido_en_staging');
         }
 
-        $productoId = $this->resolverProductoId($fila, $conteos, $dryRun);
+        $match = $this->resolverProducto($fila, $conteos, $dryRun);
+
+        // Ambigüedad de catálogo: la fila no se publica ni se descarta. Queda en
+        // la cola de revisión con los candidatos que empataron para que una
+        // persona resuelva el alias (evita contaminar el catálogo).
+        if ($match['motivo_revision'] !== null) {
+            $conteos['revision_manual']++;
+
+            if (! $dryRun) {
+                $fila->update([
+                    'estado' => 'revision_manual',
+                    'motivo_rechazo' => mb_substr($match['motivo_revision'], 0, 255),
+                    'procesado_at' => now(),
+                ]);
+            }
+
+            return;
+        }
+
+        $productoId = $match['producto_id'];
 
         if ($dryRun) {
             // Simulación: solo contamos qué pasaría; ningún write toca la base.
             $conteos['publicados']++;
 
             return;
+        }
+
+        if ($productoId === null) {
+            throw new RuntimeException('producto_no_resuelto_en_staging');
         }
 
         $sucursal = $this->sucursalOnline($fila->fuente);
@@ -158,46 +198,100 @@ class StagingProcessor
     }
 
     /**
-     * Escalera de matching del Motor de Normalización. Devuelve el producto_id,
-     * creando el producto cuando no hay coincidencia suficiente.
+     * Escalera de matching del Motor de Normalización. Devuelve el producto_id
+     * (o null si el dry-run crearía uno nuevo) y, cuando corresponde, el motivo
+     * para enviar la fila a revisión manual.
+     *
+     * @return array{producto_id: ?int, motivo_revision: ?string}
      */
-    private function resolverProductoId(ProductoRaw $fila, array &$conteos, bool $dryRun): ?int
+    private function resolverProducto(ProductoRaw $fila, array &$conteos, bool $dryRun): array
     {
         $claveNombre = NormalizadorTexto::limpiar($fila->nombre);
 
-        // 1a. Nombre normalizado exacto.
+        // 1a. Nombre normalizado exacto. Si dos productos comparten el mismo
+        // nombre canónico, el catálogo está duplicado: no se elige uno al azar.
         if (isset($this->indiceNombres[$claveNombre])) {
+            if (isset($this->nombresDuplicados[$claveNombre])) {
+                return $this->revision(
+                    "nombre_normalizado_duplicado: {$claveNombre}",
+                );
+            }
+
             $productoId = $this->indiceNombres[$claveNombre];
             $this->registrarAliasSiNuevo($productoId, $claveNombre, $fila, $conteos, $dryRun);
 
-            return $productoId;
+            return $this->resuelto($productoId);
         }
 
         // 1b. Alias normalizado exacto (incluye aliases sembrados en formato legible).
         if (isset($this->indiceAlias[$claveNombre])) {
+            if (isset($this->aliasDuplicados[$claveNombre])) {
+                return $this->revision(
+                    "alias_normalizado_duplicado: {$claveNombre}",
+                );
+            }
+
             $productoId = $this->indiceAlias[$claveNombre];
             $this->registrarAliasSiNuevo($productoId, $claveNombre, $fila, $conteos, $dryRun);
 
-            return $productoId;
+            return $this->resuelto($productoId);
         }
 
-        // 2. Similitud difusa contra los nombres del catálogo: gana el mejor %.
+        // 2. Similitud difusa contra los nombres del catálogo: gana el mejor %,
+        // pero solo entre candidatos con presentación compatible.
+        $firmaRaw = NormalizadorTexto::firmaUnidad($fila->nombre);
         $mejorId = null;
         $mejorPorcentaje = 0.0;
+        $segundoId = null;
+        $segundoPorcentaje = 0.0;
 
         foreach ($this->indiceNombres as $nombreNorm => $id) {
-            similar_text($claveNombre, (string) $nombreNorm, $porcentaje);
+            $nombreNorm = (string) $nombreNorm;
+            $firmaCandidato = $this->indiceUnidades[$nombreNorm] ?? null;
+
+            // "Leche 1 L" y "Leche 2 L" se parecen mucho, pero no son el mismo
+            // producto. Si ambas presentaciones son legibles y difieren, el
+            // candidato se descarta antes de calcular similitud.
+            if ($firmaRaw !== null && $firmaCandidato !== null && $firmaRaw !== $firmaCandidato) {
+                continue;
+            }
+
+            similar_text($claveNombre, $nombreNorm, $porcentaje);
 
             if ($porcentaje > $mejorPorcentaje) {
+                $segundoId = $mejorId;
+                $segundoPorcentaje = $mejorPorcentaje;
                 $mejorPorcentaje = $porcentaje;
                 $mejorId = (int) $id;
+            } elseif ($porcentaje > $segundoPorcentaje) {
+                $segundoPorcentaje = $porcentaje;
+                $segundoId = (int) $id;
             }
         }
 
-        if ($mejorId !== null && $mejorPorcentaje >= self::UMBRAL_SIMILITUD) {
+        $mejorSobreUmbral = $mejorId !== null && $mejorPorcentaje >= self::UMBRAL_SIMILITUD;
+        $segundoSobreUmbral = $segundoId !== null
+            && $segundoId !== $mejorId
+            && $segundoPorcentaje >= self::UMBRAL_SIMILITUD;
+
+        if ($mejorSobreUmbral && $segundoSobreUmbral
+            && ($mejorPorcentaje - $segundoPorcentaje) < self::MARGEN_AMBIGUEDAD) {
+            $nombreMejor = array_search($mejorId, $this->indiceNombres, true);
+            $nombreSegundo = array_search($segundoId, $this->indiceNombres, true);
+
+            return $this->revision(sprintf(
+                'match_ambiguo: "%s" (%.1f%%) vs "%s" (%.1f%%)',
+                is_string($nombreMejor) ? $nombreMejor : (string) $mejorId,
+                $mejorPorcentaje,
+                is_string($nombreSegundo) ? $nombreSegundo : (string) $segundoId,
+                $segundoPorcentaje,
+            ));
+        }
+
+        if ($mejorSobreUmbral) {
             $this->registrarAliasSiNuevo($mejorId, $claveNombre, $fila, $conteos, $dryRun);
 
-            return $mejorId;
+            return $this->resuelto($mejorId);
         }
 
         // 3. Producto nuevo del catálogo maestro.
@@ -206,7 +300,7 @@ class StagingProcessor
         if ($dryRun) {
             // En simulación no persistimos ni contaminamos los índices: cada fila
             // candidata se cuenta de forma independiente.
-            return null;
+            return $this->resuelto(null);
         }
 
         $categoriaOtros = Categoria::firstOrCreate(['nombre' => 'Otros']);
@@ -224,9 +318,22 @@ class StagingProcessor
         ]);
 
         $this->indiceNombres[$claveNombre] = $producto->id;
+        $this->indiceUnidades[$claveNombre] = $firmaRaw;
         $this->registrarAliasSiNuevo($producto->id, $claveNombre, $fila, $conteos, $dryRun);
 
-        return $producto->id;
+        return $this->resuelto($producto->id);
+    }
+
+    /** @return array{producto_id: ?int, motivo_revision: ?string} */
+    private function resuelto(?int $productoId): array
+    {
+        return ['producto_id' => $productoId, 'motivo_revision' => null];
+    }
+
+    /** @return array{producto_id: null, motivo_revision: string} */
+    private function revision(string $motivo): array
+    {
+        return ['producto_id' => null, 'motivo_revision' => $motivo];
     }
 
     private function registrarAliasSiNuevo(int $productoId, string $claveNombre, ProductoRaw $fila, array &$conteos, bool $dryRun): void
@@ -288,16 +395,37 @@ class StagingProcessor
 
     private function cargarIndices(): void
     {
-        if ($this->indiceNombres !== [] || $this->indiceAlias !== []) {
+        if ($this->indicesCargados) {
             return; // reutilizable dentro de la misma corrida
         }
 
-        foreach (Producto::query()->select('id', 'nombre')->cursor() as $producto) {
-            $this->indiceNombres[NormalizadorTexto::limpiar($producto->nombre)] = $producto->id;
+        foreach (Producto::query()->select('id', 'nombre')->orderBy('id')->cursor() as $producto) {
+            $clave = NormalizadorTexto::limpiar($producto->nombre);
+
+            if (isset($this->indiceNombres[$clave])) {
+                if ($this->indiceNombres[$clave] !== $producto->id) {
+                    $this->nombresDuplicados[$clave] = true;
+                }
+
+                continue; // conserva el producto de menor id de forma determinista
+            }
+
+            $this->indiceNombres[$clave] = $producto->id;
+            $this->indiceUnidades[$clave] = NormalizadorTexto::firmaUnidad($producto->nombre);
         }
 
-        foreach (AliasProducto::query()->select('producto_id', 'alias')->cursor() as $alias) {
-            $this->indiceAlias[NormalizadorTexto::limpiar($alias->alias)] = $alias->producto_id;
+        foreach (AliasProducto::query()->select('producto_id', 'alias')->orderBy('id')->cursor() as $alias) {
+            $clave = NormalizadorTexto::limpiar($alias->alias);
+
+            if (isset($this->indiceAlias[$clave]) && $this->indiceAlias[$clave] !== $alias->producto_id) {
+                $this->aliasDuplicados[$clave] = true;
+
+                continue;
+            }
+
+            $this->indiceAlias[$clave] = $alias->producto_id;
         }
+
+        $this->indicesCargados = true;
     }
 }

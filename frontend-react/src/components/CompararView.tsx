@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, friendlyError } from '../api/client'
 import * as listsApi from '../api/lists'
 import { formatMoney } from '../lib/format'
+import { alternativasComparables, etiquetaSubtotal, faltantesTexto, mejorPorCosto, mejorPorScore } from '../lib/completeness'
 import { supermarketColor } from '../lib/presentation'
 import type { CompararResultado, ListaSummary, OptimizarResultado } from '../types/domain'
 import { Check, MapPin, Navigation, Plus, Trophy } from 'lucide-react'
@@ -101,26 +102,39 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, listas])
 
-  // Podio: ordenado por costo; el ganador es la opción más barata.
+  // Podio: la etiqueta de "precio más bajo" se calcula entre alternativas
+  // completas. Si ninguna cubre la lista, se muestra la mejor parcial con aviso.
   const sorted = useMemo(
     () => (comparacion ? [...comparacion].sort((a, b) => a.costoTotal - b.costoTotal) : []),
     [comparacion],
   )
-  const winner = sorted[0]
-  const runnerUp = sorted[1]
-  const precioMasBajo = winner
-  const ahorroVsSiguiente = winner && runnerUp ? runnerUp.costoTotal - winner.costoTotal : 0
+  const winner = useMemo(() => mejorPorCosto(sorted), [sorted])
+  const hayCompletas = useMemo(() => sorted.some((r) => r.listaCompleta), [sorted])
+  const runnerUp = useMemo(() => {
+    if (!winner) return undefined
+    return alternativasComparables(sorted)
+      .filter((r) => r.sucursalId !== winner.sucursalId)
+      .sort((a, b) => a.costoTotal - b.costoTotal)[0]
+  }, [sorted, winner])
+  const ahorroVsSiguiente = winner && runnerUp && winner.listaCompleta && runnerUp.listaCompleta
+    ? runnerUp.costoTotal - winner.costoTotal
+    : 0
+  const podiumRest = useMemo(
+    () => (winner ? sorted.filter((r) => r.sucursalId !== winner.sucursalId) : []),
+    [sorted, winner],
+  )
   const podium = useMemo(
-    () => [runnerUp, winner, sorted[2]].filter((r): r is CompararResultado => Boolean(r)),
-    [runnerUp, winner, sorted],
+    () => (winner ? [podiumRest[0], winner, podiumRest[1]].filter((r): r is CompararResultado => Boolean(r)) : []),
+    [podiumRest, winner],
   )
 
-  // Ruta: ordenada por Score (menor = mejor, fórmula congelada §5.1).
+  // Ruta: ordenada por Score (menor = mejor, fórmula congelada §5.1). Se prefiere
+  // la mejor alternativa completa; si no hay, se muestra la mejor parcial.
   const rutaOrdenada = useMemo(
     () => (optimizacion ? [...optimizacion].sort((a, b) => a.score - b.score) : []),
     [optimizacion],
   )
-  const rutaMejor = rutaOrdenada[0]
+  const rutaMejor = useMemo(() => mejorPorScore(rutaOrdenada), [rutaOrdenada])
 
   async function runOptimizar(lat: number, lng: number): Promise<boolean> {
     if (!selectedId) return false
@@ -134,8 +148,10 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
       if (requestId !== optimizationRequestId.current) return false
       setOptimizacion(data.resultados)
       setResultadoOptimizacionId(data.resultadoOptimizacionId)
-      const mejorEvaluada = data.resultados
+      const evaluadas = data.resultados
         .filter((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)
+      const completas = evaluadas.filter((resultado) => resultado.listaCompleta)
+      const mejorEvaluada = [...(completas.length > 0 ? completas : evaluadas)]
         .sort((a, b) => a.score - b.score)[0]
       setChatSucursalId(mejorEvaluada?.sucursalId ?? null)
       if (data.resultados.some((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)) {
@@ -262,21 +278,40 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
           {winner && !loading && (
             <div className="compare-narrative" key={selectedId}>
               <div className="compare-stats">
-                <span className="stat-chip"><span>🏷️</span><span>Precio más bajo <b>{precioMasBajo.supermercado}</b></span></span>
-                {rutaMejor && <span className="stat-chip"><span>⚖️</span><span>Mejor Score <b>{rutaMejor.supermercado}</b></span></span>}
-                {runnerUp && (
+                <span className="stat-chip">
+                  <span>🏷️</span>
+                  <span>{winner.listaCompleta ? 'Precio más bajo' : 'Subtotal parcial'} <b>{winner.supermercado}</b>{!winner.listaCompleta && ` · faltan ${winner.productosFaltantes}`}</span>
+                </span>
+                {rutaMejor && (
+                  <span className="stat-chip">
+                    <span>⚖️</span>
+                    <span>{rutaMejor.listaCompleta ? 'Mejor Score' : 'Mejor Score parcial'} <b>{rutaMejor.supermercado}</b>{!rutaMejor.listaCompleta && ` · faltan ${rutaMejor.productosFaltantes}`}</span>
+                  </span>
+                )}
+                {runnerUp && ahorroVsSiguiente > 0 && (
                   <span className="stat-chip"><span>💰</span><span>Ahorras <b>{formatMoney(ahorroVsSiguiente)}</b></span></span>
                 )}
-                <span className="stat-chip"><span>🛒</span><span>{winner.todosLosEsenciales ? <b>Lista completa</b> : `${winner.esencialesDisponibles}/${winner.esencialesTotales} esenciales`}</span></span>
+                <span className="stat-chip"><span>🛒</span><span>{winner.listaCompleta ? <b>Lista completa</b> : <><b>{winner.productosDisponibles}/{winner.productosTotales}</b> productos</>}</span></span>
                 {rutaMejor && rutaMejor.tiempoMinutos != null && (
                   <span className="stat-chip"><span>📍</span><span>Ruta <b>{Math.round(rutaMejor.tiempoMinutos)} min</b></span></span>
                 )}
               </div>
 
-              {rutaMejor && precioMasBajo.sucursalId !== rutaMejor.sucursalId && (
+              {(!winner.listaCompleta || (rutaMejor && !rutaMejor.listaCompleta)) && (
+                <div className="decision-difference-note" role="note">
+                  <b>{hayCompletas ? 'Hay alternativas con la lista completa.' : 'Ninguna alternativa cubre toda la lista.'}</b>
+                  <span>
+                    {!winner.listaCompleta && `${winner.supermercado}: ${faltantesTexto(winner)}. `}
+                    {rutaMejor && !rutaMejor.listaCompleta && `${rutaMejor.supermercado}: ${faltantesTexto(rutaMejor)}. `}
+                    Los subtotales parciales no incluyen esos productos, así que no son comparables con una lista completa.
+                  </span>
+                </div>
+              )}
+
+              {rutaMejor && winner.sucursalId !== rutaMejor.sucursalId && (
                 <div className="decision-difference-note" role="note">
                   <b>El precio más bajo y el mejor Score corresponden a supermercados distintos.</b>
-                  <span>El precio más bajo está en {precioMasBajo.supermercado} ({formatMoney(precioMasBajo.costoTotal)}); el Score combina costo, distancia, tiempo y promociones y favorece a {rutaMejor.supermercado}.</span>
+                  <span>El precio más bajo está en {winner.supermercado} ({formatMoney(winner.costoTotal)}{!winner.listaCompleta ? `, subtotal parcial con ${winner.productosFaltantes} producto(s) faltante(s)` : ''}); el Score combina costo, distancia, tiempo y promociones y favorece a {rutaMejor.supermercado}{!rutaMejor.listaCompleta ? ` (también con ${rutaMejor.productosFaltantes} producto(s) faltante(s))` : ''}.</span>
                 </div>
               )}
 
@@ -292,6 +327,9 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                     </div>
                   </div>
                   <p className="expert-decision-context">El optimizador ordena las opciones por costo, distancia y tiempo. El experto explica la conveniencia de cada alternativa con sus reglas.</p>
+                  {!rutaMejor.listaCompleta && (
+                    <p className="expert-unavailable-note"><b>{faltantesTexto(rutaMejor)}.</b> El Score se calculó con un subtotal parcial; no incluye los productos que faltan en esta sucursal.</p>
+                  )}
                   {rutaMejor.expertRecommendation ? (
                     <>
                       <ExpertRecommendationBadge recommendation={rutaMejor.expertRecommendation} />
@@ -321,9 +359,11 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 <div className="podium-heading">
                   <span className="spark-icon"><Trophy size={20} /></span>
                   <div>
-                    <span className="eyebrow">PRECIO MÁS BAJO</span>
-                    <h2>Esta alternativa tiene el menor costo.</h2>
-                    <p>Comparado con los precios y promociones de hoy.</p>
+                    <span className="eyebrow">{winner.listaCompleta ? 'PRECIO MÁS BAJO' : 'SUBTOTAL PARCIAL'}</span>
+                    <h2>{winner.listaCompleta ? 'Esta alternativa tiene el menor costo.' : 'Esta alternativa tiene el menor subtotal, pero le faltan productos.'}</h2>
+                    <p>{winner.listaCompleta
+                      ? 'Comparado con los precios y promociones de hoy.'
+                      : `El subtotal no incluye ${winner.productosFaltantes} producto(s) de tu lista.`}</p>
                   </div>
                 </div>
 
@@ -336,7 +376,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                         className={`podium-place${isWinner ? ' winner' : ''}`}
                         style={{ animationDelay: `${i * 90}ms` }}
                       >
-                        <span className="podium-medal">{isWinner ? '🥇' : r.sucursalId === runnerUp?.sucursalId ? '🥈' : '🥉'}</span>
+                        <span className="podium-medal">{isWinner ? '🥇' : r.sucursalId === podiumRest[0]?.sucursalId ? '🥈' : '🥉'}</span>
                         <span className="store-badge" style={{ background: supermarketColor(r.supermercado) }}>
                           {r.supermercado.slice(0, 2).toUpperCase()}
                         </span>
@@ -345,12 +385,14 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                         {isWinner ? (
                           <>
                             <span className="podium-price winner-price">{formatMoney(r.costoTotal)}</span>
-                            <span className="podium-label">Precio más bajo</span>
+                            <span className="podium-label">{etiquetaSubtotal(r)}</span>
                           </>
                         ) : (
                           <>
                             <span className="podium-price">{formatMoney(r.costoTotal)}</span>
-                            <span className="podium-vs">{runnerUp && winner ? `+${formatMoney(r.costoTotal - winner.costoTotal)} vs mejor` : ''}</span>
+                            <span className="podium-vs">{r.listaCompleta
+                              ? `+${formatMoney(r.costoTotal - winner.costoTotal)} vs mejor`
+                              : `Subtotal parcial · faltan ${r.productosFaltantes}`}</span>
                           </>
                         )}
                         <PriceProvenance resultado={r} compact />
@@ -360,26 +402,25 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 </div>
 
                 <div className="winner-foot">
-                  <span className="winner-seal"><Check size={14} /> Menor precio de la lista</span>
+                  <span className="winner-seal"><Check size={14} /> {winner.listaCompleta ? 'Menor precio con la lista completa' : 'Mejor subtotal parcial disponible'}</span>
                 </div>
               </section>
 
               <section className="why-panel">
                 <div className="why-head">
                   <span className="eyebrow">LA DECISIÓN</span>
-                  <h3>Detalle del precio más bajo</h3>
+                  <h3>{winner.listaCompleta ? 'Detalle del precio más bajo' : 'Detalle del menor subtotal'}</h3>
                 </div>
                 <ul className="why-list">
                   {runnerUp && ahorroVsSiguiente > 0 && (
-                    <li><Check size={15} /><span><b>Ahorras {formatMoney(ahorroVsSiguiente)}</b> vs la segunda opción</span></li>
+                    <li><Check size={15} /><span><b>Ahorras {formatMoney(ahorroVsSiguiente)}</b> vs la segunda opción completa</span></li>
                   )}
-                  <li>
+                  <li className={winner.listaCompleta ? '' : 'warn'}>
                     <Check size={15} />
                     <span>
-                      {winner.todosLosEsenciales
-                        ? <b>Lista completa</b>
-                        : <b>{winner.esencialesDisponibles} de {winner.esencialesTotales}</b>}
-                      {winner.todosLosEsenciales ? ' · todos tus esenciales disponibles' : ' esenciales disponibles'}
+                      {winner.listaCompleta
+                        ? <><b>Lista completa</b> · todos tus productos disponibles</>
+                        : <><b>{faltantesTexto(winner)}</b> · el subtotal no incluye esos productos</>}
                     </span>
                   </li>
                   {winner.productosConPromocion > 0 && (
@@ -407,7 +448,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                 <section className="store-table" style={{ marginTop: 14 }}>
                   <div className="store-table-head">
                     <span>Supermercado</span>
-                    <span>Esenciales</span>
+                    <span>Productos</span>
                     <span>Costo</span>
                   </div>
                   {sorted.map((r) => (
@@ -421,7 +462,7 @@ export function CompararView({ onListasChange, onOpenMisListas }: Props) {
                           <small> · {r.sucursal}</small>
                         </div>
                       </div>
-                      <span>{r.esencialesDisponibles}/{r.esencialesTotales}</span>
+                      <span>{r.productosDisponibles}/{r.productosTotales} productos{r.listaCompleta ? '' : ` · faltan ${r.productosFaltantes}`}</span>
                       <div className="saving-price" style={{ justifyContent: 'flex-end' }}>
                         <b>{formatMoney(r.costoTotal)}</b>
                         {r.beneficioPromociones > 0 && <small className="saving">ahorro {formatMoney(r.beneficioPromociones)}</small>}

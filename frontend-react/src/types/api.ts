@@ -127,11 +127,18 @@ export type ApiCompararResultado = {
   costo_total: number
   beneficio_promociones: number
   productos_con_promocion: number
+  productos_disponibles: number
+  productos_totales: number
+  productos_faltantes: number
   productos_esenciales_disponibles: number
   productos_esenciales_totales: number
+  productos_esenciales_faltantes: number
   productos_opcionales_disponibles: number
   productos_opcionales_totales: number
+  productos_opcionales_faltantes: number
   todos_los_esenciales_disponibles: boolean
+  lista_completa: boolean
+  cobertura_productos: number
   dentro_del_presupuesto: boolean | null
   procedencia_precios: 'sincronizados' | 'simulados' | 'mixtos' | 'manuales' | 'desconocidos'
   origenes_precio: string[]

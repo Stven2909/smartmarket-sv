@@ -1014,6 +1014,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 .recommendation-store { display: block; margin-top: 2px; font-size: 15px; font-weight: 800; }
 .recommendation-card small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
 .recommendation-card .lowest-price-tag { display: inline-flex; width: fit-content; margin-top: 5px; padding: 3px 7px; border-radius: 999px; background: var(--green-100, #dcfce7); color: var(--green-800, #166534); font-size: 10px; font-weight: 800; }
+.recommendation-card .lowest-price-tag.partial { background: #fef3c7; color: #92400e; }
 .recommendation-total { text-align: right; }
 .recommendation-total b { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
 

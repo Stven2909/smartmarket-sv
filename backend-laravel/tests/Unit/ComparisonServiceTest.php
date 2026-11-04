@@ -70,6 +70,48 @@ class ComparisonServiceTest extends TestCase
         $this->assertSame($fechaActualizacion->toIso8601String(), $resultado['precios_actualizados_en']);
     }
 
+    public function test_comparacion_reporta_completitud_y_faltantes_por_sucursal(): void
+    {
+        $categoria = Categoria::create(['nombre' => 'Abarrotes']);
+        $esencialA = $this->crearProducto($categoria, 'Arroz');
+        $esencialB = $this->crearProducto($categoria, 'Frijoles');
+        $opcional = $this->crearProducto($categoria, 'Galletas');
+
+        $lista = $this->crearListaConDetalles([
+            ['producto' => $esencialA, 'esencial' => true],
+            ['producto' => $esencialB, 'esencial' => true],
+            ['producto' => $opcional, 'esencial' => false],
+        ]);
+
+        $sucursalCompleta = $this->crearSucursal('Selectos', 'Completa');
+        $sucursalParcial = $this->crearSucursal('Tienda local', 'Parcial');
+
+        $fecha = Carbon::parse('2026-11-02 09:00:00');
+        $this->crearPrecio($esencialA, $sucursalCompleta, 'html-super-selectos', $fecha);
+        $this->crearPrecio($esencialB, $sucursalCompleta, 'html-super-selectos', $fecha);
+        $this->crearPrecio($opcional, $sucursalCompleta, 'html-super-selectos', $fecha);
+        $this->crearPrecio($esencialA, $sucursalParcial, 'html-super-selectos', $fecha);
+
+        $porSucursal = collect(app(ComparisonService::class)->comparar($lista)['resultados'])
+            ->keyBy('sucursal_id');
+
+        $completa = $porSucursal[$sucursalCompleta->id];
+        $this->assertSame(3, $completa['productos_disponibles']);
+        $this->assertSame(3, $completa['productos_totales']);
+        $this->assertSame(0, $completa['productos_faltantes']);
+        $this->assertTrue($completa['lista_completa']);
+        $this->assertSame(100.0, $completa['cobertura_productos']);
+
+        $parcial = $porSucursal[$sucursalParcial->id];
+        $this->assertSame(1, $parcial['productos_disponibles']);
+        $this->assertSame(3, $parcial['productos_totales']);
+        $this->assertSame(2, $parcial['productos_faltantes']);
+        $this->assertSame(1, $parcial['productos_esenciales_faltantes']);
+        $this->assertSame(1, $parcial['productos_opcionales_faltantes']);
+        $this->assertFalse($parcial['lista_completa']);
+        $this->assertSame(33.3, $parcial['cobertura_productos']);
+    }
+
     private function crearProducto(Categoria $categoria, string $nombre): Producto
     {
         return Producto::create([
@@ -82,6 +124,17 @@ class ComparisonServiceTest extends TestCase
     }
 
     private function crearLista(Producto ...$productos): ListaCompra
+    {
+        return $this->crearListaConDetalles(array_map(
+            fn (Producto $producto) => ['producto' => $producto, 'esencial' => true],
+            $productos,
+        ));
+    }
+
+    /**
+     * @param  array<int, array{producto: Producto, esencial: bool}>  $detalles
+     */
+    private function crearListaConDetalles(array $detalles): ListaCompra
     {
         $usuario = User::create([
             'name' => 'Usuario de prueba',
@@ -97,12 +150,12 @@ class ComparisonServiceTest extends TestCase
             'fecha' => now(),
         ]);
 
-        foreach ($productos as $producto) {
+        foreach ($detalles as $detalle) {
             ListaCompraDetalles::create([
                 'lista_id' => $lista->id,
-                'producto_id' => $producto->id,
+                'producto_id' => $detalle['producto']->id,
                 'cantidad' => 1,
-                'esencial' => true,
+                'esencial' => $detalle['esencial'],
             ]);
         }
 

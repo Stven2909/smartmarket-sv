@@ -205,4 +205,81 @@ class StagingProcessorTest extends TestCase
         $vinculado = PrecioActual::sole()->producto_id;
         $this->assertNotSame(Producto::where('marca', 'Bimbo')->sole()->id, $vinculado);
     }
+
+    public function test_match_ambiguo_queda_en_revision_manual_sin_publicar(): void
+    {
+        $categoria = Categoria::firstOrCreate(['nombre' => 'Otros']);
+
+        foreach (['Leche Entera 1 L', 'Leche Entera 1 Lt'] as $nombre) {
+            Producto::create([
+                'categoria_id' => $categoria->id,
+                'marca' => 'Sin marca',
+                'nombre' => $nombre,
+                'activo' => true,
+            ]);
+        }
+
+        $this->crearRaw(['nombre' => 'Leche Entera 1 Litro', 'unidad' => '1 L']);
+
+        $conteos = $this->procesar();
+
+        $this->assertSame(0, $conteos['publicados']);
+        $this->assertSame(1, $conteos['revision_manual']);
+        $this->assertSame(0, $conteos['nuevos_productos']);
+        $this->assertSame(2, Producto::count()); // no se creó un tercero
+        $this->assertSame(0, PrecioActual::count()); // no se publicó precio
+
+        $raw = ProductoRaw::sole();
+        $this->assertSame('revision_manual', $raw->estado);
+        $this->assertStringContainsString('match_ambiguo', (string) $raw->motivo_rechazo);
+        $this->assertNotNull($raw->procesado_at);
+    }
+
+    public function test_presentacion_distinta_no_se_vincula_aunque_la_similitud_sea_alta(): void
+    {
+        $categoria = Categoria::firstOrCreate(['nombre' => 'Otros']);
+        $existente = Producto::create([
+            'categoria_id' => $categoria->id,
+            'marca' => 'Sin marca',
+            'nombre' => 'Leche Entera 1 L',
+            'activo' => true,
+        ]);
+
+        $this->crearRaw(['nombre' => 'Leche Entera 2 L', 'unidad' => '2 L']);
+
+        $conteos = $this->procesar();
+
+        $this->assertSame(1, $conteos['nuevos_productos']);
+        $this->assertSame(0, $conteos['revision_manual']);
+        $this->assertSame(2, Producto::count());
+
+        $nuevo = Producto::where('id', '!=', $existente->id)->sole();
+        $this->assertSame('Leche Entera 2 L', $nuevo->nombre);
+        $this->assertSame($nuevo->id, PrecioActual::sole()->producto_id);
+    }
+
+    public function test_nombre_normalizado_duplicado_queda_en_revision_manual(): void
+    {
+        $categoria = Categoria::firstOrCreate(['nombre' => 'Otros']);
+
+        foreach (['Arroz Blanco 1 lb', 'ARROZ   blanco 1 LB'] as $nombre) {
+            Producto::create([
+                'categoria_id' => $categoria->id,
+                'marca' => 'Sin marca',
+                'nombre' => $nombre,
+                'activo' => true,
+            ]);
+        }
+
+        $this->crearRaw(['nombre' => 'Arroz Blanco 1 lb', 'unidad' => '1 lb']);
+
+        $conteos = $this->procesar();
+
+        $this->assertSame(0, $conteos['publicados']);
+        $this->assertSame(1, $conteos['revision_manual']);
+        $this->assertSame('revision_manual', ProductoRaw::sole()->estado);
+        $this->assertStringContainsString('nombre_normalizado_duplicado', (string) ProductoRaw::sole()->motivo_rechazo);
+        $this->assertSame(2, Producto::count());
+        $this->assertSame(0, PrecioActual::count());
+    }
 }

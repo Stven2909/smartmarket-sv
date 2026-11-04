@@ -64,6 +64,7 @@ class PreciosProcesar extends Command
             . " publicados={$conteos['publicados']}"
             . " nuevos_productos={$conteos['nuevos_productos']}"
             . " alias_nuevos={$conteos['alias_nuevos']}"
+            . " revision_manual={$conteos['revision_manual']}"
             . " errores={$conteos['errores']}"
             . "{$sufijoDry}");
 

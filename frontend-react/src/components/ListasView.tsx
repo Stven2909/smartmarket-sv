@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import * as listsApi from '../api/lists'
 import { buscarProductos } from '../api/catalog'
 import { formatMoney } from '../lib/format'
+import { etiquetaSubtotal, faltantesTexto, mejorPorCosto, mejorPorScore } from '../lib/completeness'
 import { productFromApi } from '../types/domain'
 import type { CompararResultado, ListaDetalle, ListaSummary, OptimizarResultado, Promotion } from '../types/domain'
 import { ProductCard } from './ProductCard'
@@ -376,8 +377,10 @@ export function ListasView({ onListasChange }: Props) {
       if (requestId !== optimizationRequestId.current) return
       setOptimizacion(data.resultados)
       setResultadoOptimizacionId(data.resultadoOptimizacionId)
-      const mejorEvaluada = data.resultados
+      const evaluadas = data.resultados
         .filter((resultado) => resultado.expertSystemAvailable && resultado.expertRecommendation)
+      const completas = evaluadas.filter((resultado) => resultado.listaCompleta)
+      const mejorEvaluada = [...(completas.length > 0 ? completas : evaluadas)]
         .sort((a, b) => a.score - b.score)[0]
       setChatSucursalId(mejorEvaluada?.sucursalId ?? null)
       setOptimizationTimestamp(new Date().toISOString())
@@ -432,6 +435,22 @@ export function ListasView({ onListasChange }: Props) {
 
   const isActiveTab = tab === 'activa'
   const selectedList = listas.find((lista) => lista.id === selectedId)
+  const ganadoraComparacion = useMemo(
+    () => (comparacion ? mejorPorCosto(comparacion) : undefined),
+    [comparacion],
+  )
+  const mejorAlternativa = useMemo(
+    () => (optimizacion && optimizacion.length > 0 ? mejorPorScore(optimizacion) : undefined),
+    [optimizacion],
+  )
+  const menorPrecioOptimizado = useMemo(
+    () => (optimizacion && optimizacion.length > 0 ? mejorPorCosto(optimizacion) : undefined),
+    [optimizacion],
+  )
+  const hayCompletasOptimizadas = useMemo(
+    () => optimizacion?.some((resultado) => resultado.listaCompleta) ?? false,
+    [optimizacion],
+  )
 
   return (
     <section className="real-basket-panel">
@@ -745,9 +764,14 @@ export function ListasView({ onListasChange }: Props) {
                       <div>
                         <span className="recommendation-label">{r.supermercado}</span>
                         <span className="recommendation-store">{r.sucursal}</span>
-                            {r.sucursalId === [...comparacion].sort((a, b) => a.costoTotal - b.costoTotal)[0]?.sucursalId && <span className="lowest-price-tag">Precio más bajo</span>}
+                            {r.sucursalId === ganadoraComparacion?.sucursalId && (
+                              <span className={`lowest-price-tag${r.listaCompleta ? '' : ' partial'}`}>
+                                {etiquetaSubtotal(r)}
+                              </span>
+                            )}
                         <small>
-                          {r.esencialesDisponibles}/{r.esencialesTotales} esenciales
+                          {r.productosDisponibles}/{r.productosTotales} productos · {r.esencialesDisponibles}/{r.esencialesTotales} esenciales
+                          {!r.listaCompleta && ` · ${faltantesTexto(r)}`}
                           {r.beneficioPromociones > 0 && ` · ahorro ${formatMoney(r.beneficioPromociones)}`}
                           {r.dentroDelPresupuesto === false && ' · excede presupuesto'}
                         </small>
@@ -763,8 +787,8 @@ export function ListasView({ onListasChange }: Props) {
               {optimizacion !== null && optimizacion.length > 0 && (
                 <section className="list-decision-panel" aria-label="Resultado de optimización">
                   {(() => {
-                    const mejorScore = optimizacion[0]
-                    const menorPrecio = optimizacion.reduce((best, item) => item.costoTotal < best.costoTotal ? item : best, optimizacion[0])
+                    const mejorScore = mejorAlternativa ?? optimizacion[0]
+                    const menorPrecio = menorPrecioOptimizado ?? optimizacion[0]
                     return (
                       <>
                         <div className="decision-panel-heading">
@@ -772,10 +796,14 @@ export function ListasView({ onListasChange }: Props) {
                           <div><span className="eyebrow">DECISIÓN DE COMPRA</span><h2>Mejor alternativa según el optimizador</h2></div>
                         </div>
                         <article className="decision-winner-card">
-                          <div className="decision-winner-top"><span>MEJOR SCORE · {mejorScore.score.toFixed(2)}</span><span className="decision-winner-price">{formatMoney(mejorScore.costoTotal)}</span></div>
+                          <div className="decision-winner-top">
+                            <span>{mejorScore.listaCompleta ? 'MEJOR SCORE' : 'MEJOR PARCIAL'} · {mejorScore.score.toFixed(2)}</span>
+                            <span className="decision-winner-price">{formatMoney(mejorScore.costoTotal)}</span>
+                          </div>
                           <h3>{mejorScore.supermercado}</h3><p>{mejorScore.sucursal}</p>
                           <div className="decision-criteria">
                             <span>Score <b>{mejorScore.score.toFixed(2)}</b></span>
+                            <span>Productos <b>{mejorScore.productosDisponibles}/{mejorScore.productosTotales}</b></span>
                             <span>Distancia <b>{mejorScore.distanciaKm != null ? `${mejorScore.distanciaKm.toFixed(1)} km` : 'No disponible'}</b></span>
                             <span>Tiempo <b>{mejorScore.tiempoMinutos != null ? `${Math.round(mejorScore.tiempoMinutos)} min` : 'No disponible'}</b></span>
                             <span>Esenciales <b>{mejorScore.esencialesDisponibles}/{mejorScore.esencialesTotales}</b></span>
@@ -783,9 +811,17 @@ export function ListasView({ onListasChange }: Props) {
                           </div>
                           <PriceProvenance resultado={mejorScore} />
                         </article>
+                        {!mejorScore.listaCompleta && (
+                          <div className="decision-difference-note" role="note">
+                            <b>{faltantesTexto(mejorScore)}: esta alternativa tiene un subtotal parcial.</b>
+                            <span>El costo mostrado no incluye esos productos. {hayCompletasOptimizadas
+                              ? 'Hay alternativas con la lista completa; compará sus precios antes de decidir.'
+                              : 'Ninguna alternativa cubre toda la lista, así que esta es la mejor opción disponible.'}</span>
+                          </div>
+                        )}
                         {menorPrecio.sucursalId !== mejorScore.sucursalId && (
                           <div className="decision-difference-note" role="note">
-                            <b>El precio más bajo está en {menorPrecio.supermercado}: {formatMoney(menorPrecio.costoTotal)}.</b>
+                            <b>El precio más bajo está en {menorPrecio.supermercado}: {formatMoney(menorPrecio.costoTotal)}{!menorPrecio.listaCompleta ? ` (subtotal parcial, faltan ${menorPrecio.productosFaltantes})` : ''}.</b>
                             <span>El Score considera costo, distancia, tiempo y promociones; por eso puede recomendar otra alternativa.</span>
                           </div>
                         )}
@@ -818,7 +854,7 @@ export function ListasView({ onListasChange }: Props) {
                               <article key={r.sucursalId} className="recommendation-card">
                                 <div>
                                   <span className="recommendation-label">{r.supermercado}</span><span className="recommendation-store">{r.sucursal}</span>
-                                  <small>Score {r.score.toFixed(2)} · {r.expertRecommendation ? 'Evaluación experta' : `Nivel ${r.nivelOptimizacion}%`} · {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : 'Sin distancia'} · {r.tiempoMinutos != null ? `${Math.round(r.tiempoMinutos)} min` : 'Sin tiempo'} · ahorro promociones {formatMoney(r.beneficioPromociones)}</small>
+                                  <small>Score {r.score.toFixed(2)} · {r.expertRecommendation ? 'Evaluación experta' : `Nivel ${r.nivelOptimizacion}%`} · {r.listaCompleta ? 'Lista completa' : faltantesTexto(r)} · {formatMoney(r.costoTotal)} · {r.distanciaKm != null ? `${r.distanciaKm.toFixed(1)} km` : 'Sin distancia'} · {r.tiempoMinutos != null ? `${Math.round(r.tiempoMinutos)} min` : 'Sin tiempo'} · ahorro promociones {formatMoney(r.beneficioPromociones)}</small>
                                   <PriceProvenance resultado={r} compact />
                                   {!r.expertSystemAvailable && <div className="expert-omission-note compact"><b>Sin evaluación experta</b><span>{omissionReasonLabel(r.expertOmissionReason) ?? 'El experto no respondió para esta alternativa.'}</span></div>}
                                 </div>

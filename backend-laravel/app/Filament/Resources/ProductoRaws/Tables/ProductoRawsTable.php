@@ -55,7 +55,7 @@ class ProductoRawsTable
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'publicado' => 'success',
-                        'pendiente' => 'warning',
+                        'pendiente', 'revision_manual' => 'warning',
                         default => 'danger', // rechazado | error
                     })
                     ->sortable(),
@@ -76,6 +76,7 @@ class ProductoRawsTable
                     ->options([
                         'pendiente' => 'Pendiente',
                         'publicado' => 'Publicado',
+                        'revision_manual' => 'Revisión manual',
                         'rechazado' => 'Rechazado',
                         'error' => 'Error',
                     ]),
@@ -88,6 +89,7 @@ class ProductoRawsTable
             ])
             ->recordActions([
                 self::accionPublicar(),
+                self::accionReencolar(),
                 self::accionRechazar(),
                 self::accionVerPayload(),
             ])
@@ -110,9 +112,9 @@ class ProductoRawsTable
 
         Notification::make()
             ->title("Publicados {$conteos['publicados']} de {$conteos['procesados']}")
-            ->body("Nuevos productos: {$conteos['nuevos_productos']} · Alias nuevos: {$conteos['alias_nuevos']} · Errores: {$conteos['errores']}")
-            ->success($conteos['errores'] === 0)
-            ->warning($conteos['errores'] > 0)
+            ->body("Nuevos productos: {$conteos['nuevos_productos']} · Alias nuevos: {$conteos['alias_nuevos']} · Revisión manual: {$conteos['revision_manual']} · Errores: {$conteos['errores']}")
+            ->success($conteos['errores'] === 0 && $conteos['revision_manual'] === 0)
+            ->warning($conteos['errores'] > 0 || $conteos['revision_manual'] > 0)
             ->send();
     }
 
@@ -126,6 +128,30 @@ class ProductoRawsTable
             ->requiresConfirmation()
             ->modalDescription('Publica esta fila vía StagingProcessor: matching contra catálogo, alias y upsert de precio.')
             ->action(fn (ProductoRaw $record) => self::publicar(collect([$record])));
+    }
+
+    private static function accionReencolar(): Action
+    {
+        return Action::make('reencolar')
+            ->label('Reencolar')
+            ->icon('heroicon-o-arrow-path')
+            ->color('warning')
+            ->visible(fn (ProductoRaw $record): bool => $record->estado === 'revision_manual')
+            ->requiresConfirmation()
+            ->modalDescription('Vuelve a poner la fila en pendiente. Úsalo después de resolver el duplicado o crear el alias correcto; si la ambigüedad persiste, volverá a revisión manual.')
+            ->action(function (ProductoRaw $record): void {
+                $record->update([
+                    'estado' => 'pendiente',
+                    'motivo_rechazo' => null,
+                    'procesado_at' => null,
+                ]);
+
+                Notification::make()
+                    ->title('Fila reencolada')
+                    ->body('Se procesará en la próxima corrida de precios:procesar.')
+                    ->success()
+                    ->send();
+            });
     }
 
     private static function accionRechazar(): Action

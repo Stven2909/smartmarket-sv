@@ -41,6 +41,7 @@ class ComparisonService
             $costoTotal = 0;
             $beneficioPromociones = 0;
             $productosConPromocion = 0;
+            $productosDisponibles = 0;
             $esencialesDisponibles = 0;
             $opcionalesDisponibles = 0;
 
@@ -48,6 +49,7 @@ class ComparisonService
                 $precio = $preciosSucursal->firstWhere('producto_id', $detalle->producto_id);
 
                 if ($precio) {
+                    $productosDisponibles++;
                     $costoTotal += $precio->precio_final * $detalle->cantidad;
 
                     if ($precio->tiene_promocion) {
@@ -89,6 +91,14 @@ class ComparisonService
                 ->filter()
                 ->max();
 
+            // Completitud del subtotal. Un producto sin precio en esta sucursal
+            // NO suma al costo_total; por eso la UI debe distinguir un subtotal
+            // parcial de un precio realmente más bajo (Q/A: listas incompletas).
+            $totalProductos = $totalEsenciales + $totalOpcionales;
+            $productosFaltantes = $totalProductos - $productosDisponibles;
+            $esencialesFaltantes = $totalEsenciales - $esencialesDisponibles;
+            $opcionalesFaltantes = $totalOpcionales - $opcionalesDisponibles;
+
             $resultados[] = [
                 'sucursal_id' => $sucursalId,
                 'sucursal' => $sucursal->nombre,
@@ -101,11 +111,20 @@ class ComparisonService
                 'costo_total' => round($costoTotal, 2),
                 'beneficio_promociones' => round($beneficioPromociones, 2),
                 'productos_con_promocion' => $productosConPromocion,
+                'productos_disponibles' => $productosDisponibles,
+                'productos_totales' => $totalProductos,
+                'productos_faltantes' => $productosFaltantes,
                 'productos_esenciales_disponibles' => $esencialesDisponibles,
                 'productos_esenciales_totales' => $totalEsenciales,
+                'productos_esenciales_faltantes' => $esencialesFaltantes,
                 'productos_opcionales_disponibles' => $opcionalesDisponibles,
                 'productos_opcionales_totales' => $totalOpcionales,
+                'productos_opcionales_faltantes' => $opcionalesFaltantes,
                 'todos_los_esenciales_disponibles' => $esencialesDisponibles === $totalEsenciales,
+                'lista_completa' => $productosFaltantes === 0,
+                'cobertura_productos' => $totalProductos > 0
+                    ? round(($productosDisponibles / $totalProductos) * 100, 1)
+                    : 100.0,
                 'dentro_del_presupuesto' => $lista->presupuesto === null
                     ? null
                     : $costoTotal <= $lista->presupuesto,
