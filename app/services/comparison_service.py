@@ -1,6 +1,7 @@
 """Comparación experta determinista de alternativas independientes."""
 
 from app.expert_system.convenience_index import CRITICAL_RULE_IDS
+from app.expert_system.decision_quality import decision_quality_flags
 from app.schemas.comparison import (
     ComparisonRequest,
     ComparisonResponse,
@@ -56,6 +57,13 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
                 f"Regla {result.winning_rule}, nivel {result.nivel_recomendacion}; "
                 f"índice auxiliar {result.indice_conveniencia:.2f}/100."
             )
+        quality_flags = decision_quality_flags(
+            level=result.nivel_recomendacion,
+            facts=result.hechos_derivados,
+            convenience_classification=result.clasificacion_conveniencia,
+        )
+        if quality_flags:
+            reason += " La opción requiere revisar advertencias comerciales en su explicación."
         alternatives.append(
             RankedAlternative(
                 posicion=position,
@@ -84,6 +92,21 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
         warnings.append(
             "Las alternativas tienen distintos totales de productos o esenciales. "
             "Comprueba que corresponden a la misma lista antes de interpretar el ranking."
+        )
+
+    flagged_count = sum(
+        bool(decision_quality_flags(
+            level=row.recomendacion.nivel_recomendacion,
+            facts=row.recomendacion.hechos_derivados,
+            convenience_classification=row.recomendacion.clasificacion_conveniencia,
+        ))
+        for row in alternatives
+    )
+    if flagged_count:
+        warnings.append(
+            f"{flagged_count} alternativa(s) favorables tienen advertencias "
+            "comerciales: consulte su explicación antes de decidir. "
+            "El ranking no cambia por estas advertencias."
         )
 
     if all(_tier(row.recomendacion) >= 2 for row in alternatives):
