@@ -93,7 +93,7 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
 
     weighted = calculate_convenience_index(request)
     conveniencia_alta = weighted["clasificacion_conveniencia"] == "ALTA_CONVENIENCIA"
-    conveniencia_no_baja = weighted["indice_conveniencia"] >= 50.0
+    conveniencia_no_baja = weighted["clasificacion_conveniencia"] != "BAJA_CONVENIENCIA"
 
     una_parada = request.numero_supermercados == 1
     dos_paradas = request.numero_supermercados == 2
