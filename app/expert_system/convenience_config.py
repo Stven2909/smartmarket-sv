@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from math import isclose
+from math import isclose, isfinite
 
 CONVENIENCE_CONFIG_VERSION = "1.0.0"
 
@@ -25,7 +25,7 @@ class ConvenienceConfig:
             self.peso_tiempo,
             self.peso_promociones,
         )
-        if any(weight < 0 for weight in weights):
+        if any(not isfinite(weight) or weight < 0 for weight in weights):
             raise ValueError("Todos los pesos deben ser mayores o iguales que cero")
         if not isclose(sum(weights), 1.0, abs_tol=1e-9):
             raise ValueError("La suma de los pesos debe ser igual a 1")
@@ -35,7 +35,7 @@ class ConvenienceConfig:
             self.distancia_maxima,
             self.tiempo_maximo,
         )
-        if any(limit <= 0 for limit in limits):
+        if any(not isfinite(limit) or limit <= 0 for limit in limits):
             raise ValueError("Los límites de normalización deben ser positivos")
 
     def weights(self) -> dict[str, float]:
