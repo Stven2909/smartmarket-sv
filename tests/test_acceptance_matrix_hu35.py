@@ -9,7 +9,9 @@ import pytest
 
 from app.main import app
 from app.schemas.batch_recommendation import BatchRecommendationResponse
+from app.schemas.comparison import ComparisonRequest, ComparisonResponse
 from app.schemas.recommendation import RecommendationRequest, RecommendationResponse
+from app.services.comparison_service import compare_alternatives
 from app.services.recommendation_service import recommend
 from scripts import validate_recommendation_matrix as acceptance
 
@@ -138,6 +140,45 @@ def test_http_recommendation_and_batch_agree_with_oracle_and_each_other():
                 assert rejected.status_code == 422, invalid_id
 
     asyncio.run(run_http())
+
+
+
+def test_comparison_with_oracle_examples_keeps_critical_risk_last():
+    ids = [
+        "escenario-ideal",
+        "r07-extremo-indice-bajo",
+        "presupuesto-excedido-ligero",
+        "distancia-exacta-8-con-ahorro-bajo",
+    ]
+    by_id = {name: req for name, _, req, _ in ROWS}
+    cases = [by_id[name] for name in ids]
+    report = compare_alternatives(ComparisonRequest(alternativas=cases))
+    assert [row.recomendacion.winning_rule for row in report.ranking] == [
+        "R06", "R07", None, "R03",
+    ]
+    assert [row.riesgo_critico for row in report.ranking] == [
+        False, False, False, True,
+    ]
+    assert report.mejor_alternativa_id == cases[0].alternativa_id
+    assert any("advertencias comerciales" in note for note in report.advertencias)
+
+    async def test_http():
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://testserver",
+        ) as client:
+            response = await client.post(
+                "/api/v1/compare",
+                json={"alternativas": [
+                    item.model_dump(mode="json") for item in cases
+                ]},
+            )
+            assert response.status_code == 200, response.text
+            parsed = ComparisonResponse.model_validate(response.json())
+            assert parsed.model_dump(mode="json") == report.model_dump(mode="json")
+
+    asyncio.run(test_http())
+
 
 
 def test_http_authentication_still_applies_to_validation_examples(monkeypatch):
