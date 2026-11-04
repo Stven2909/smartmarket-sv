@@ -1,0 +1,33 @@
+name: Python dependency security audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install deployed Python dependencies and auditor
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r demo/requirements.txt pip-audit==2.10.1
+
+      - name: Check installed dependencies against vulnerability advisories
+        run: |
+          python -m pip_audit --local --progress-spinner off

@@ -35,6 +35,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-23 | Proteger la comunicación Laravel-Python con rotación y no-cache | Alta | Implementada; activar secretos en Render y Laravel |
 | HU-24 | Permitir inferencias de hasta 50 alternativas por solicitud | Media | Implementada, opcional para Laravel |
 | HU-25 | Verificar coherencia entre reglas, hechos, explicación, dictamen e índice | Alta | Implementada en pruebas de regresión |
+| HU-26 | Endurecer Render, separar claves de servicio y escanear dependencias | Alta | Implementada en código; validación externa del hosting pendiente |
 
 ## Historias y criterios de aceptación
 
@@ -325,3 +326,12 @@ Como responsable del servicio Python, quiero detectar incoherencias entre hechos
 **Aceptación:** pruebas con los escenarios documentados, 200 combinaciones representativas y casos R01–R08 con/sin ganador. La auditoría independiente `scripts/check_inference_consistency.py` detecta alteraciones provocadas en `winning_rule`, `losing_rules`, `reglas_activadas`, `trace`, `nivel_recomendacion`, `accion_sugerida`, `explicacion`, hechos e índice. No se introduce validación redundante dentro del camino HTTP ni se cambian las reglas o los 14/16 campos del contrato.
 
 **Evidencia:** [HU-25 y límites](hu25-coherencia-inferencia.md), `tests/test_inference_consistency.py`.
+
+
+## HU-26 — Auditoría y protección del servidor gratuito
+
+Como responsable del motor, quiero impedir que el servidor Render quede anónimo por una variable faltante, separar la credencial de Streamlit y rechazar cargas HTTP excesivas, para reducir exposiciones accidentales y consumo innecesario de memoria.
+
+**Aceptación:** al detectar `RENDER=true` se rechazan peticiones sin `SMARTMARKET_API_KEY` aun si `SMARTMARKET_ENV` no está configurada; opcionalmente se acepta `SMARTMARKET_API_KEY_STREAMLIT` y se puede revocar sin invalidar la principal; los cuerpos HTTP mayores de 512 KiB generan 413 antes de parsear JSON. La CI examina dependencias instaladas con `pip-audit`. Se ofrece un verificador externo de cuatro GET sin secretos, sin falsamente declarar el hosting revisado cuando no haya conexión.
+
+**Evidencia:** `tests/test_security_hardening_hu26.py`, `tests/test_security_external_probe.py`, `.github/workflows/python-security-audit.yml` y [auditoría HU-26](auditoria-seguridad-hu26.md).
