@@ -62,7 +62,7 @@ def test_all_fourteen_input_fields_are_classified_exclusively():
     assert IDENTITY_FIELDS.isdisjoint(CONTEXT_FIELDS)
     assert IDENTITY_FIELDS.isdisjoint(EVALUATED_FIELDS)
     assert CONTEXT_FIELDS.isdisjoint(EVALUATED_FIELDS)
-    assert IDENTITY_FIELDS | CONTEXT_FIELDS | EVALUATED_FIELDS == public
+    assert public == IDENTITY_FIELDS | CONTEXT_FIELDS | EVALUATED_FIELDS
     assert set(WEIGHTED_FACTORS).issubset(EVALUATED_FIELDS)
     assert len(RecommendationResponse.model_fields) == 16
 
