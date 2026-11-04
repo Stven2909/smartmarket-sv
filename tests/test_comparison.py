@@ -138,7 +138,7 @@ def test_comparison_http_uses_existing_recommendation_contract_unchanged():
     assert body.ranking[1].riesgo_critico
     for row in body.ranking:
         assert isinstance(row.recomendacion, RecommendationResponse)
-        assert len(row.recomendacion.trace) == 13
+        assert len(row.recomendacion.trace) == 16
 
 
 def test_comparison_http_rejects_duplicate_ids_and_different_budgets():
@@ -185,9 +185,9 @@ def test_knowledge_endpoint_exposes_current_rules_and_parameters():
     response = api_request("GET", "/api/v1/knowledge")
     assert response.status_code == 200
     body = response.json()
-    assert len(body["rules"]) == 13
+    assert len(body["rules"]) == 16
     assert {rule["id"] for rule in body["rules"]} == {
-        "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13"
+        "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16"
     }
     assert sum(body["weights"].values()) == pytest.approx(1.0)
     assert body["thresholds"]["presupuesto_exceso_max_pct"] == 10.0
