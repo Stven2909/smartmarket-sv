@@ -38,6 +38,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-26 | Endurecer Render, separar claves de servicio y escanear dependencias | Alta | Implementada; 4 comprobaciones externas de acceso correctas |
 | HU-27 | Limitar el uso de la demo pública sin reducir la cuota de Laravel | Alta | Implementada; se activa con clave Streamlit independiente |
 | HU-28 | Corregir casos de cobertura insuficiente y agregar compra equilibrada sin promociones | Alta | Implementada en reglas 1.1.0; verificar regresiones |
+| HU-29 | Distinguir cobertura parcial con o sin esenciales declarados | Alta | Implementada en reglas 1.2.0, validación pendiente de cierre |
 
 ## Historias y criterios de aceptación
 
@@ -355,3 +356,12 @@ Como consumidor de recomendaciones Python, quiero rechazar alternativas sin stoc
 **Aceptación:** R09 y R10 activan conclusiones críticas distintas para cero disponibilidad y 1–49 %; R11 devuelve `BUENA` con todos los productos, presupuesto respetado, una parada, ahorro ≥3, distancia adicional ≤5 km y tiempo ≤30 min, sin promociones. R08 deja de presentar una activación favorable si faltan esenciales. Se conserva el contrato HTTP 14/16 campos; `RULES_VERSION` sube a `1.1.0` pero `CONTRACT_VERSION` se mantiene en `1.0.0`. Escenarios nuevos separados para no exceder los límites HTTP de diez alternativas.
 
 **Evidencia:** `tests/test_new_rule_cases_hu28.py`, `data/scenarios_hu28.json`, comparación de reglas en CI y [documentación de HU-28](hu28-ampliacion-reglas.md).
+
+
+## HU-29 — Cobertura responsable de la lista
+
+Como responsable del sistema experto, quiero evitar dictámenes EXCELENTE cuando la disponibilidad total es insuficiente y no hay esenciales declarados, y distinguir una alternativa parcialmente completa cuando sí están cubiertos, para entregar conclusiones prudentes con los 14 hechos actuales.
+
+**Criterios de aceptación:** agregar R12 (sin esenciales y cobertura inferior al 80 %, crítica) y R13 (esenciales completos, cobertura inferior al 80 %, presupuesto y traslado razonables, BUENA), probar la frontera 80 %, mantener las reglas críticas prioritarias, conservar el contrato 14/16 y ampliar la cobertura de Streamlit a trece reglas en lotes permitidos.
+
+**Evidencia:** `tests/test_coverage_guards_hu29.py`, `data/scenarios_hu29.json` y [documentación HU-29](hu29-cobertura-reglas.md). El umbral es una decisión del prototipo, no un dato estadístico; las reglas requieren contraste con compras reales.
