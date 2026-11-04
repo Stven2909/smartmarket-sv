@@ -21,6 +21,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Motor de reglas R01–R08:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
 - **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
+- **Control de coherencia HU-25:** una auditoría de pruebas contrasta hechos derivados, condiciones de las ocho reglas, resolución de prioridades, dictamen, explicación e índice; no consume recursos durante peticiones HTTP.
 - **Identificación exacta de reglas (HU-22):** devuelve la huella SHA-256 de las definiciones vigentes en la cabecera HTTP `X-Expert-Rules-SHA256` de `/api/v1/recommend`, `/api/v1/knowledge` y `/ready`; sin campos adicionales en JSON ni trabajo en segundo plano.
 - **Cobertura de reglas:** ejecuta nueve escenarios de prueba y muestra activaciones, victorias, conflictos y casos sin regla en la interfaz.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
@@ -312,4 +313,4 @@ Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los
 
 En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
-[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md) · [Inferencia por lotes HU-24](docs/inferencia-lotes-hu24.md) · [Estabilidad Streamlit Cloud](docs/reparacion-streamlit-cloud-2026-11.md).
+[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md) · [Inferencia por lotes HU-24](docs/inferencia-lotes-hu24.md) · [Estabilidad Streamlit Cloud](docs/reparacion-streamlit-cloud-2026-11.md) · [Coherencia de inferencias HU-25](docs/hu25-coherencia-inferencia.md).
