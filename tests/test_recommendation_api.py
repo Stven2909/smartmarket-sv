@@ -96,7 +96,7 @@ def test_response_conforms_to_recommendation_response():
     parsed = RecommendationResponse.model_validate(response.json())
 
     assert parsed.request_id == "demo-001"
-    assert parsed.version_reglas == "1.1.0"
+    assert parsed.version_reglas == "1.2.0"
 
 
 def test_missing_required_field_returns_422():
@@ -131,7 +131,7 @@ def test_endpoint_runs_without_laravel():
     response = post_recommendation()
 
     assert response.status_code == 200
-    assert response.json()["version_reglas"] == "1.1.0"
+    assert response.json()["version_reglas"] == "1.2.0"
 
 
 def test_api_rejects_missing_or_wrong_key_when_configured(monkeypatch):
