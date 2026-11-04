@@ -57,7 +57,7 @@ def test_synthetic_comparison_does_not_depend_on_external_sources():
         )
     )
     assert len(report.ranking) == 10
-    assert all(len(option.recomendacion.trace) == 13 for option in report.ranking)
+    assert all(len(option.recomendacion.trace) == 16 for option in report.ranking)
 
 
 def test_web_catalog_is_explicitly_a_price_reference_not_real_inventory():
