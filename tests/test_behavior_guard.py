@@ -24,9 +24,9 @@ def snapshots():
     return cases, capture(cases)
 
 
-def test_full_snapshot_covers_fixed_threshold_boundaries_and_3402_classes():
+def test_full_snapshot_covers_fixed_threshold_boundaries_and_3404_classes():
     cases, result = snapshots()
-    assert len(cases) == 3441
+    assert len(cases) == 3443
     assert len(result["casos"]) == len(cases)
     assert len(result["contrato_entrada"]) == 14
     assert set(result["contrato_entrada"]) == EXPECTED_INPUTS
@@ -40,7 +40,7 @@ def test_same_commit_is_approved_without_differences():
     assert report["metricas"]["cambios_nivel"] == 0
     assert report["metricas"]["cambios_indice"] == 0
     assert report["metricas"]["perdidas_proteccion"] == 0
-    assert report["metricas"]["casos"] == 3441
+    assert report["metricas"]["casos"] == 3443
     assert "HU-17" in summary(report)
 
 
