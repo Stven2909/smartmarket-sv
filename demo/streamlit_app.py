@@ -173,8 +173,10 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
         elif (field == "presupuesto" and value <= 0) or (
             field != "presupuesto" and value < 0
         ):
-            rule = "mayor que cero" if field == "presupuesto" else "no negativo"
-            errors.append(f"{label} debe ser {rule}.")
+            if field == "presupuesto":
+                errors.append("Presupuesto debe ser mayor que cero.")
+            else:
+                errors.append(f"{label} no puede ser negativo.")
 
     counts: dict[str, int] = {}
     count_fields = {
