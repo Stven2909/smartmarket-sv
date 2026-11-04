@@ -42,3 +42,15 @@ La CI ejecuta `ruff check app demo scripts tests` y `pytest -q`, con `tests/test
 - Protección de URL, redirecciones y cabeceras de autenticación.
 
 **Limitación importante:** `streamlit.testing.v1.AppTest` ejecuta el código de Streamlit en Python, pero no valida la descarga de recursos JavaScript, websockets, caché de navegador o disponibilidad de Streamlit Cloud. Esas comprobaciones requieren una visita real a la aplicación publicada. Tampoco se ha alterado la lógica del motor, las ocho reglas ni `develop` de Laravel.
+
+## Segunda mejora: tablas de resultados sin módulos de DataFrame
+
+Después de solucionar `Metric.*.js`, las capturas seguían mostrando rectángulos grises donde debían aparecer tablas de datos. Las tablas de hechos, diagnósticos, índices y auditoría se habían construido con `st.dataframe`, que utiliza widgets interactivos de frontend incluso para listas de unas pocas filas.
+
+Ahora 16 tablas usan una función de presentación HTML estática, con encabezados semánticos, escape de etiquetas/celdas y CSS adaptable (desplazamiento horizontal y vertical). Se eliminan también cuatro widgets `st.json` en favor de bloques JSON visibles con `st.code`. Para evitar renderizar miles de filas HTML, el visor de tablas presenta hasta 100 registros y avisa cuando hay más; el JSON de evidencia conserva el resultado completo.
+
+**Qué esperamos mejorar:** menos carga de módulos JavaScript dinámicos, menos indicadores grises y una experiencia más consistente en navegadores con caché antigua. **Qué no prometemos:** latencia de red cero, eliminación del arranque en frío de Render o disponibilidad de Streamlit Cloud. Cuando Render esté dormido, la solicitud HTTP puede seguir tardando; el backend usa un timeout controlado y no se mantiene despierto mediante pings.
+
+El cliente de la demo ya obtiene la clave con `api_auth_headers()` desde `SMARTMARKET_API_KEY` del entorno Python o `st.secrets`; la URL se lee de `SMARTMARKET_API_URL` con la misma precedencia. El encabezado se envía desde el servidor Streamlit, no como código JavaScript público. Para el sitio desplegado, guarda ambas variables en **Streamlit Community Cloud → aplicación → Settings → Secrets**. Nunca copies claves en el repositorio ni en el frontend React. Si la demo es pública, un visitante puede seguir desencadenando llamadas desde Streamlit, aunque no pueda leer el secreto.
+
+**Pruebas:** `tests/test_streamlit_static_tables.py` comprueba escaping, límites, render y lectura de variables/secrets; el resto de la CI verifica las cuatro pestañas, el motor y su contrato. Sigue siendo necesario observar el resultado en un navegador real después del despliegue.
