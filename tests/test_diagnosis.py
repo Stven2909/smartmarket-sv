@@ -214,4 +214,4 @@ def test_streamlit_diagnosis_uses_fastapi_without_external_network(monkeypatch):
     at.run(timeout=20)
     assert not at.exception
     assert at.session_state["latest_diagnosis"]["regla_ganadora"] == "R06"
-    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 4
+    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 5
