@@ -1,11 +1,15 @@
 """Clasificadores deterministas de hechos; sus cambios se revisan entre commits en CI."""
 
+from app.expert_system.convenience_config import (
+    DEFAULT_CONVENIENCE_CONFIG,
+    ConvenienceConfig,
+)
 from app.expert_system.convenience_index import calculate_convenience_index
 from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
 # hechos resultantes, sin repetir estas comparaciones numéricas.
-THRESHOLDS_VERSION = "1.3.0"
+THRESHOLDS_VERSION = "1.3.1"
 
 THRESHOLDS = {
     "presupuesto_exceso_max_pct": 10.0,
@@ -23,7 +27,10 @@ THRESHOLDS = {
 }
 
 
-def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
+def derive_facts(
+    request: RecommendationRequest,
+    config: ConvenienceConfig = DEFAULT_CONVENIENCE_CONFIG,
+) -> dict[str, bool | float]:
     """Convierte una solicitud validada en hechos booleanos y métricas útiles."""
 
     diferencia_presupuesto = request.presupuesto - request.costo_total
@@ -91,10 +98,16 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
     )
     tiempo_alto = request.tiempo_estimado_min >= THRESHOLDS["tiempo_medio_max_min"]
 
-    weighted = calculate_convenience_index(request)
+    weighted = calculate_convenience_index(request, config)
     conveniencia_alta = weighted["clasificacion_conveniencia"] == "ALTA_CONVENIENCIA"
     conveniencia_no_baja = weighted["clasificacion_conveniencia"] != "BAJA_CONVENIENCIA"
-    conveniencia_solida = weighted["indice_conveniencia"] >= 60.0
+    # Use the unrounded score to test the threshold: 59.996 displays as
+    # 60.00 but must not activate a rule requiring at least 60.
+    unrounded_index = 100.0 * sum(
+        weight * weighted["componentes_conveniencia"][name]
+        for name, weight in weighted["pesos"].items()
+    )
+    conveniencia_solida = unrounded_index >= 60.0
 
     una_parada = request.numero_supermercados == 1
     dos_paradas = request.numero_supermercados == 2

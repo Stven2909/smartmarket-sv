@@ -92,5 +92,10 @@ jobs:
               --max-index-shift 10
           fi
 
+      - name: HU-31 - Weight sensitivity and critical-rule guard (no external requests)
+        run: |
+          python -m scripts.calibrate_convenience_weights \
+            --with-grid --json-output "$RUNNER_TEMP/weight-calibration.json"
+
       - name: Lightweight expert benchmark (no external requests)
         run: python -m scripts.benchmark_inference --iterations 300
