@@ -44,6 +44,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
 - **Seguridad del canal backend → motor (HU-23):** protege los endpoints de negocio con `X-API-Key` en producción, admite rotación temporal y desactiva caché en las respuestas de la API. La autenticación de usuarios finales permanece en Laravel.
 - **Endurecimiento HU-26:** activa protección automáticamente en Render, permite una clave independiente para Streamlit, limita a 512 KiB cada cuerpo HTTP de la API y audita las dependencias Python en GitHub Actions.
+- **Protección de la demo HU-27:** con clave independiente para Streamlit, limita el número de peticiones por minuto sin aplicar esa cuota al backend Laravel ni mantener tareas residentes.
 
 ## Arquitectura
 
@@ -264,6 +265,7 @@ En la demostración se detectó un fallo de carga del módulo JavaScript `Metric
 | `SMARTMARKET_API_KEY` | Secreto principal del servidor Python, obligatorio cuando `SMARTMARKET_ENV` indica un entorno desplegado |
 | `SMARTMARKET_API_KEY_PREVIOUS` | Clave anterior opcional y temporal durante una rotación |
 | `SMARTMARKET_API_KEY_STREAMLIT` | En Render: clave secundaria opcional, distinta de la de Laravel; puede revocarse independientemente |
+| `SMARTMARKET_STREAMLIT_RATE_LIMIT_PER_MINUTE` | En Render: máximo de peticiones por minuto de la clave independiente Streamlit (predeterminado 60; válido 1–600) |
 
 Streamlit utiliza `http://127.0.0.1:8001` por defecto. Los endpoints `/api/v1/*` requieren `X-API-Key` cuando existe un secreto de servidor o el entorno está protegido. `/health` y `/ready` permanecen públicos; el resto devuelve `401` sin clave válida. En un entorno protegido sin clave principal, el motor devuelve `503` en lugar de permitir acceso anónimo.
 
@@ -324,3 +326,8 @@ En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve J
 ### Auditoría de seguridad reproducible (HU-26)
 
 El servicio exige `X-API-Key` en Render, separa opcionalmente la credencial de Streamlit con `SMARTMARKET_API_KEY_STREAMLIT`, limita solicitudes JSON a 512 KiB y analiza dependencias con `pip-audit` en CI. Para verificar sin clave los cuatro endpoints públicos/privados desde tu propia red: `python -m scripts.security_probe --base-url https://sistema-experto-fork.onrender.com`. Se recomienda revisar las pruebas y las limitaciones antes de declarar seguro un despliegue: [HU-26 — auditoría de seguridad](docs/auditoria-seguridad-hu26.md).
+
+
+### Cuota de la demo pública (HU-27)
+
+Después de configurar una clave **distinta** para Streamlit, el motor aplica un presupuesto de peticiones por minuto al consumidor Streamlit, sin restringir la clave principal de Laravel. Cuando se supera, la API devuelve HTTP 429 y `Retry-After`; no se ejecutan procesos ni pings periódicos. La cuota es compartida por los visitantes y por proceso, y no sustituye la restricción de acceso a la página. Consulta [HU-27 — límite de la demo pública](docs/hu27-proteccion-demo-publica.md).
