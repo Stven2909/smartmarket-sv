@@ -51,7 +51,7 @@ def test_evidence_bundle_uses_real_existing_services():
     bundle = build_evidence(payload)
     assert len(bundle.comparison.ranking) == 9
     assert bundle.audit.escenarios_sinteticos == 3402
-    assert len(bundle.audit.cobertura) == 13
+    assert len(bundle.audit.cobertura) == 16
     assert len(bundle.sensitivity) == 9
     assert all(len(item.escenarios) >= 4 for item in bundle.sensitivity)
     assert bundle.request.model_dump() == before
