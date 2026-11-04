@@ -9,7 +9,7 @@ from app.schemas.recommendation import RecommendationRequest
 CONVENIENCE_CLASSIFICATIONS = frozenset(
     {"ALTA_CONVENIENCIA", "CONVENIENCIA_MEDIA", "BAJA_CONVENIENCIA"}
 )
-CRITICAL_RULE_IDS = frozenset({"R01", "R02", "R03", "R04", "R05", "R09", "R10"})
+CRITICAL_RULE_IDS = frozenset({"R01", "R02", "R03", "R04", "R05", "R09", "R10", "R12"})
 
 
 def _clamp(value: float) -> float:
