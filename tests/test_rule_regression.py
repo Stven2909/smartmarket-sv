@@ -56,7 +56,7 @@ def api(method, path, **kwargs):
 def test_identical_snapshots_do_not_create_false_regressions():
     request = RuleRegressionRequest.model_validate(payload())
     report = compare_rule_versions(request)
-    assert report.escenarios_evaluados == 9
+    assert report.escenarios_evaluados == 12
     assert report.huella_anterior == report.huella_propuesta
     assert report.reglas_agregadas == 0
     assert report.reglas_retiradas == 0
@@ -101,8 +101,14 @@ def test_critical_regression_is_detected_in_synthetic_two_store_case():
             "productos_esenciales_disponibles": 5,
         },
     }
+    unsafe = priority_variant("R02", 9)
+    # A deliberately unsafe candidate removes the essential guard from R08;
+    # the gate must still catch promotion of an incomplete shopping basket.
+    next(row for row in unsafe if row["id"] == "R08")["conditions"].pop(
+        "todos_esenciales_disponibles"
+    )
     request = RuleRegressionRequest.model_validate(
-        payload(after=priority_variant("R02", 9), cases=[case])
+        payload(after=unsafe, cases=[case])
     )
     result = compare_rule_versions(request)
     item = result.resultados[0]
@@ -136,7 +142,7 @@ def test_added_and_removed_rules_are_detected():
     current = rules()
     changed = [r for r in current if r["id"] != "R07"]
     added = json.loads(json.dumps(current[-1]))
-    added["id"] = "R09"
+    added["id"] = "R12"
     changed.append(added)
     report = compare_rule_versions(
         RuleRegressionRequest.model_validate(
@@ -147,7 +153,7 @@ def test_added_and_removed_rules_are_detected():
     assert report.reglas_retiradas == 1
     assert {(row.regla, row.tipo) for row in report.cambios_reglas} == {
         ("R07", "RETIRADA"),
-        ("R09", "AGREGADA"),
+        ("R12", "AGREGADA"),
     }
 
 
