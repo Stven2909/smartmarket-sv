@@ -191,7 +191,8 @@ def test_streamlit_shows_diagnosis_control_with_a_previous_result():
 def test_streamlit_diagnosis_uses_fastapi_without_external_network(monkeypatch):
     import requests
 
-    def fake_post(url, *, json, timeout, headers):
+    def fake_post(url, *, json, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         assert url.endswith("/api/v1/diagnosis")
         assert timeout > 0
         return request_api("POST", "/api/v1/diagnosis", json=json, headers=headers)

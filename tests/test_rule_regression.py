@@ -236,11 +236,13 @@ def test_api_key_is_required_when_configured(monkeypatch):
 def test_streamlit_comparison_click_reaches_real_api(monkeypatch):
     import requests
 
-    def fake_get(url, *, timeout, headers):
+    def fake_get(url, *, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         assert url.endswith("/api/v1/knowledge")
         return api("GET", "/api/v1/knowledge", headers=headers)
 
-    def fake_post(url, *, json, timeout, headers):
+    def fake_post(url, *, json, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         assert url.endswith("/api/v1/rule-regression")
         return api("POST", "/api/v1/rule-regression", json=json, headers=headers)
 

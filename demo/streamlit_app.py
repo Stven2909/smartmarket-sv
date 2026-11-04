@@ -1,7 +1,10 @@
 import json
 import os
+from html import escape
+from math import isfinite
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import requests
 import streamlit as st
@@ -31,6 +34,48 @@ class ApiClientError(RuntimeError):
     def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
+
+
+def metric_cards_html(items: list[tuple[str, Any]]) -> str:
+    """Render server-side, escaped summary cards without Streamlit's Metric JS chunk."""
+    if not items:
+        return ""
+    cards = []
+    for label, value in items:
+        safe_label = escape(str(label), quote=True)
+        safe_value = escape(str(value), quote=True)
+        cards.append(
+            '<div class="sm-stat-card" role="group" '
+            f'aria-label="{safe_label}">'
+            f'<div class="sm-stat-label">{safe_label}</div>'
+            f'<div class="sm-stat-value">{safe_value}</div>'
+            "</div>"
+        )
+    return '<div class="sm-stat-grid">' + "".join(cards) + "</div>"
+
+
+def render_metric_cards(items: list[tuple[str, Any]]) -> None:
+    """Present readable values even if the Metric.* frontend asset is unavailable."""
+    if items:
+        st.markdown(metric_cards_html(items), unsafe_allow_html=True)
+
+
+def _json_dict(response: requests.Response) -> dict[str, Any]:
+    """Convert failed/non-object JSON responses into user-facing API errors."""
+    try:
+        payload = response.json()
+    except (ValueError, TypeError) as exc:
+        raise ApiClientError(
+            "La API devolvió una respuesta no válida. Reintenta la operación.",
+            response.status_code,
+        ) from exc
+    if not isinstance(payload, dict):
+        raise ApiClientError(
+            "La API devolvió un formato JSON inesperado.",
+            response.status_code,
+        )
+    return payload
+
 
 
 @st.cache_data(show_spinner=False, max_entries=4)
@@ -91,54 +136,123 @@ def api_auth_headers() -> dict[str, str]:
 
 
 def validate_payload(payload: dict[str, Any]) -> list[str]:
-    """Valida localmente el formulario antes de enviarlo a FastAPI."""
+    """Check demo input safely; FastAPI remains the contract authority."""
+    if not isinstance(payload, dict):
+        return ["La alternativa debe ser un objeto JSON."]
 
     errors: list[str] = []
-    if not str(payload.get("request_id", "")).strip():
-        errors.append("Request ID es obligatorio.")
-    if not str(payload.get("alternativa_id", "")).strip():
-        errors.append("Alternativa ID es obligatorio.")
+    for field, title in (
+        ("request_id", "Request ID"),
+        ("alternativa_id", "Alternativa ID"),
+    ):
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{title} es obligatorio.")
+        elif len(value) > 256:
+            errors.append(f"{title} no puede superar 256 caracteres.")
 
-    non_negative_fields = {
+    numeric_fields = {
         "costo_total": "Costo total",
+        "presupuesto": "Presupuesto",
         "ahorro": "Ahorro",
         "distancia_km": "Distancia",
         "distancia_adicional_km": "Distancia adicional",
         "tiempo_estimado_min": "Tiempo estimado",
-        "productos_disponibles": "Productos disponibles",
-        "productos_esenciales_disponibles": "Productos esenciales disponibles",
     }
-    for field, label in non_negative_fields.items():
-        if float(payload.get(field, -1)) < 0:
-            errors.append(f"{label} no puede ser negativo.")
+    for field, label in numeric_fields.items():
+        raw = payload.get(field)
+        try:
+            if isinstance(raw, bool) or raw is None:
+                raise TypeError("boolean/null")
+            value = float(raw)
+        except (TypeError, ValueError, OverflowError):
+            errors.append(f"{label} debe ser un número válido.")
+            continue
+        if not isfinite(value):
+            errors.append(f"{label} debe ser un número finito.")
+        elif (field == "presupuesto" and value <= 0) or (
+            field != "presupuesto" and value < 0
+        ):
+            if field == "presupuesto":
+                errors.append("Presupuesto debe ser mayor que cero.")
+            else:
+                errors.append(f"{label} no puede ser negativo.")
 
-    if float(payload.get("presupuesto", 0)) <= 0:
-        errors.append("Presupuesto debe ser mayor que cero.")
-    if int(payload.get("productos_totales", 0)) <= 0:
-        errors.append("Productos totales debe ser mayor que cero.")
-    if int(payload.get("productos_esenciales_totales", 0)) < 0:
-        errors.append("Productos esenciales totales no puede ser negativo.")
-    if int(payload.get("numero_supermercados", 0)) < 1:
-        errors.append("Número de supermercados debe ser como mínimo uno.")
-    if int(payload.get("productos_disponibles", 0)) > int(payload.get("productos_totales", 0)):
+    counts: dict[str, int] = {}
+    count_fields = {
+        "productos_disponibles": "Productos disponibles",
+        "productos_totales": "Productos totales",
+        "productos_esenciales_disponibles": "Productos esenciales disponibles",
+        "productos_esenciales_totales": "Productos esenciales totales",
+        "numero_supermercados": "Número de supermercados",
+    }
+    for field, label in count_fields.items():
+        raw = payload.get(field)
+        try:
+            if isinstance(raw, bool) or raw is None:
+                raise TypeError("boolean/null")
+            value = float(raw)
+            if not isfinite(value) or not value.is_integer():
+                raise ValueError("not a finite integer")
+            count = int(value)
+        except (TypeError, ValueError, OverflowError):
+            errors.append(f"{label} debe ser un entero válido.")
+            continue
+        minimum = 1 if field in {"productos_totales", "numero_supermercados"} else 0
+        if count < minimum:
+            errors.append(f"{label} debe ser como mínimo {minimum}.")
+        counts[field] = count
+
+    if type(payload.get("promociones_aplicables")) is not bool:
+        errors.append("Promociones aplicables debe ser verdadero o falso.")
+
+    available = counts.get("productos_disponibles")
+    total = counts.get("productos_totales")
+    essentials = counts.get("productos_esenciales_disponibles")
+    essential_total = counts.get("productos_esenciales_totales")
+    if available is not None and total is not None and available > total:
         errors.append("Productos disponibles no puede superar productos totales.")
-    if int(payload.get("productos_esenciales_disponibles", 0)) > int(
-        payload.get("productos_esenciales_totales", 0)
+    if (
+        essentials is not None
+        and essential_total is not None
+        and essentials > essential_total
     ):
         errors.append(
             "Productos esenciales disponibles no puede superar productos esenciales totales."
         )
-    total = int(payload.get("productos_totales", 0))
-    disponibles = int(payload.get("productos_disponibles", 0))
-    esenciales_total = int(payload.get("productos_esenciales_totales", 0))
-    esenciales_disponibles = int(payload.get("productos_esenciales_disponibles", 0))
-    if esenciales_total > total:
+    if essential_total is not None and total is not None and essential_total > total:
         errors.append("Productos esenciales totales no puede superar productos totales.")
-    if esenciales_disponibles > disponibles:
+    if essentials is not None and available is not None and essentials > available:
         errors.append("Productos esenciales disponibles no puede superar productos disponibles.")
-    if disponibles - esenciales_disponibles > total - esenciales_total:
+    if (
+        None not in (available, total, essentials, essential_total)
+        and available - essentials > total - essential_total
+    ):
         errors.append("Productos opcionales disponibles no pueden superar su total.")
     return errors
+
+
+def _service_url(
+    path: str, base_url: str | None, *, has_secret: bool = False
+) -> str:
+    """Restrict API calls to a configured HTTP(S) origin, never follow redirects."""
+    origin = (base_url or api_base_url()).strip().rstrip("/")
+    parsed = urlsplit(origin)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path not in {"", "/"}
+    ):
+        raise ApiClientError("La URL del servicio Python no es válida.")
+    if has_secret and parsed.scheme != "https" and parsed.hostname not in {
+        "127.0.0.1", "localhost", "::1",
+    }:
+        raise ApiClientError("La API requiere HTTPS para transmitir la clave del servicio.")
+    return f"{origin}{path}"
 
 
 def _response_detail(response: requests.Response) -> str:
@@ -157,42 +271,48 @@ def _response_detail(response: requests.Response) -> str:
 
 
 def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
-    url = f"{(base_url or api_base_url()).rstrip('/')}/health"
+    url = _service_url("/health", base_url)
     try:
-        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers())
+        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS, allow_redirects=False)
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
 
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
             response.status_code,
         )
-    return response.json()
+    return _json_dict(response)
 
 
 def _post_json(path: str, payload: dict[str, Any], base_url: str | None = None) -> dict[str, Any]:
-    url = f"{(base_url or api_base_url()).rstrip('/')}{path}"
+    headers = api_auth_headers()
+    url = _service_url(path, base_url, has_secret=bool(headers))
     try:
         response = requests.post(
             url,
             json=payload,
             timeout=REQUEST_TIMEOUT_SECONDS,
-            headers=api_auth_headers(),
+            headers=headers,
+            allow_redirects=False,
         )
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
 
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
             response.status_code,
         )
-    return response.json()
+    return _json_dict(response)
 
 
 def call_recommendation_api(payload: dict[str, Any], base_url: str | None = None) -> dict[str, Any]:
@@ -242,42 +362,37 @@ def call_diagnosis_api(
     return _post_json("/api/v1/diagnosis", {"alternativa": alternative}, base_url)
 
 
-def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
-    """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
-    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/knowledge"
+def _get_json(path: str, base_url: str | None = None) -> dict[str, Any]:
+    headers = api_auth_headers()
+    url = _service_url(path, base_url, has_secret=bool(headers))
     try:
         response = requests.get(
-            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
+            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=headers,
+            allow_redirects=False,
         )
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
             response.status_code,
         )
-    return response.json()
+    return _json_dict(response)
+
+
+def call_knowledge_api(base_url: str | None = None) -> dict[str, Any]:
+    """Lee reglas y parámetros de la API; nunca ejecuta el motor en la interfaz."""
+    return _get_json("/api/v1/knowledge", base_url)
 
 
 def call_rule_audit_api(base_url: str | None = None) -> dict[str, Any]:
     """Consulta el informe de consistencia sin evaluar ni modificar compras."""
-    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/rule-audit"
-    try:
-        response = requests.get(
-            url, timeout=REQUEST_TIMEOUT_SECONDS, headers=api_auth_headers()
-        )
-    except requests.Timeout as exc:
-        raise ApiClientError("La auditoría tardó demasiado en responder.") from exc
-    except requests.RequestException as exc:
-        raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
-    if response.status_code >= 400:
-        raise ApiClientError(
-            f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
-            response.status_code,
-        )
-    return response.json()
+    return _get_json("/api/v1/rule-audit", base_url)
 
 
 def call_evidence_report_api(
@@ -285,7 +400,8 @@ def call_evidence_report_api(
 ) -> bytes:
     """Solicita un PDF real; la interfaz no replica el motor experto."""
 
-    url = f"{(base_url or api_base_url()).rstrip('/')}/api/v1/evidence-report"
+    headers = api_auth_headers()
+    url = _service_url("/api/v1/evidence-report", base_url, has_secret=bool(headers))
     payload = {
         "procedencia": "sintetico",
         "escenarios": [
@@ -296,12 +412,15 @@ def call_evidence_report_api(
     try:
         response = requests.post(
             url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS,
-            headers=api_auth_headers(),
+            headers=headers,
+            allow_redirects=False,
         )
     except requests.Timeout as exc:
         raise ApiClientError("La generación del informe tardó demasiado.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
@@ -339,7 +458,13 @@ def render_recommendation(
 
     level = result.get("nivel_recomendacion", "DESCONOCIDO")
     index = result.get("indice_conveniencia")
-    score = float(index) if isinstance(index, (int, float)) else None
+    score = (
+        float(index)
+        if isinstance(index, (int, float))
+        and not isinstance(index, bool)
+        and isfinite(index)
+        else None
+    )
     rule = result.get("winning_rule")
     activated = result.get("reglas_activadas", [])
     facts = result.get("hechos_derivados", {})
@@ -352,11 +477,14 @@ def render_recommendation(
         else:
             st.warning("No recomendable o sin una regla favorable")
 
-        a, b, c, d = st.columns(4)
-        a.metric("Decisión experta", level)
-        b.metric("Índice auxiliar", f"{score:.2f}/100" if score is not None else "N/D")
-        c.metric("Regla ganadora", rule or "Ninguna")
-        d.metric("Reglas activadas", len(activated))
+        render_metric_cards(
+            [
+                ("Decisión experta", level),
+                ("Índice auxiliar", f"{score:.2f}/100" if score is not None else "N/D"),
+                ("Regla ganadora", rule or "Ninguna"),
+                ("Reglas activadas", len(activated)),
+            ]
+        )
         if score is not None:
             st.progress(max(0.0, min(score / 100.0, 1.0)))
         st.caption(
@@ -696,6 +824,7 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         )
 
     if st.button("Comparar alternativas", type="primary", key="compare_button"):
+        st.session_state.pop("latest_comparison", None)
         selected_payloads = [by_name[name]["facts"] for name in selected]
         if include_custom:
             selected_payloads.append(st.session_state["latest_facts"])
@@ -728,9 +857,9 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         st.info("Ejecuta una comparación para ver el ranking y su explicación.")
         return
 
-    st.metric(
-        "Mejor alternativa entre las evaluadas",
-        comparison.get("mejor_alternativa_id", "N/D"),
+    render_metric_cards(
+        [("Mejor alternativa entre las evaluadas",
+          comparison.get("mejor_alternativa_id", "N/D"))]
     )
     st.caption(comparison.get("criterio_orden", ""))
     rows = comparison.get("ranking", [])
@@ -774,6 +903,7 @@ def render_sensitivity_tab(base_url: str) -> None:
         return
 
     if st.button("Ejecutar escenarios de sensibilidad", key="sensitivity_button"):
+        st.session_state.pop("latest_sensitivity", None)
         try:
             st.session_state["latest_sensitivity"] = call_sensitivity_api(
                 original, base_url
@@ -791,9 +921,8 @@ def render_sensitivity_tab(base_url: str) -> None:
         st.info("Ejecuta el análisis para ver el efecto de cambios hipotéticos.")
         return
 
-    st.metric(
-        "Escenarios con una decisión diferente",
-        report["cantidad_decisiones_distintas"],
+    render_metric_cards(
+        [("Escenarios con una decisión diferente", report["cantidad_decisiones_distintas"])]
     )
     st.write(report["interpretacion"])
     baseline = report["escenario_base"]
@@ -918,10 +1047,13 @@ def render_rule_coverage(
     if report is None:
         return
 
-    a, b, c = st.columns(3)
-    a.metric("Escenarios evaluados", report["total"])
-    b.metric("Sin regla ganadora", report["no_winner"])
-    c.metric("Con varias reglas activas", report["conflicts"])
+    render_metric_cards(
+        [
+            ("Escenarios evaluados", report["total"]),
+            ("Sin regla ganadora", report["no_winner"]),
+            ("Con varias reglas activas", report["conflicts"]),
+        ]
+    )
     st.dataframe(
         report["rules"], hide_index=True, use_container_width=True
     )
@@ -957,10 +1089,13 @@ def render_rule_audit(base_url: str) -> None:
         st.info("Ejecuta la auditoría para inspeccionar la consistencia de R01–R08.")
         return
 
-    first, second, third = st.columns(3)
-    first.metric("Reglas", report["reglas_evaluadas"])
-    second.metric("Hallazgos para revisar", len(report["hallazgos"]))
-    third.metric("Pares que se solapan", len(report["solapamientos"]))
+    render_metric_cards(
+        [
+            ("Reglas", report["reglas_evaluadas"]),
+            ("Hallazgos para revisar", len(report["hallazgos"])),
+            ("Pares que se solapan", len(report["solapamientos"])),
+        ]
+    )
     st.write(report["resumen"])
 
     findings = report.get("hallazgos", [])
@@ -1112,11 +1247,14 @@ def render_rule_regression(
     if not report or st.session_state.get("regression_fingerprint") != fingerprint:
         return
 
-    first, second, third, fourth = st.columns(4)
-    first.metric("Casos evaluados", report["escenarios_evaluados"])
-    second.metric("Cambios de nivel", report["cambios_nivel"])
-    third.metric("Reglas ganadoras distintas", report["cambios_regla_ganadora"])
-    fourth.metric("Regresiones críticas", report["regresiones_criticas"])
+    render_metric_cards(
+        [
+            ("Casos evaluados", report["escenarios_evaluados"]),
+            ("Cambios de nivel", report["cambios_nivel"]),
+            ("Reglas ganadoras distintas", report["cambios_regla_ganadora"]),
+            ("Regresiones críticas", report["regresiones_criticas"]),
+        ]
+    )
 
     if report["regresiones_criticas"]:
         st.error(
@@ -1221,7 +1359,7 @@ def render_knowledge_tab(base_url: str) -> None:
         return
 
     rules = knowledge.get("rules", [])
-    st.metric("Reglas de producción vigentes", len(rules))
+    render_metric_cards([("Reglas de producción vigentes", len(rules))])
     st.caption(
         f"Versión de reglas: {knowledge.get('rules_version', 'N/D')} · "
         f"Versión de umbrales: {knowledge.get('thresholds_version', 'N/D')}"
@@ -1282,13 +1420,33 @@ def main() -> None:
         """
         <style>
         .block-container {max-width: 1200px; padding-top: 2rem;}
-        [data-testid="stMetric"] {
-            background: rgba(42, 118, 98, 0.065);
-            border: 1px solid rgba(80, 150, 135, 0.20);
-            border-radius: 14px;
-            padding: 16px;
+        .sm-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+            gap: 12px;
+            margin: 0 0 20px 0;
         }
-        [data-testid="stMetricValue"] {font-size: 1.45rem;}
+        .sm-stat-card {
+            background: rgba(42, 118, 98, 0.065);
+            border: 1px solid rgba(80, 150, 135, 0.22);
+            border-radius: 14px;
+            padding: 16px 18px;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .sm-stat-label {
+            font-size: 0.86rem;
+            color: var(--text-color);
+            opacity: 0.78;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .sm-stat-value {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.25;
+            font-weight: 700;
+        }
         [data-testid="stDataFrame"] {border-radius: 12px; overflow: hidden;}
         [data-testid="stExpander"] {border-radius: 12px;}
         .sm-hero {
@@ -1311,7 +1469,10 @@ def main() -> None:
         """,
         unsafe_allow_html=True,
     )
-    base_url = st.sidebar.text_input("URL del servicio Python", value=api_base_url())
+    # Never let an anonymous visitor redirect requests carrying server-side
+    # X-API-Key to an arbitrary URL. This endpoint is operator-configured only.
+    base_url = api_base_url()
+    st.sidebar.caption("Servicio Python configurado desde el servidor.")
     st.sidebar.caption(
         "Interfaz de demostración del servicio experto Python. "
         "En la aplicación integrada, Laravel proporciona los hechos por HTTP."
@@ -1348,6 +1509,11 @@ def main() -> None:
 
             payload = _render_scenario_form(selected)
             if payload is not None:
+                # Do not leave a previous recommendation visible after a failed
+                # request or invalid new form, which can mislead the user.
+                st.session_state.pop("latest_recommendation", None)
+                st.session_state.pop("latest_facts", None)
+                st.session_state.pop("latest_diagnosis", None)
                 errors = validate_payload(payload)
                 if errors:
                     for error in errors:

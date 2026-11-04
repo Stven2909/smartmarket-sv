@@ -214,7 +214,8 @@ def test_audit_uses_same_api_key_as_other_endpoints(monkeypatch):
 def test_streamlit_audit_button_fetches_real_asgi_report(monkeypatch):
     import requests
 
-    def fake_get(url, *, timeout, headers):
+    def fake_get(url, *, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         assert url.endswith("/api/v1/rule-audit")
         assert timeout > 0
         return get("/api/v1/rule-audit", headers=headers)

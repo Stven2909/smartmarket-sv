@@ -183,7 +183,8 @@ def test_bad_payload_is_422_and_streamlit_rejects_bad_counts(changes):
 
 
 def test_streamlit_client_calls_fastapi_http_contract_without_network(monkeypatch):
-    def fake_post(url, *, json, timeout, headers):
+    def fake_post(url, *, json, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         assert url == "http://testserver/api/v1/recommend"
         assert timeout > 0
         return api_request("POST", "/api/v1/recommend", json=json, headers=headers)

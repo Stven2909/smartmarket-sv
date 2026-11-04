@@ -38,6 +38,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Informe académico PDF (HU-12):** integra ranking, trazas de las ocho reglas, sensibilidad, versiones y auditoría en un documento descargable.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
+- **Paneles resistentes en Streamlit Cloud:** sustituye todas las métricas dinámicas por tarjetas HTML seguras, adapta el diseño a móvil y evita mostrar resultados obsoletos ante errores.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
 - **Seguridad del canal backend → motor (HU-23):** protege los endpoints de negocio con `X-API-Key` en producción, admite rotación temporal y desactiva caché en las respuestas de la API. La autenticación de usuarios finales permanece en Laravel.
 
@@ -245,6 +246,12 @@ El comparador evalúa individualmente cada alternativa y ordena por conclusión 
 
 Para los contratos completos consulta [la documentación de la API](docs/api-contract.md) y [los ejemplos de integración](docs/laravel-integration.md).
 
+## Reparación de Streamlit Cloud
+
+En la demostración se detectó un fallo de carga del módulo JavaScript `Metric.*.js`. Los indicadores se renderizan ahora como HTML escapado y adaptable, sin depender de ese recurso dinámico. La dependencia de Streamlit en `demo/requirements.txt` queda fijada en `1.66.1` (verificada en CI). La URL del servicio Python ya no puede ser modificada por usuarios de la demo; se configura solo en el servidor.
+
+**Advertencia:** las pruebas automáticas de Streamlit ejecutan Python, pero no garantizan que Streamlit Cloud entregue sus módulos JS al navegador. Una pantalla en blanco, un spinner permanente o recursos `.js` inaccesibles también pueden indicar problemas de Cloud, caché del navegador o conectividad. Revisa los logs del despliegue y sigue la [guía de reparación y verificación](docs/reparacion-streamlit-cloud-2026-11.md). Aun cuando las pruebas pasen, no consideres resuelto el incidente hasta validar el sitio publicado en un navegador real.
+
 ## Configuración
 
 | Variable | Uso |
@@ -305,4 +312,4 @@ Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los
 
 En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
-[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md) · [Inferencia por lotes HU-24](docs/inferencia-lotes-hu24.md).
+[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md) · [Inferencia por lotes HU-24](docs/inferencia-lotes-hu24.md) · [Estabilidad Streamlit Cloud](docs/reparacion-streamlit-cloud-2026-11.md).
