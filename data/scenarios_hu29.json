@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sin-esenciales-cobertura-60",
+    "name": "Cobertura incompleta sin esenciales marcados",
+    "description": "60 % de cobertura sin elementos esenciales identificados, que antes podía activar una clasificación demasiado favorable.",
+    "facts": {
+      "request_id": "hu29-sin-esenciales",
+      "alternativa_id": "hu29-tienda-sin-esenciales",
+      "presupuesto": 50,
+      "costo_total": 45,
+      "ahorro": 5,
+      "distancia_km": 2,
+      "distancia_adicional_km": 1,
+      "tiempo_estimado_min": 12,
+      "productos_totales": 10,
+      "productos_disponibles": 6,
+      "productos_esenciales_totales": 0,
+      "productos_esenciales_disponibles": 0,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "esenciales-cubiertos-lista-parcial",
+    "name": "Esenciales cubiertos pero faltan opcionales",
+    "description": "60 % de la lista disponible con todos los esenciales cubiertos y un recorrido razonable.",
+    "facts": {
+      "request_id": "hu29-opcionales-faltantes",
+      "alternativa_id": "hu29-tienda-opcionales",
+      "presupuesto": 50,
+      "costo_total": 45,
+      "ahorro": 5,
+      "distancia_km": 4,
+      "distancia_adicional_km": 3,
+      "tiempo_estimado_min": 25,
+      "productos_totales": 10,
+      "productos_disponibles": 6,
+      "productos_esenciales_totales": 3,
+      "productos_esenciales_disponibles": 3,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  }
+]
