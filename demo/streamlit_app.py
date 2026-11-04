@@ -24,6 +24,7 @@ DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
 REQUEST_TIMEOUT_SECONDS = 90
 SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
 EXTRA_RULE_SCENARIOS_PATH = SCENARIOS_PATH.with_name("scenarios_hu28.json")
+COVERAGE_GUARD_SCENARIOS_PATH = SCENARIOS_PATH.with_name("scenarios_hu29.json")
 
 
 class ScenarioLoadError(ValueError):
@@ -1131,8 +1132,8 @@ def render_rule_coverage(
 ) -> None:
     st.subheader("Matriz de cobertura de reglas")
     st.caption(
-        "Evalúa las nueve alternativas clásicas y tres escenarios complementarios "
-        "en dos solicitudes independientes para no superar el límite de diez. "
+        "Evalúa nueve alternativas clásicas y cinco casos complementarios "
+        "en tres solicitudes independientes para no superar el límite de diez. "
         "La matriz muestra activaciones y prioridades, no exactitud comercial."
     )
     if st.button("Evaluar cobertura", key="coverage_button"):
@@ -1147,13 +1148,21 @@ def render_rule_coverage(
                 complementary = call_comparison_api(
                     [scenario["facts"] for scenario in extras], base_url
                 )
+                safety_cases = load_scenarios(COVERAGE_GUARD_SCENARIOS_PATH)
+                safety_results = call_comparison_api(
+                    [scenario["facts"] for scenario in safety_cases], base_url
+                )
                 # The 10-alternative HTTP limit remains unchanged.
                 together = {
                     **primary,
-                    "ranking": primary["ranking"] + complementary["ranking"],
+                    "ranking": (
+                        primary["ranking"]
+                        + complementary["ranking"]
+                        + safety_results["ranking"]
+                    ),
                 }
                 st.session_state["rule_coverage"] = build_coverage_report(
-                    together, scenarios + extras
+                    together, scenarios + extras + safety_cases
                 )
             except (ApiClientError, ScenarioLoadError) as exc:
                 st.error(f"No se pudo evaluar la cobertura: {exc}")
