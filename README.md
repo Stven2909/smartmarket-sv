@@ -43,6 +43,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Tablas ligeras y legibles:** presenta las tablas de hechos, auditoría, diagnóstico y comparación como HTML escapado en lugar de 16 componentes interactivos con carga JavaScript adicional.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
 - **Seguridad del canal backend → motor (HU-23):** protege los endpoints de negocio con `X-API-Key` en producción, admite rotación temporal y desactiva caché en las respuestas de la API. La autenticación de usuarios finales permanece en Laravel.
+- **Endurecimiento HU-26:** activa protección automáticamente en Render, permite una clave independiente para Streamlit, limita a 512 KiB cada cuerpo HTTP de la API y audita las dependencias Python en GitHub Actions.
 
 ## Arquitectura
 
@@ -262,12 +263,13 @@ En la demostración se detectó un fallo de carga del módulo JavaScript `Metric
 | `SMARTMARKET_ENV` | En Render usa `production`; cualquier entorno explícito salvo `local/dev/development/test/testing` exige API key |
 | `SMARTMARKET_API_KEY` | Secreto principal del servidor Python, obligatorio cuando `SMARTMARKET_ENV` indica un entorno desplegado |
 | `SMARTMARKET_API_KEY_PREVIOUS` | Clave anterior opcional y temporal durante una rotación |
+| `SMARTMARKET_API_KEY_STREAMLIT` | En Render: clave secundaria opcional, distinta de la de Laravel; puede revocarse independientemente |
 
 Streamlit utiliza `http://127.0.0.1:8001` por defecto. Los endpoints `/api/v1/*` requieren `X-API-Key` cuando existe un secreto de servidor o el entorno está protegido. `/health` y `/ready` permanecen públicos; el resto devuelve `401` sin clave válida. En un entorno protegido sin clave principal, el motor devuelve `503` en lugar de permitir acceso anónimo.
 
 **Streamlit también utiliza credenciales de servidor:** en Community Cloud, abre la aplicación → Settings → Secrets y guarda `SMARTMARKET_API_URL` (URL HTTPS de Render) y `SMARTMARKET_API_KEY` (el secreto vigente en Render). La interfaz ya incluye `X-API-Key` en las llamadas de API desde Python, no desde el navegador. El botón **Verificar conexión** sigue disponible en la barra lateral; la URL y el secreto no pueden editarse desde la demo. Nunca copies estas variables al código fuente ni a React.
 
-**Importante:** si Render no tiene ni `SMARTMARKET_ENV` ni clave configuradas, todavía funciona como entorno de desarrollo. Antes de considerar el despliegue seguro, configura ambos secretos en Render y la clave correspondiente `EXPERT_SYSTEM_API_KEY` en Laravel. Nunca expongas la clave del servidor en React/Streamlit ni confundas `X-API-Key` con la autenticación de usuarios finales.
+**Importante:** Render define automáticamente `RENDER=true` y nuestro servicio lo reconoce como un entorno desplegado, que exige la clave principal. Aunque falte `SMARTMARKET_ENV`, la API no queda abierta por ese motivo. En desarrollo local continúa el modo sin clave. Antes de considerar el despliegue seguro, configura ambos secretos en Render y la clave correspondiente `EXPERT_SYSTEM_API_KEY` en Laravel. Nunca expongas la clave del servidor en React/Streamlit ni confundas `X-API-Key` con la autenticación de usuarios finales.
 
 No incluyas claves reales en el código, el README ni archivos versionados. Ver [HU-23: seguridad y rotación de claves](docs/seguridad-api-hu23.md).
 
@@ -317,3 +319,8 @@ Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los
 En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
 [Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md) · [Inferencia por lotes HU-24](docs/inferencia-lotes-hu24.md) · [Estabilidad Streamlit Cloud](docs/reparacion-streamlit-cloud-2026-11.md) · [Coherencia de inferencias HU-25](docs/hu25-coherencia-inferencia.md).
+
+
+### Auditoría de seguridad reproducible (HU-26)
+
+El servicio exige `X-API-Key` en Render, separa opcionalmente la credencial de Streamlit con `SMARTMARKET_API_KEY_STREAMLIT`, limita solicitudes JSON a 512 KiB y analiza dependencias con `pip-audit` en CI. Para verificar sin clave los cuatro endpoints públicos/privados desde tu propia red: `python -m scripts.security_probe --base-url https://sistema-experto-fork.onrender.com`. Se recomienda revisar las pruebas y las limitaciones antes de declarar seguro un despliegue: [HU-26 — auditoría de seguridad](docs/auditoria-seguridad-hu26.md).
