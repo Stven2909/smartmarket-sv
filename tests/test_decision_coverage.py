@@ -90,6 +90,36 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
     )
 
 
+def test_full_eleven_rule_coverage_uses_two_valid_comparison_batches():
+    basic = load_scenarios()
+    extras = load_scenarios(
+        Path(__file__).resolve().parents[1] / "data" / "scenarios_hu28.json"
+    )
+    assert len(basic) == 9 and len(extras) == 3
+
+    def compare(rows):
+        return compare_alternatives(
+            ComparisonRequest(
+                alternativas=[
+                    RecommendationRequest.model_validate(item["facts"])
+                    for item in rows
+                ]
+            )
+        ).model_dump(mode="json")
+
+    first = compare(basic)
+    second = compare(extras)
+    merged = {**first, "ranking": first["ranking"] + second["ranking"]}
+    report = build_coverage_report(merged, basic + extras)
+    assert report["total"] == 12
+    assert report["no_winner"] == 1
+    assert {row["Regla"] for row in report["rules"]} == {
+        f"R{i:02}" for i in range(1, 12)
+    }
+    assert all(row["Activaciones"] >= 1 for row in report["rules"])
+    assert all(row["Victorias"] >= 1 for row in report["rules"])
+
+
 def test_streamlit_coverage_controls_load_without_network():
     script = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app.py"
     at = AppTest.from_file(str(script))
