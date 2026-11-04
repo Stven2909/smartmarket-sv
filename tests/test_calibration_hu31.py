@@ -70,7 +70,7 @@ def test_custom_profile_affects_both_fact_classification_and_reported_index():
         rules,
         config=configurations()["priorizar_promociones"],
     )
-    assert trial["pesos_conveniencia"] == PROFILES["priorizar_promociones"]
+    assert trial["pesos_conveniencia"] == configurations()["priorizar_promociones"].weights()
     assert trial["facts"]["conveniencia_alta"] is False
     assert trial["indice_conveniencia"] != baseline["indice_conveniencia"]
     assert baseline["winning_rule"] == "R14"
