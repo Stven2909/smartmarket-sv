@@ -6,6 +6,12 @@ Mantener `Stven2909/smartmarket-sv:expert-system-python` alineada con las mejora
 
 El 3 de noviembre de 2026 se comprobó que el commit del equipo `03c256b4ea1df05ed6c5e1ad26ca53cc72036292` seguía siendo ancestro de nuestro `main`. Al inicio de HU-22 el fork ya llevaba 246 commits de ventaja. El script vuelve a consultar el origen antes de cada publicación: estos números **son observaciones históricas**, no una garantía de que siga siendo posible el avance rápido. La conexión GitHub de este chat puede leer el repositorio del compañero, pero `update_ref` devolvió `Resource not accessible by integration`; eso no demuestra que las credenciales Git personales del usuario carezcan de permisos.
 
+## Rama espejo dentro de nuestro fork (automática)
+
+`HenryBo06/Sistema-experto-fork:main` y `HenryBo06/Sistema-experto-fork:expert-system-python` pertenecen al **mismo repositorio privado**. El workflow `.github/workflows/sync-python-mirror.yml` se ejecuta al actualizar `main` y hace un avance rápido normal, solo en la rama espejo del fork. Verifica el último commit de `main` y se detiene si descubre divergencias. No utiliza `--force`, no accede a repositorios externos y no hace cambios en `develop`.
+
+**Son dos tareas distintas:** mantener las dos ramas propias iguales es automático; publicar los commits del fork en `Stven2909/smartmarket-sv:expert-system-python` sigue necesitando un push autenticado como usuario con permisos. Esta última operación se realiza usando el script PowerShell descrito más abajo.
+
 ## Pasos desde Windows PowerShell
 
 Necesitas un clon actualizado de nuestro fork y una cuenta con permisos `write` en `Stven2909/smartmarket-sv` para subir cambios a la rama del equipo. Git Credential Manager puede solicitar autenticación; no añadas claves o tokens al código.

@@ -1,0 +1,52 @@
+name: Sync expert mirror inside personal fork
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    if: github.repository == 'HenryBo06/Sistema-experto-fork'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sync-python-mirror
+      cancel-in-progress: false
+    steps:
+      - name: Checkout the main commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward expert-system-python mirror (never force)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --quiet --no-tags origin \
+            '+refs/heads/main:refs/remotes/origin/main' \
+            '+refs/heads/expert-system-python:refs/remotes/origin/expert-system-python'
+
+          latest_main="$(git rev-parse refs/remotes/origin/main)"
+          mirror_head="$(git rev-parse refs/remotes/origin/expert-system-python)"
+
+          if [[ "$GITHUB_SHA" != "$latest_main" ]]; then
+            echo "Main has advanced; a newer workflow will handle the mirror."
+            exit 0
+          fi
+
+          if [[ "$mirror_head" == "$latest_main" ]]; then
+            echo "Our main and expert-system-python already match."
+            exit 0
+          fi
+
+          if ! git merge-base --is-ancestor "$mirror_head" "$latest_main"; then
+            echo "::error::The mirror has diverged. Manual review required; refusing force push."
+            exit 1
+          fi
+
+          git push origin "$latest_main:refs/heads/expert-system-python"
+          echo "Mirror advanced without force. No external repository was modified."
