@@ -25,10 +25,11 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Identificación exacta de reglas (HU-22):** devuelve la huella SHA-256 de las definiciones vigentes en la cabecera HTTP `X-Expert-Rules-SHA256` de `/api/v1/recommend`, `/api/v1/knowledge` y `/ready`; sin campos adicionales en JSON ni trabajo en segundo plano.
 - **Cobertura de reglas:** ejecuta nueve escenarios de prueba y muestra activaciones, victorias, conflictos y casos sin regla en la interfaz.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
+- **Calibración reproducible HU-31:** compara cinco perfiles alternativos de pesos en el mismo motor, registra cambios de dictamen y comprueba riesgos críticos, sin modificar los pesos del despliegue.
 - **Comparación de alternativas:** ordena de 2 a 10 opciones, explica sus posiciones y advierte cuando los totales de productos sugieren listas distintas.
 - **Importación CSV/JSON (HU-15):** Streamlit valida hasta 750 filas y distingue datos manuales, escenarios sintéticos y referencias web, sin añadir campos al motor.
 - **Pruebas basadas en propiedades (HU-16):** Hypothesis comprueba determinismo, condiciones excluyentes, prioridades críticas y monotonía del índice auxiliar.
-- **Regresión de código (HU-17):** compara en procesos aislados el commit base y el candidato sobre 3441 escenarios, detectando cambios de umbrales, pesos y activación crítica.
+- **Regresión de código (HU-17):** compara en procesos aislados el commit base y el candidato sobre 3443 escenarios, detectando cambios de umbrales, pesos y activación crítica.
 - **Compatibilidad Laravel (HU-18):** valida mediante HTTP en memoria los 14 hechos y respuestas esperadas a partir de casos sintéticos basados en el contrato PHP de Steven.
 - **Benchmark del motor (HU-19):** mide mediana, p95 y memoria en CI sin despertar Render.
 - **Análisis de sensibilidad:** muestra cómo cambia una recomendación ante variaciones hipotéticas del precio, distancia, tiempo, promociones y disponibilidad de esenciales.
@@ -111,6 +112,8 @@ Las dieciséis reglas se almacenan en [`data/rules.json`](data/rules.json).
 **Ampliación HU-29:** R12 evita declarar excelente una alternativa con cobertura baja y cero esenciales definidos; R13 distingue una compra parcialmente completa (BUENA) de una excelente cuando faltan muchos opcionales. El límite del 80 % es una política del prototipo y debe calibrarse con ejemplos reales. En esa fase, la matriz de Streamlit revisaba R01–R13 en tres lotes (9, 3 y 2). `RULES_VERSION=1.2.0`, `THRESHOLDS_VERSION=1.2.0`, `CONTRACT_VERSION=1.0.0`. [Razones, límites y pruebas](docs/hu29-cobertura-reglas.md).
 
 **Ampliación HU-30 (vigente):** R14–R16 incorporan el índice de conveniencia calculado con los cinco pesos del motor a la evaluación de casos comerciales concretos. R14 exige conveniencia alta (≥75); R15 exige conveniencia no baja (≥50) y R16 un índice sólido (≥60). Ningún peso puede revocar los riesgos críticos. La matriz de cobertura revisa las dieciséis reglas en solo dos peticiones de 9 y 8 escenarios. `RULES_VERSION=1.3.0`, `THRESHOLDS_VERSION=1.3.0` y `CONTRACT_VERSION=1.0.0`. [Criterios y límites](docs/hu30-reglas-ponderadas.md).
+
+**Calibración HU-31 (vigente):** `python -m scripts.calibrate_convenience_weights --with-grid` contrasta cinco perfiles de pesos con los 17 escenarios de demostración y 3404 representantes sintéticos. La CI valida que ningún perfil invalide una protección crítica; no elige automáticamente un perfil "mejor". El motor continúa con los pesos originales, pero corrige la comparación de R16 para aplicar 60 puntos **sin redondear**. Esta precisión queda trazada mediante `RULES_VERSION=1.3.1`, `THRESHOLDS_VERSION=1.3.1`; el contrato continúa en `1.0.0`. [Guía de calibración y límites](docs/hu31-calibracion-pesos.md).
 
 Si ninguna regla se activa, el sistema devuelve provisionalmente `NO_RECOMENDABLE` e indica que se requiere comparar otras opciones. Cuando el presupuesto se supera ligeramente (hasta el 10 %) sin activar otras reglas, la explicación y la acción indican explícitamente esa condición; no se inventa una regla ganadora. La regla R06 no presupone que todos los productos opcionales estén disponibles.
 
