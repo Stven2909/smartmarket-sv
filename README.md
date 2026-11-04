@@ -18,10 +18,10 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Evaluación de alternativas:** clasifica una compra como `EXCELENTE`, `BUENA` o `NO_RECOMENDABLE`.
 - **Inferencia por lotes (HU-24):** opcionalmente recibe hasta 50 alternativas en una sola solicitud HTTP, preserva su orden, IDs y evaluación independiente, sin calcular ni cambiar el ranking de Laravel.
 - **Despliegue ligero:** Streamlit instala solo las dependencias de la interfaz y calcula únicamente la pestaña activa; Render difiere el motor PDF y cachea las reglas estáticas y la auditoría bajo demanda.
-- **Motor de reglas R01–R13:** aplica condiciones lógicas y prioridades configuradas en JSON.
+- **Motor de reglas R01–R16:** aplica condiciones lógicas y prioridades configuradas en JSON.
 - **Resolución de conflictos:** identifica la regla ganadora y las demás reglas activadas.
 - **Trazabilidad:** conserva los hechos derivados, cada comparación y las condiciones específicas que no se cumplen.
-- **Control de coherencia HU-25:** una auditoría de pruebas contrasta hechos derivados, condiciones de las trece reglas, resolución de prioridades, dictamen, explicación e índice; no consume recursos durante peticiones HTTP.
+- **Control de coherencia HU-25:** una auditoría de pruebas contrasta hechos derivados, condiciones de las dieciséis reglas, resolución de prioridades, dictamen, explicación e índice; no consume recursos durante peticiones HTTP.
 - **Identificación exacta de reglas (HU-22):** devuelve la huella SHA-256 de las definiciones vigentes en la cabecera HTTP `X-Expert-Rules-SHA256` de `/api/v1/recommend`, `/api/v1/knowledge` y `/ready`; sin campos adicionales en JSON ni trabajo en segundo plano.
 - **Cobertura de reglas:** ejecuta nueve escenarios de prueba y muestra activaciones, victorias, conflictos y casos sin regla en la interfaz.
 - **Índice de conveniencia:** calcula una puntuación complementaria de 0 a 100 con pesos explícitos.
@@ -36,7 +36,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Auditoría de reglas (HU-11):** identifica duplicados, condiciones incompatibles, reglas sombreadas y coincidencias controladas por prioridad con 3402 escenarios sintéticos.
 - **Comparador de versiones (HU-13):** identifica cambios de dictamen, ganador, activaciones y explicación entre dos bases de reglas sin modificar la versión publicada.
 - **Control de regresiones en CI (HU-14):** revisa propuestas de cambio en `data/rules.json` sobre 3411 casos sintéticos y falla cuando detecta pérdidas de protección crítica o nuevas anomalías estructurales.
-- **Informe académico PDF (HU-12):** integra ranking, trazas de las trece reglas, sensibilidad, versiones y auditoría en un documento descargable.
+- **Informe académico PDF (HU-12):** integra ranking, trazas de las dieciséis reglas, sensibilidad, versiones y auditoría en un documento descargable.
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **Paneles resistentes en Streamlit Cloud:** sustituye todas las métricas dinámicas por tarjetas HTML seguras, adapta el diseño a móvil y evita mostrar resultados obsoletos ante errores.
@@ -63,7 +63,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
              │                    │                     │
     ┌────────▼────────┐  ┌────────▼────────┐  ┌─────────▼────────┐
     │ Motor experto   │  │ Comparador      │  │ Chatbot          │
-    │ R01–R13         │  │ determinista    │  │ explicativo      │
+    │ R01–R16         │  │ determinista    │  │ explicativo      │
     └────────┬────────┘  └─────────────────┘  └──────────────────┘
              │
     ┌────────▼──────────────────────────────────────┐
@@ -85,7 +85,7 @@ El motor evalúa las reglas en **una sola pasada**; no realiza encadenamiento it
 
 ### Base de reglas
 
-Las trece reglas se almacenan en [`data/rules.json`](data/rules.json).
+Las dieciséis reglas se almacenan en [`data/rules.json`](data/rules.json).
 
 | Regla | Criterio principal | Resultado |
 |---|---|---|
@@ -102,10 +102,15 @@ Las trece reglas se almacenan en [`data/rules.json`](data/rules.json).
 | R11 | Compra completa en una tienda, trayecto ≤5 km y ≤30 min, ahorro ≥3 y sin promociones | `BUENA` |
 | R12 | Menos del 80 % de la lista disponible sin esenciales declarados | `NO_RECOMENDABLE` |
 | R13 | Esenciales cubiertos y cobertura parcial, con costo y traslado razonables | `BUENA` |
+| R14 | Compra completa con ahorro alto y balance ponderado ≥75 puntos, viaje moderado | `BUENA` |
+| R15 | Compra completa sin descuentos, índice ≥50 puntos y viaje moderado | `BUENA` |
+| R16 | Esenciales cubiertos, 80–99 % disponible, ahorro medio e índice ≥60 puntos | `BUENA` |
 
-**Ampliación HU-28:** R09 y R10 protegen contra una falsa recomendación favorable cuando existe disponibilidad nula o inferior a la mitad; R11 permite una alternativa completa, equilibrada y sin promociones. R08 ya no se activa si faltan productos esenciales. Los nuevos umbrales son criterios del prototipo que deberán validarse con casos reales. La matriz de cobertura de Streamlit verifica las trece reglas mediante dos solicitudes de nueve y tres escenarios, respetando los límites del endpoint. `RULES_VERSION=1.1.0`, mientras que `CONTRACT_VERSION=1.0.0` y el payload Laravel siguen iguales. [Diseño, límites y pruebas](docs/hu28-ampliacion-reglas.md).
+**Ampliación HU-28:** R09 y R10 protegen contra una falsa recomendación favorable cuando existe disponibilidad nula o inferior a la mitad; R11 permite una alternativa completa, equilibrada y sin promociones. R08 ya no se activa si faltan productos esenciales. Los nuevos umbrales son criterios del prototipo que deberán validarse con casos reales. La matriz histórica de Streamlit se amplió entonces mediante escenarios separados, respetando los límites del endpoint. `RULES_VERSION=1.1.0`, mientras que `CONTRACT_VERSION=1.0.0` y el payload Laravel siguen iguales. [Diseño, límites y pruebas](docs/hu28-ampliacion-reglas.md).
 
-**Ampliación HU-29:** R12 evita declarar excelente una alternativa con cobertura baja y cero esenciales definidos; R13 distingue una compra parcialmente completa (BUENA) de una excelente cuando faltan muchos opcionales. El límite del 80 % es una política del prototipo y debe calibrarse con ejemplos reales. La matriz de Streamlit revisa R01–R13 en tres lotes (9, 3 y 2). `RULES_VERSION=1.2.0`, `THRESHOLDS_VERSION=1.2.0`, `CONTRACT_VERSION=1.0.0`. [Razones, límites y pruebas](docs/hu29-cobertura-reglas.md).
+**Ampliación HU-29:** R12 evita declarar excelente una alternativa con cobertura baja y cero esenciales definidos; R13 distingue una compra parcialmente completa (BUENA) de una excelente cuando faltan muchos opcionales. El límite del 80 % es una política del prototipo y debe calibrarse con ejemplos reales. En esa fase, la matriz de Streamlit revisaba R01–R13 en tres lotes (9, 3 y 2). `RULES_VERSION=1.2.0`, `THRESHOLDS_VERSION=1.2.0`, `CONTRACT_VERSION=1.0.0`. [Razones, límites y pruebas](docs/hu29-cobertura-reglas.md).
+
+**Ampliación HU-30 (vigente):** R14–R16 incorporan el índice de conveniencia calculado con los cinco pesos del motor a la evaluación de casos comerciales concretos. R14 exige conveniencia alta (≥75); R15 exige conveniencia no baja (≥50) y R16 un índice sólido (≥60). Ningún peso puede revocar los riesgos críticos. La matriz de cobertura revisa las dieciséis reglas en solo dos peticiones de 9 y 8 escenarios. `RULES_VERSION=1.3.0`, `THRESHOLDS_VERSION=1.3.0` y `CONTRACT_VERSION=1.0.0`. [Criterios y límites](docs/hu30-reglas-ponderadas.md).
 
 Si ninguna regla se activa, el sistema devuelve provisionalmente `NO_RECOMENDABLE` e indica que se requiere comparar otras opciones. Cuando el presupuesto se supera ligeramente (hasta el 10 %) sin activar otras reglas, la explicación y la acción indican explícitamente esa condición; no se inventa una regla ganadora. La regla R06 no presupone que todos los productos opcionales estén disponibles.
 
