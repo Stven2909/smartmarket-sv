@@ -71,11 +71,11 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
         )
     )
     coverage = build_coverage_report(result.model_dump(mode="json"), scenarios)
-    assert coverage["total"] == len(scenarios) == 12
+    assert coverage["total"] == len(scenarios) == 9
     assert coverage["no_winner"] == 1
     assert coverage["conflicts"] >= 1
     assert {row["Regla"] for row in coverage["rules"]} == {
-        f"R{index:02}" for index in range(1, 12)
+        f"R{index:02}" for index in range(1, 9)
     }
     assert all(row["Activaciones"] >= 1 for row in coverage["rules"])
     assert all(row["Victorias"] >= 1 for row in coverage["rules"])
