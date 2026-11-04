@@ -110,6 +110,30 @@ def _representative_requests():
             promociones_aplicables=promotion,
         )
 
+    # Weighted rules R14/R16 need combinations absent from the compact
+    # Cartesian grid. Add two carefully chosen boundary representatives
+    # rather than multiplying the entire grid's size and CI time.
+    for params in (
+        {"ahorro": 20.0, "distancia_adicional_km": 6.0,
+         "tiempo_estimado_min": 35.0, "productos_disponibles": 10,
+         "productos_totales": 10, "productos_esenciales_disponibles": 6,
+         "productos_esenciales_totales": 6},
+        {"ahorro": 7.0, "distancia_adicional_km": 4.0,
+         "tiempo_estimado_min": 30.0, "productos_disponibles": 9,
+         "productos_totales": 10, "productos_esenciales_disponibles": 5,
+         "productos_esenciales_totales": 5},
+    ):
+        yield RecommendationRequest(
+            request_id="auditoria-ponderada",
+            alternativa_id="escenario-ponderado",
+            costo_total=45.0,
+            presupuesto=50.0,
+            distancia_km=params["distancia_adicional_km"] + 1.0,
+            numero_supermercados=1,
+            promociones_aplicables=False,
+            **params,
+        )
+
 
 def _is_active(rule: ProductionRule, facts: dict[str, bool | float]) -> bool:
     return all(
