@@ -4,7 +4,10 @@ from app.expert_system.convenience_config import (
     DEFAULT_CONVENIENCE_CONFIG,
     ConvenienceConfig,
 )
-from app.expert_system.convenience_index import calculate_convenience_index
+from app.expert_system.convenience_index import (
+    calculate_convenience_index,
+    meets_convenience_threshold,
+)
 from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
@@ -101,13 +104,13 @@ def derive_facts(
     weighted = calculate_convenience_index(request, config)
     conveniencia_alta = weighted["clasificacion_conveniencia"] == "ALTA_CONVENIENCIA"
     conveniencia_no_baja = weighted["clasificacion_conveniencia"] != "BAJA_CONVENIENCIA"
-    # Use the unrounded score to test the threshold: 59.996 displays as
-    # 60.00 but must not activate a rule requiring at least 60.
+    # Use unrounded score: 59.996 displays as 60.00 but must not activate
+    # R16; allow only microscopic binary floating-point comparison noise.
     unrounded_index = 100.0 * sum(
         weight * weighted["componentes_conveniencia"][name]
         for name, weight in weighted["pesos"].items()
     )
-    conveniencia_solida = unrounded_index >= 60.0
+    conveniencia_solida = meets_convenience_threshold(unrounded_index, 60.0)
 
     una_parada = request.numero_supermercados == 1
     dos_paradas = request.numero_supermercados == 2
