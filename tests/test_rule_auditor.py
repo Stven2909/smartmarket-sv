@@ -232,5 +232,5 @@ def test_streamlit_audit_button_fetches_real_asgi_report(monkeypatch):
     button.click()
     at.run(timeout=20)
     assert not at.exception
-    assert at.session_state["rule_audit_report"]["reglas_evaluadas"] == 11
+    assert at.session_state["rule_audit_report"]["reglas_evaluadas"] == 13
     assert at.session_state["rule_audit_report"]["escenarios_sinteticos"] == 3402
