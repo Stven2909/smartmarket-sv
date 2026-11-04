@@ -294,7 +294,7 @@ Distribuido bajo la [licencia MIT](LICENSE).
 
 ## Sincronización y alcance de integración
 
-Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los mismos commits en la rama `expert-system-python` del compañero, sin modificar `develop`, utiliza la [guía de sincronización segura](docs/sincronizacion-upstream-expert.md) y `scripts/sync_upstream_expert.ps1`: verifica el historial y publica solo por avance rápido, sin `--force`. La rama espejo `expert-system-python` de **nuestro fork** puede mantenerse igual a `main`, pero eso **no sustituye** la publicación en el repositorio del equipo.
+Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los mismos commits en la rama `expert-system-python` del compañero, sin modificar `develop`, utiliza la [guía de sincronización segura](docs/sincronizacion-upstream-expert.md) y `scripts/sync_upstream_expert.ps1`: verifica el historial y publica solo por avance rápido, sin `--force`. La rama espejo `expert-system-python` de **nuestro fork** se mantiene por avance rápido con el workflow `.github/workflows/sync-python-mirror.yml` cuando cambia `main`. Esta sincronización interna **no sustituye** la publicación en el repositorio del equipo, que requiere permisos de escritura específicos.
 
 En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
