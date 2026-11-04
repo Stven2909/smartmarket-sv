@@ -1,5 +1,6 @@
 import json
 import os
+from collections.abc import Mapping
 from html import escape
 from math import isfinite
 from pathlib import Path
@@ -58,6 +59,77 @@ def render_metric_cards(items: list[tuple[str, Any]]) -> None:
     """Present readable values even if the Metric.* frontend asset is unavailable."""
     if items:
         st.markdown(metric_cards_html(items), unsafe_allow_html=True)
+
+
+def render_json_static(value: Any) -> None:
+    """Show inspectable JSON in a server-generated code block."""
+    st.code(json.dumps(value, ensure_ascii=False, indent=2), language="json")
+
+
+MAX_STATIC_TABLE_ROWS = 100
+
+
+def static_table_html(rows: list[dict[str, Any]], *, max_rows: int = MAX_STATIC_TABLE_ROWS) -> str:
+    """Small, read-only tables without Streamlit's asynchronously loaded DataFrame JS.
+
+    Escape every cell. A hard cap avoids rendering unbounded HTML from uploaded
+    demo files or from external API responses.
+    """
+    if not rows:
+        return ""
+    if max_rows < 1:
+        raise ValueError("max_rows debe ser positivo")
+    headers = list(rows[0])
+    if not headers:
+        return ""
+    header_html = "".join(
+        f'<th scope="col">{escape(str(name), quote=True)}</th>' for name in headers
+    )
+    html_rows = []
+    for item in rows[:max_rows]:
+        cells = []
+        for name in headers:
+            value = item.get(name)
+            label = "N/D" if value is None else str(value)
+            cells.append(f"<td>{escape(label, quote=True)}</td>")
+        html_rows.append("<tr>" + "".join(cells) + "</tr>")
+    return (
+        '<div class="sm-table-scroll" role="region" '
+        'aria-label="Resultados tabulares" tabindex="0">'
+        '<table class="sm-data-table"><thead><tr>'
+        + header_html + "</tr></thead><tbody>"
+        + "".join(html_rows)
+        + "</tbody></table></div>"
+    )
+
+
+def render_static_table(
+    rows: list[dict[str, Any]],
+    *,
+    hide_index: bool = True,
+    use_container_width: bool = True,
+) -> None:
+    """Replace st.dataframe for bounded, explanatory tables in the demo.
+
+    The compatibility options keep existing call sites stable; this display
+    is always full-width and never invents a row-number index.
+    """
+    if not rows:
+        st.caption("No hay datos tabulares para mostrar.")
+        return
+    if not isinstance(rows[0], Mapping):
+        st.warning("Se recibió una tabla en un formato inesperado.")
+        return
+    st.markdown(
+        static_table_html(rows),
+        unsafe_allow_html=True,
+    )
+    if len(rows) > MAX_STATIC_TABLE_ROWS:
+        st.caption(
+            f"Mostrando {MAX_STATIC_TABLE_ROWS} de {len(rows)} filas. "
+            "Consulta la evidencia JSON para ver los datos completos."
+        )
+
 
 
 def _json_dict(response: requests.Response) -> dict[str, Any]:
@@ -523,12 +595,12 @@ def render_recommendation(
             }
             for key, weight in weights.items()
         ]
-        st.dataframe(contribution_rows, hide_index=True, use_container_width=True)
+        render_static_table(contribution_rows, hide_index=True, use_container_width=True)
     else:
         st.info("Este servicio no incluyó el desglose ponderado.")
 
     with st.expander("Hechos derivados usados por el motor"):
-        st.dataframe(
+        render_static_table(
             [{"Hecho": name, "Valor": str(value)} for name, value in facts.items()],
             hide_index=True,
             use_container_width=True,
@@ -552,7 +624,7 @@ def render_recommendation(
                             "Coincide": bool(condition.get("matched")),
                         }
                     )
-            st.dataframe(audit_rows, hide_index=True, use_container_width=True)
+            render_static_table(audit_rows, hide_index=True, use_container_width=True)
             losing = result.get("losing_rules") or []
             st.caption(
                 "Ganadora: "
@@ -607,7 +679,7 @@ def render_diagnosis_panel(base_url: str, facts: dict[str, Any] | None) -> None:
             st.write(f"**{risk['regla']}:** {risk['motivo']}")
 
     opportunities = report.get("oportunidades", [])
-    st.dataframe(
+    render_static_table(
         [
             {
                 "Regla": item["regla"],
@@ -789,7 +861,7 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
         for warning in imported.warnings:
             st.warning(warning)
         with st.expander("Revisar alternativas y fuentes"):
-            st.dataframe(
+            render_static_table(
                 [
                     {
                         "Nombre": item["name"],
@@ -863,7 +935,7 @@ def render_comparison_tab(scenarios: list[dict[str, Any]], base_url: str) -> Non
     )
     st.caption(comparison.get("criterio_orden", ""))
     rows = comparison.get("ranking", [])
-    st.dataframe(
+    render_static_table(
         [
             {
                 "Puesto": row.get("posicion"),
@@ -931,7 +1003,7 @@ def render_sensitivity_tab(base_url: str) -> None:
         f"Regla {baseline.get('winning_rule') or 'ninguna'} · "
         f"Índice {baseline['indice_conveniencia']}/100"
     )
-    st.dataframe(
+    render_static_table(
         [
             {
                 "Escenario": scenario["escenario"],
@@ -947,7 +1019,7 @@ def render_sensitivity_tab(base_url: str) -> None:
     )
     for scenario in report["escenarios"]:
         with st.expander(scenario["descripcion"]):
-            st.json(scenario["cambios"])
+            render_json_static(scenario["cambios"])
             st.write(scenario["recomendacion"]["explicacion"])
     for notice in report.get("advertencias", []):
         st.caption(notice)
@@ -1054,10 +1126,10 @@ def render_rule_coverage(
             ("Con varias reglas activas", report["conflicts"]),
         ]
     )
-    st.dataframe(
+    render_static_table(
         report["rules"], hide_index=True, use_container_width=True
     )
-    st.dataframe(
+    render_static_table(
         report["scenarios"], hide_index=True, use_container_width=True
     )
     missing = [
@@ -1101,7 +1173,7 @@ def render_rule_audit(base_url: str) -> None:
     findings = report.get("hallazgos", [])
     if findings:
         st.warning("Hay observaciones que conviene revisar antes de editar las reglas.")
-        st.dataframe(
+        render_static_table(
             [
                 {
                     "Tipo": issue["tipo"],
@@ -1122,7 +1194,7 @@ def render_rule_audit(base_url: str) -> None:
             "Los solapamientos no son necesariamente errores: el motor decide "
             "por prioridad y por ID si existe empate."
         )
-        st.dataframe(
+        render_static_table(
             [
                 {
                     "Reglas": " / ".join(pair["reglas"]),
@@ -1137,9 +1209,9 @@ def render_rule_audit(base_url: str) -> None:
             use_container_width=True,
         )
         with st.expander("Ejemplo sintético reproducible de un solapamiento"):
-            st.json(overlaps[0]["ejemplo"])
+            render_json_static(overlaps[0]["ejemplo"])
 
-    st.dataframe(
+    render_static_table(
         [
             {
                 "Regla": item["regla"],
@@ -1265,7 +1337,7 @@ def render_rule_regression(
         f"SHA-256 vigente: {report['huella_anterior']} | "
         f"SHA-256 propuesta: {report['huella_propuesta']}"
     )
-    st.dataframe(
+    render_static_table(
         [
             {
                 "Escenario": item["escenario"],
@@ -1282,7 +1354,7 @@ def render_rule_regression(
         use_container_width=True,
     )
     with st.expander("Cambios en las reglas y explicaciones"):
-        st.json(report["cambios_reglas"])
+        render_json_static(report["cambios_reglas"])
         for item in report["resultados"]:
             if item["cambio_explicacion"]:
                 st.write(f"**{item['escenario']}**")
@@ -1364,7 +1436,7 @@ def render_knowledge_tab(base_url: str) -> None:
         f"Versión de reglas: {knowledge.get('rules_version', 'N/D')} · "
         f"Versión de umbrales: {knowledge.get('thresholds_version', 'N/D')}"
     )
-    st.dataframe(
+    render_static_table(
         [
             {
                 "Regla": rule["id"],
@@ -1385,10 +1457,10 @@ def render_knowledge_tab(base_url: str) -> None:
             st.write(f"**Conclusión:** {rule['result']['level']}")
             st.write(f"**Acción:** {rule['result']['action']}")
             st.write(f"**Justificación:** {rule['result']['explanation']}")
-            st.json(rule["conditions"])
+            render_json_static(rule["conditions"])
 
     st.subheader("Umbrales documentados")
-    st.dataframe(
+    render_static_table(
         [
             {"Parámetro": name, "Valor": value}
             for name, value in knowledge.get("thresholds", {}).items()
@@ -1397,7 +1469,7 @@ def render_knowledge_tab(base_url: str) -> None:
         use_container_width=True,
     )
     st.subheader("Pesos del índice auxiliar")
-    st.dataframe(
+    render_static_table(
         [
             {"Factor": name, "Peso (%)": round(float(weight) * 100, 1)}
             for name, weight in knowledge.get("weights", {}).items()
@@ -1420,7 +1492,37 @@ def main() -> None:
         """
         <style>
         .block-container {max-width: 1200px; padding-top: 2rem;}
-        .sm-stat-grid {
+        .sm-table-scroll {
+            width: 100%;
+            max-height: 410px;
+            overflow: auto;
+            border: 1px solid rgba(120, 130, 145, 0.22);
+            border-radius: 12px;
+            margin: 10px 0 18px;
+        }
+        .sm-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.91rem;
+            line-height: 1.42;
+        }
+        .sm-data-table th, .sm-data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(120, 130, 145, 0.16);
+            text-align: left;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+        .sm-data-table thead {
+            position: sticky;
+            top: 0;
+            background: var(--secondary-background-color);
+        }
+        .sm-data-table tbody tr:last-child td {border-bottom: 0;}
+        .sm-data-table tbody tr:nth-child(even) {
+            background: rgba(120, 130, 145, 0.04);
+        }
+                .sm-stat-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
             gap: 12px;
