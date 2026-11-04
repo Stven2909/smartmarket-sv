@@ -124,6 +124,14 @@ def test_previous_key_alone_cannot_enable_service(monkeypatch):
     assert "old-only" not in rejected.text
 
 
+@pytest.mark.parametrize("environment", ["staging", "pruduction", "preview"])
+def test_explicit_deployment_environment_fails_closed(monkeypatch, environment):
+    monkeypatch.setenv("SMARTMARKET_ENV", environment)
+    monkeypatch.delenv("SMARTMARKET_API_KEY", raising=False)
+    monkeypatch.delenv("SMARTMARKET_API_KEY_PREVIOUS", raising=False)
+    assert send("POST", "/api/v1/recommend", json=VALID).status_code == 503
+
+
 def test_production_without_primary_key_is_closed(monkeypatch):
     monkeypatch.setenv("SMARTMARKET_ENV", "production")
     monkeypatch.delenv("SMARTMARKET_API_KEY", raising=False)
