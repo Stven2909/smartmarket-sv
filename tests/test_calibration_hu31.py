@@ -7,10 +7,7 @@ from dataclasses import replace
 import pytest
 
 from app.expert_system.classifiers import derive_facts
-from app.expert_system.convenience_config import (
-    DEFAULT_CONVENIENCE_CONFIG,
-    ConvenienceConfig,
-)
+from app.expert_system.convenience_config import DEFAULT_CONVENIENCE_CONFIG
 from app.expert_system.convenience_index import calculate_convenience_index
 from app.expert_system.inference_engine import run_inference, run_inference_with_rules
 from app.expert_system.rule_loader import load_rules
