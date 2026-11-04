@@ -37,7 +37,7 @@ def test_current_rules_have_no_structural_findings():
     report = audit_rules()
     assert report.version_reglas
     assert report.reglas_evaluadas == 16
-    assert report.escenarios_sinteticos == 3402
+    assert report.escenarios_sinteticos == 3404
     assert not report.hallazgos
     assert {row.regla for row in report.cobertura} == {
         f"R{number:02}" for number in range(1, 17)
