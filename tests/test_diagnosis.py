@@ -55,7 +55,7 @@ def test_ideal_diagnosis_identifies_active_rules_without_risks():
     assert diagnosis.nivel_actual == "EXCELENTE"
     assert diagnosis.regla_ganadora == "R06"
     assert diagnosis.riesgos_criticos == []
-    assert {row.regla for row in diagnosis.oportunidades} == {"R06", "R07", "R08"}
+    assert {row.regla for row in diagnosis.oportunidades} == {"R06", "R07", "R08", "R11"}
     assert [row.regla for row in diagnosis.oportunidades[:2]] == ["R06", "R07"]
     assert all(not row.faltantes for row in diagnosis.oportunidades[:2])
     assert item.model_dump() == baseline
@@ -73,8 +73,8 @@ def test_critical_risks_are_explained_and_not_overridden():
     assert [risk.regla for risk in report.riesgos_criticos] == ["R02"]
     assert "no garantiza" in report.resumen
     r08 = next(row for row in report.oportunidades if row.regla == "R08")
-    assert r08.activa is True
-    assert r08.faltantes == []
+    assert r08.activa is False
+    assert any(x.hecho == "todos_esenciales_disponibles" for x in r08.faltantes)
 
 
 def test_diagnosis_observes_multiple_critical_rules_in_priority_order():
@@ -119,6 +119,7 @@ def test_no_rule_case_returns_pending_requirements_instead_of_hallucinating():
         ahorro=5.0,
         distancia_adicional_km=4.0,
         tiempo_estimado_min=30,
+        productos_disponibles=9,
         promociones_aplicables=False,
     )
     report = diagnose(DiagnosisRequest(alternativa=item))
@@ -213,4 +214,4 @@ def test_streamlit_diagnosis_uses_fastapi_without_external_network(monkeypatch):
     at.run(timeout=20)
     assert not at.exception
     assert at.session_state["latest_diagnosis"]["regla_ganadora"] == "R06"
-    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 3
+    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 4
