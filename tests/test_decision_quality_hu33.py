@@ -113,6 +113,28 @@ def test_excellent_with_incomplete_list_explains_limitations():
     assert "no a la lista completa" in response.explicacion
 
 
+
+def test_r13_precedes_r06_when_essentials_are_covered_but_less_than_80_percent():
+    response = recommend(
+        scenario(
+            ahorro=1,
+            distancia_km=1,
+            distancia_adicional_km=1,
+            tiempo_estimado_min=10,
+            productos_disponibles=5,
+            productos_esenciales_disponibles=1,
+            productos_esenciales_totales=1,
+            promociones_aplicables=False,
+        )
+    )
+    assert response.winning_rule == "R13"
+    assert response.nivel_recomendacion == "BUENA"
+    assert "R06" in response.reglas_activadas
+    assert flags_for(response) == (LOW_INDEX,)
+    assert "EXCELENTE se refiere" not in response.explicacion
+
+
+
 def test_critical_note_names_actual_winning_rule_not_first_active_rule():
     # R03 is encountered before R10 by sorted ID; R10 wins by priority.
     response = recommend(
