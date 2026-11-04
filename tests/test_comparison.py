@@ -187,7 +187,8 @@ def test_knowledge_endpoint_exposes_current_rules_and_parameters():
     body = response.json()
     assert len(body["rules"]) == 16
     assert {rule["id"] for rule in body["rules"]} == {
-        "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16"
+        "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08",
+        "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16",
     }
     assert sum(body["weights"].values()) == pytest.approx(1.0)
     assert body["thresholds"]["presupuesto_exceso_max_pct"] == 10.0
