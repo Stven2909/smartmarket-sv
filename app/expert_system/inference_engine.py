@@ -1,6 +1,10 @@
 from typing import Any
 
 from app.expert_system.classifiers import derive_facts
+from app.expert_system.convenience_config import (
+    DEFAULT_CONVENIENCE_CONFIG,
+    ConvenienceConfig,
+)
 from app.expert_system.conflict_resolver import resolve_conflicts
 from app.expert_system.convenience_index import enrich_inference_result
 from app.expert_system.explanation_builder import build_inference_result
@@ -105,11 +109,14 @@ def _evaluate_all_rules(
 
 
 def run_inference_with_rules(
-    request: RecommendationRequest, rules: list[ProductionRule]
+    request: RecommendationRequest,
+    rules: list[ProductionRule],
+    *,
+    config: ConvenienceConfig = DEFAULT_CONVENIENCE_CONFIG,
 ) -> dict[str, Any]:
-    """Ejecuta la inferencia sobre reglas aisladas, sin reescribir rules.json."""
+    """Evalúa reglas aisladas y un perfil de pesos sin tocar producción."""
 
-    facts = derive_facts(request)
+    facts = derive_facts(request, config)
     activated_rules, trace = _evaluate_all_rules(rules, facts)
     conflict = resolve_conflicts(activated_rules)
 
@@ -119,7 +126,7 @@ def run_inference_with_rules(
         activated_rules=activated_rules,
         conflict=conflict,
     )
-    return enrich_inference_result(result, request)
+    return enrich_inference_result(result, request, config)
 
 
 def run_inference(request: RecommendationRequest, rules_path=None) -> dict[str, Any]:
