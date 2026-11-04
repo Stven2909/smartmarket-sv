@@ -23,6 +23,7 @@ DEFAULT_API_BASE_URL = "http://127.0.0.1:8001"
 # Espera pasiva ante un posible arranque en frío; no realiza peticiones periódicas.
 REQUEST_TIMEOUT_SECONDS = 90
 SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
+EXTRA_RULE_SCENARIOS_PATH = SCENARIOS_PATH.with_name("scenarios_hu28.json")
 
 
 class ScenarioLoadError(ValueError):
@@ -1130,22 +1131,31 @@ def render_rule_coverage(
 ) -> None:
     st.subheader("Matriz de cobertura de reglas")
     st.caption(
-        "Ejecuta los escenarios de prueba contra la API Python. "
-        "La matriz muestra reglas activadas, ganadoras y conflictos; "
-        "no mide exactitud sobre datos comerciales."
+        "Evalúa las nueve alternativas clásicas y tres escenarios complementarios "
+        "en dos solicitudes independientes para no superar el límite de diez. "
+        "La matriz muestra activaciones y prioridades, no exactitud comercial."
     )
     if st.button("Evaluar cobertura", key="coverage_button"):
         if not 2 <= len(scenarios) <= 10:
             st.warning("La matriz requiere entre 2 y 10 escenarios de prueba.")
         else:
             try:
-                result = call_comparison_api(
+                primary = call_comparison_api(
                     [scenario["facts"] for scenario in scenarios], base_url
                 )
-                st.session_state["rule_coverage"] = build_coverage_report(
-                    result, scenarios
+                extras = load_scenarios(EXTRA_RULE_SCENARIOS_PATH)
+                complementary = call_comparison_api(
+                    [scenario["facts"] for scenario in extras], base_url
                 )
-            except ApiClientError as exc:
+                # The 10-alternative HTTP limit remains unchanged.
+                together = {
+                    **primary,
+                    "ranking": primary["ranking"] + complementary["ranking"],
+                }
+                st.session_state["rule_coverage"] = build_coverage_report(
+                    together, scenarios + extras
+                )
+            except (ApiClientError, ScenarioLoadError) as exc:
                 st.error(f"No se pudo evaluar la cobertura: {exc}")
 
     report = st.session_state.get("rule_coverage")
@@ -1173,7 +1183,7 @@ def render_rule_coverage(
             "Reglas sin cobertura en estos escenarios: " + ", ".join(missing)
         )
     else:
-        st.success("Las ocho reglas aparecen activadas en los escenarios evaluados.")
+        st.success("Todas las reglas aparecen activadas en los escenarios evaluados.")
 
 
 def render_rule_audit(base_url: str) -> None:
@@ -1191,7 +1201,7 @@ def render_rule_audit(base_url: str) -> None:
             st.error(f"No se pudo realizar la auditoría: {exc}")
     report = st.session_state.get("rule_audit_report")
     if not report:
-        st.info("Ejecuta la auditoría para inspeccionar la consistencia de R01–R08.")
+        st.info("Ejecuta la auditoría para inspeccionar la consistencia de R01–R11.")
         return
 
     render_metric_cards(
