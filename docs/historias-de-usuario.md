@@ -35,7 +35,8 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-23 | Proteger la comunicación Laravel-Python con rotación y no-cache | Alta | Implementada; activar secretos en Render y Laravel |
 | HU-24 | Permitir inferencias de hasta 50 alternativas por solicitud | Media | Implementada, opcional para Laravel |
 | HU-25 | Verificar coherencia entre reglas, hechos, explicación, dictamen e índice | Alta | Implementada en pruebas de regresión |
-| HU-26 | Endurecer Render, separar claves de servicio y escanear dependencias | Alta | Implementada en código; validación externa del hosting pendiente |
+| HU-26 | Endurecer Render, separar claves de servicio y escanear dependencias | Alta | Implementada; 4 comprobaciones externas de acceso correctas |
+| HU-27 | Limitar el uso de la demo pública sin reducir la cuota de Laravel | Alta | Implementada; se activa con clave Streamlit independiente |
 
 ## Historias y criterios de aceptación
 
@@ -335,3 +336,12 @@ Como responsable del motor, quiero impedir que el servidor Render quede anónimo
 **Aceptación:** al detectar `RENDER=true` se rechazan peticiones sin `SMARTMARKET_API_KEY` aun si `SMARTMARKET_ENV` no está configurada; opcionalmente se acepta `SMARTMARKET_API_KEY_STREAMLIT` y se puede revocar sin invalidar la principal; los cuerpos HTTP mayores de 512 KiB generan 413 antes de parsear JSON. La CI examina dependencias instaladas con `pip-audit`. Se ofrece un verificador externo de cuatro GET sin secretos, sin falsamente declarar el hosting revisado cuando no haya conexión.
 
 **Evidencia:** `tests/test_security_hardening_hu26.py`, `tests/test_security_external_probe.py`, `.github/workflows/python-security-audit.yml` y [auditoría HU-26](auditoria-seguridad-hu26.md).
+
+
+## HU-27 — Protección ligera de recursos para Streamlit público
+
+Como responsable del servicio Python, quiero una cuota por minuto para el consumidor Streamlit, para evitar consumo accidental excesivo en Render gratuito sin afectar las peticiones legítimas de Laravel.
+
+**Aceptación:** si Streamlit usa un secreto distinto del principal, solo ese consumidor tiene un límite local por minuto (60 por defecto, ajustable de 1 a 600), sin timers ni tareas residentes. Al alcanzar el límite devuelve HTTP 429 con `Retry-After`. El servidor permite automáticamente nuevas peticiones al expirar la ventana. Las claves Laravel y de rotación siguen operativas. Una configuración de cuota inválida no desactiva la protección; si las dos claves son iguales, no se limita el token compartido para no castigar a Laravel. El código, las pruebas y el README explican que se requiere activar la clave independiente en Render y Streamlit Cloud.
+
+**Evidencia:** `tests/test_streamlit_rate_limit.py` y [HU-27 — límites y configuración](hu27-proteccion-demo-publica.md).
