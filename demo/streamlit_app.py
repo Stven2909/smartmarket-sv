@@ -135,53 +135,95 @@ def api_auth_headers() -> dict[str, str]:
 
 
 def validate_payload(payload: dict[str, Any]) -> list[str]:
-    """Valida localmente el formulario antes de enviarlo a FastAPI."""
+    """Check demo input safely; FastAPI remains the contract authority."""
+    if not isinstance(payload, dict):
+        return ["La alternativa debe ser un objeto JSON."]
 
     errors: list[str] = []
-    if not str(payload.get("request_id", "")).strip():
-        errors.append("Request ID es obligatorio.")
-    if not str(payload.get("alternativa_id", "")).strip():
-        errors.append("Alternativa ID es obligatorio.")
+    for field, title in (
+        ("request_id", "Request ID"),
+        ("alternativa_id", "Alternativa ID"),
+    ):
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{title} es obligatorio.")
+        elif len(value) > 256:
+            errors.append(f"{title} no puede superar 256 caracteres.")
 
-    non_negative_fields = {
+    numeric_fields = {
         "costo_total": "Costo total",
+        "presupuesto": "Presupuesto",
         "ahorro": "Ahorro",
         "distancia_km": "Distancia",
         "distancia_adicional_km": "Distancia adicional",
         "tiempo_estimado_min": "Tiempo estimado",
-        "productos_disponibles": "Productos disponibles",
-        "productos_esenciales_disponibles": "Productos esenciales disponibles",
     }
-    for field, label in non_negative_fields.items():
-        if float(payload.get(field, -1)) < 0:
-            errors.append(f"{label} no puede ser negativo.")
+    for field, label in numeric_fields.items():
+        raw = payload.get(field)
+        try:
+            if isinstance(raw, bool) or raw is None:
+                raise TypeError("boolean/null")
+            value = float(raw)
+        except (TypeError, ValueError, OverflowError):
+            errors.append(f"{label} debe ser un número válido.")
+            continue
+        if not isfinite(value):
+            errors.append(f"{label} debe ser un número finito.")
+        elif (field == "presupuesto" and value <= 0) or (
+            field != "presupuesto" and value < 0
+        ):
+            rule = "mayor que cero" if field == "presupuesto" else "no negativo"
+            errors.append(f"{label} debe ser {rule}.")
 
-    if float(payload.get("presupuesto", 0)) <= 0:
-        errors.append("Presupuesto debe ser mayor que cero.")
-    if int(payload.get("productos_totales", 0)) <= 0:
-        errors.append("Productos totales debe ser mayor que cero.")
-    if int(payload.get("productos_esenciales_totales", 0)) < 0:
-        errors.append("Productos esenciales totales no puede ser negativo.")
-    if int(payload.get("numero_supermercados", 0)) < 1:
-        errors.append("Número de supermercados debe ser como mínimo uno.")
-    if int(payload.get("productos_disponibles", 0)) > int(payload.get("productos_totales", 0)):
+    counts: dict[str, int] = {}
+    count_fields = {
+        "productos_disponibles": "Productos disponibles",
+        "productos_totales": "Productos totales",
+        "productos_esenciales_disponibles": "Productos esenciales disponibles",
+        "productos_esenciales_totales": "Productos esenciales totales",
+        "numero_supermercados": "Número de supermercados",
+    }
+    for field, label in count_fields.items():
+        raw = payload.get(field)
+        try:
+            if isinstance(raw, bool) or raw is None:
+                raise TypeError("boolean/null")
+            value = float(raw)
+            if not isfinite(value) or not value.is_integer():
+                raise ValueError("not a finite integer")
+            count = int(value)
+        except (TypeError, ValueError, OverflowError):
+            errors.append(f"{label} debe ser un entero válido.")
+            continue
+        minimum = 1 if field in {"productos_totales", "numero_supermercados"} else 0
+        if count < minimum:
+            errors.append(f"{label} debe ser como mínimo {minimum}.")
+        counts[field] = count
+
+    if type(payload.get("promociones_aplicables")) is not bool:
+        errors.append("Promociones aplicables debe ser verdadero o falso.")
+
+    available = counts.get("productos_disponibles")
+    total = counts.get("productos_totales")
+    essentials = counts.get("productos_esenciales_disponibles")
+    essential_total = counts.get("productos_esenciales_totales")
+    if available is not None and total is not None and available > total:
         errors.append("Productos disponibles no puede superar productos totales.")
-    if int(payload.get("productos_esenciales_disponibles", 0)) > int(
-        payload.get("productos_esenciales_totales", 0)
+    if (
+        essentials is not None
+        and essential_total is not None
+        and essentials > essential_total
     ):
         errors.append(
             "Productos esenciales disponibles no puede superar productos esenciales totales."
         )
-    total = int(payload.get("productos_totales", 0))
-    disponibles = int(payload.get("productos_disponibles", 0))
-    esenciales_total = int(payload.get("productos_esenciales_totales", 0))
-    esenciales_disponibles = int(payload.get("productos_esenciales_disponibles", 0))
-    if esenciales_total > total:
+    if essential_total is not None and total is not None and essential_total > total:
         errors.append("Productos esenciales totales no puede superar productos totales.")
-    if esenciales_disponibles > disponibles:
+    if essentials is not None and available is not None and essentials > available:
         errors.append("Productos esenciales disponibles no puede superar productos disponibles.")
-    if disponibles - esenciales_disponibles > total - esenciales_total:
-        errors.append("Productos opcionales disponibles no pueden superar su total.")
+    if None not in (available, total, essentials, essential_total):
+        if available - essentials > total - essential_total:
+            errors.append("Productos opcionales disponibles no pueden superar su total.")
     return errors
 
 
@@ -1397,7 +1439,7 @@ def main() -> None:
     # Never let an anonymous visitor redirect requests carrying server-side
     # X-API-Key to an arbitrary URL. This endpoint is operator-configured only.
     base_url = api_base_url()
-    st.sidebar.caption(f"Servicio Python configurado: {base_url}")
+    st.sidebar.caption("Servicio Python configurado desde el servidor.")
     st.sidebar.caption(
         "Interfaz de demostración del servicio experto Python. "
         "En la aplicación integrada, Laravel proporciona los hechos por HTTP."
