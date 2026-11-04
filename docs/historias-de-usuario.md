@@ -32,6 +32,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-20 | Validar desbordamientos numéricos, readiness y cierre seguro en producción | Alta | Implementada; requiere configurar secretos al desplegar |
 | HU-21 | Detectar cambios del contrato Laravel leyendo develop sin modificarlo | Alta | Implementada en CI |
 | HU-22 | Identificar la base exacta de reglas usada en cada inferencia | Media | Implementada |
+| HU-23 | Proteger la comunicación Laravel-Python con rotación y no-cache | Alta | Implementada; activar secretos en Render y Laravel |
 
 ## Historias y criterios de aceptación
 
@@ -291,3 +292,14 @@ Como integrador, quiero saber qué definiciones de reglas generaron una recomend
 **Criterios de aceptación:** el servicio calcula un SHA-256 estable sobre la representación JSON canónica de las reglas validadas (independiente del orden y de los espacios del archivo). `POST /api/v1/recommend`, `GET /api/v1/knowledge` y `GET /ready` exponen el mismo valor en la cabecera `X-Expert-Rules-SHA256`; las respuestas JSON conservan los 14 campos de entrada y 16 de salida de la recomendación. El valor se cachea por proceso y no genera llamadas remotas ni procesos residentes. Los fallos de carga de reglas devuelven un 503 controlado sin revelar rutas internas.
 
 **Evidencia:** `tests/test_rules_fingerprint.py` y [huella y pruebas](hu22-huella-reglas.md).
+
+
+## HU-23 — Seguridad de la API del sistema experto
+
+Como responsable del servicio de inferencia, quiero verificar la identidad de la aplicación Laravel mediante `X-API-Key` y evitar que respuestas sean cacheadas, para mantener un canal entre servidores sin gestionar usuarios ni permisos de negocio.
+
+**Criterios de aceptación:** todas las rutas `/api/v1/*` devuelven HTTP 401 cuando falta una clave válida y el ambiente está protegido. Un ambiente explícito distinto de `local/dev/development/test/testing` sin secreto principal devuelve 503 y no queda abierto por un error tipográfico del nombre. `SMARTMARKET_API_KEY_PREVIOUS` es opcional y solo funciona si está configurado el secreto principal; al eliminarla, la antigua clave deja de funcionar. Se conservan `/health` y `/ready` públicos, el contrato JSON de inferencia y la disponibilidad de la demostración local. Las respuestas API incluyen `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` y `Vary: X-API-Key`. La documentación interactiva queda desactivada cuando la aplicación arranca con un ambiente protegido.
+
+**Límite:** la API key valida la **aplicación llamante**, no la sesión del usuario; corresponde a Laravel proteger listas de compra y credenciales de sus usuarios. La demo pública Streamlit no se vuelve privada por proteger FastAPI. El despliegue productivo requiere `SMARTMARKET_ENV`, `SMARTMARKET_API_KEY` y `EXPERT_SYSTEM_API_KEY` coordinados antes de declararse protegido.
+
+**Evidencia:** `tests/test_api_security_boundaries.py` y [guía de seguridad HU-23](seguridad-api-hu23.md). No se modifica `develop` del compañero.
