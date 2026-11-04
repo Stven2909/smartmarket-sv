@@ -22,12 +22,12 @@ Los ejemplos usan presupuestos y listas ficticias:
 |---|---|---:|---|
 | R07: promociones, ahorro 11, 100 km adicionales, 200 min | BUENA | 49.25 | Trayecto alto + índice bajo |
 | R08: ahorro 11, dos tiendas, 100 km adicionales, 200 min | BUENA | 44.25 | Trayecto alto + índice bajo |
-| R06: esenciales completos, 50 % lista disponible, 1 km y 10 min | EXCELENTE | 47.00 | Índice bajo + 50 % de disponibilidad |
+| R13: esenciales completos, 50 % lista disponible, 1 km y 10 min | BUENA | 47.00 | Índice bajo y opcionales faltantes |\n| R06: esenciales completos, 80 % lista disponible, 1 km y 10 min | EXCELENTE | 54.50 | Lista incompleta pese a nivel excelente |
 
-R06 usa `EXCELENTE` para señalar que la **regla R06** se satisfizo,
-no que la lista esté completa. Se informa de los productos opcionales
-faltantes sin modificar la categoría, que necesitaría una revisión
-independiente de criterios de negocio.
+Con 50 % disponible, **R13 prevalece sobre R06** por su prioridad; con
+80 % disponible, R06 sí puede ganar y clasificar como `EXCELENTE` aunque
+falten opcionales. La advertencia informa de ese límite sin alterar el
+dictamen ni imponer una preferencia comercial no validada.
 
 ## Tres advertencias deterministas
 
@@ -38,9 +38,9 @@ independiente de criterios de negocio.
 - `INDICE_BAJO_CON_DICTAMEN_FAVORABLE`: dictamen favorable con
   `clasificacion_conveniencia=BAJA_CONVENIENCIA`.
   El índice auxiliar no anula reglas ni calcula utilidad monetaria.
-- `EXCELENTE_CON_COBERTURA_INFERIOR_80`: R06 u otra regla
-  `EXCELENTE` con menos de 80 % de productos disponibles, aunque
-  estén todos los esenciales.
+- `EXCELENTE_CON_LISTA_INCOMPLETA`: dictamen `EXCELENTE` con menos
+  de 100 % de productos disponibles. Por debajo del 80 %, R13 puede
+  prevalecer sobre R06 por prioridad.
 
 Se incluyen frases explicativas usando **solo los hechos recibidos**.
 No se crean propiedades de entrada ni de salida: los 14 hechos, los
@@ -73,7 +73,7 @@ pytest -q tests/test_decision_quality_hu33.py tests/test_quality_audit_hu33.py
 # Casos históricos + casos extremos y fronteras específicos de HU-33.
 python -m scripts.audit_decision_quality
 
-# 17 documentados + 3404 sintéticos + 7 escenarios dirigidos = 3428.
+# 17 documentados + 3404 sintéticos + 8 escenarios dirigidos = 3429.
 python -m scripts.audit_decision_quality --with-grid
 
 # Exportación opcional, sin modificar datos ni API.
