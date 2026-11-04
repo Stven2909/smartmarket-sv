@@ -31,6 +31,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-19 | Medir rendimiento y memoria sin solicitudes remotas | Media | Implementada |
 | HU-20 | Validar desbordamientos numéricos, readiness y cierre seguro en producción | Alta | Implementada; requiere configurar secretos al desplegar |
 | HU-21 | Detectar cambios del contrato Laravel leyendo develop sin modificarlo | Alta | Implementada en CI |
+| HU-22 | Identificar la base exacta de reglas usada en cada inferencia | Media | Implementada |
 
 ## Historias y criterios de aceptación
 
@@ -281,3 +282,12 @@ Como propietario del servicio Python, quiero rechazar entradas que produzcan val
 **Criterios de aceptación:** `POST /api/v1/recommend` conserva 14 campos de entrada y 16 de salida, rechaza desbordamientos con 422, usa la API key en producción con fallo seguro ante secreto ausente y expone `/ready` sin abrir conexión permanente. La CI lee el código de `develop` y compara los nombres de campo, endpoint y cabecera sin escribir en el repositorio del compañero. Las pruebas de integración siguen siendo sintéticas; se exige coordinación manual para desplegar los secretos.
 
 **Evidencia:** `tests/test_operational_contract_hardening.py`, `scripts/check_laravel_contract.py` y `docs/contrato-integracion-develop-2026-11-03.md`.
+
+
+## HU-22 — Huella verificable del conocimiento aplicado
+
+Como integrador, quiero saber qué definiciones de reglas generaron una recomendación sin introducir campos JSON nuevos ni depender de Laravel, para facilitar la trazabilidad después de desplegar cambios.
+
+**Criterios de aceptación:** el servicio calcula un SHA-256 estable sobre la representación JSON canónica de las reglas validadas (independiente del orden y de los espacios del archivo). `POST /api/v1/recommend`, `GET /api/v1/knowledge` y `GET /ready` exponen el mismo valor en la cabecera `X-Expert-Rules-SHA256`; las respuestas JSON conservan los 14 campos de entrada y 16 de salida de la recomendación. El valor se cachea por proceso y no genera llamadas remotas ni procesos residentes. Los fallos de carga de reglas devuelven un 503 controlado sin revelar rutas internas.
+
+**Evidencia:** `tests/test_rules_fingerprint.py` y [huella y pruebas](hu22-huella-reglas.md).
