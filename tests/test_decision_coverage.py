@@ -41,7 +41,7 @@ def test_budget_slightly_exceeded_has_explicit_provisional_explanation():
     assert "supera ligeramente" in report.explicacion
     assert "provisional" in report.explicacion
     assert "Ajustar" in report.accion_sugerida
-    assert len(report.trace) == 13
+    assert len(report.trace) == 16
 
 
 def test_exact_budget_threshold_remains_provisional_and_above_is_critical():
@@ -75,7 +75,7 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
     assert coverage["no_winner"] == 1
     assert coverage["conflicts"] >= 1
     assert {row["Regla"] for row in coverage["rules"]} == {
-        f"R{index:02}" for index in range(1, 14)
+        f"R{index:02}" for index in range(1, 17)
     }
     # The legacy nine-scenario view has coverage for the original rules.
     # New R09–R13 cases are isolated to avoid the 10-alternative API cap.
@@ -121,7 +121,7 @@ def test_full_thirteen_rule_coverage_uses_three_valid_comparison_batches():
     assert report["total"] == 14
     assert report["no_winner"] == 1
     assert {row["Regla"] for row in report["rules"]} == {
-        f"R{i:02}" for i in range(1, 14)
+        f"R{i:02}" for i in range(1, 17)
     }
     assert all(row["Activaciones"] >= 1 for row in report["rules"])
     assert all(row["Victorias"] >= 1 for row in report["rules"])
