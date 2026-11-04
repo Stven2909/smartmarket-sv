@@ -55,7 +55,7 @@ def test_ideal_diagnosis_identifies_active_rules_without_risks():
     assert diagnosis.nivel_actual == "EXCELENTE"
     assert diagnosis.regla_ganadora == "R06"
     assert diagnosis.riesgos_criticos == []
-    assert {row.regla for row in diagnosis.oportunidades} == {"R06", "R07", "R08", "R11"}
+    assert {row.regla for row in diagnosis.oportunidades} == {"R06", "R07", "R08", "R11", "R13"}
     assert [row.regla for row in diagnosis.oportunidades[:2]] == ["R06", "R07"]
     assert all(not row.faltantes for row in diagnosis.oportunidades[:2])
     assert item.model_dump() == baseline
@@ -214,4 +214,4 @@ def test_streamlit_diagnosis_uses_fastapi_without_external_network(monkeypatch):
     at.run(timeout=20)
     assert not at.exception
     assert at.session_state["latest_diagnosis"]["regla_ganadora"] == "R06"
-    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 4
+    assert len(at.session_state["latest_diagnosis"]["oportunidades"]) == 5

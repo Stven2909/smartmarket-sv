@@ -4,12 +4,13 @@ from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
 # hechos resultantes, sin repetir estas comparaciones numéricas.
-THRESHOLDS_VERSION = "1.1.0"
+THRESHOLDS_VERSION = "1.2.0"
 
 THRESHOLDS = {
     "presupuesto_exceso_max_pct": 10.0,
     "ahorro_bajo_max": 3.0,
     "cobertura_muy_baja_max_pct": 50.0,
+    "cobertura_parcial_relevante_pct": 80.0,
     "distancia_razonable_max_km": 5.0,
     "tiempo_razonable_max_min": 30.0,
     "ahorro_alto_min": 10.0,
@@ -51,6 +52,11 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
     algun_producto_disponible = request.productos_disponibles > 0
     cobertura_muy_baja = (
         porcentaje_productos_disponibles < THRESHOLDS["cobertura_muy_baja_max_pct"]
+    )
+    sin_esenciales_definidos = request.productos_esenciales_totales == 0
+    cobertura_parcial_relevante = (
+        porcentaje_productos_disponibles
+        < THRESHOLDS["cobertura_parcial_relevante_pct"]
     )
     distancia_razonable = (
         request.distancia_adicional_km <= THRESHOLDS["distancia_razonable_max_km"]
@@ -97,6 +103,8 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
         "ningun_producto_disponible": ningun_producto_disponible,
         "algun_producto_disponible": algun_producto_disponible,
         "cobertura_muy_baja": cobertura_muy_baja,
+        "sin_esenciales_definidos": sin_esenciales_definidos,
+        "cobertura_parcial_relevante": cobertura_parcial_relevante,
         "distancia_razonable": distancia_razonable,
         "tiempo_razonable": tiempo_razonable,
         "todos_productos_disponibles": todos_productos_disponibles,

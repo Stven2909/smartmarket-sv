@@ -121,7 +121,7 @@ def test_recommendation_http_is_explainable(changes, expected_rule, expected_lev
     assert body["nivel_recomendacion"] == expected_level
     assert expected_rule in body["reglas_activadas"]
     assert 0 <= body["indice_conveniencia"] <= 100
-    assert len(body["trace"]) == 11
+    assert len(body["trace"]) == 13
     assert any(
         item["rule_id"] == expected_rule and item["activated"]
         for item in body["trace"]

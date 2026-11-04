@@ -153,7 +153,7 @@ def test_sensitivity_is_deterministic_and_preserves_source_request():
     assert first.escenario_base.winning_rule == "R06"
     assert len(first.escenarios) >= 5
     assert first.cantidad_decisiones_distintas >= 1
-    assert all(len(case.recomendacion.trace) == 11 for case in first.escenarios)
+    assert all(len(case.recomendacion.trace) == 13 for case in first.escenarios)
 
 
 def test_essential_unavailability_changes_decision_to_r02():

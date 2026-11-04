@@ -10,7 +10,7 @@ def test_rules_json_contains_rules():
     rules = load_rules()
 
     assert rules
-    assert len(rules) == 11
+    assert len(rules) == 13
 
 
 def test_rule_ids_are_unique():
@@ -38,7 +38,7 @@ def test_conditions_use_existing_derived_facts():
     assert all(set(rule.conditions).issubset(DERIVED_FACT_NAMES) for rule in rules)
 
 
-@pytest.mark.parametrize("rule_id", [f"R{i:02}" for i in range(1, 12)])
+@pytest.mark.parametrize("rule_id", [f"R{i:02}" for i in range(1, 14)])
 def test_expected_rule_exists(rule_id):
     rules = load_rules()
 

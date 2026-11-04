@@ -46,7 +46,7 @@ def test_laravel_style_payloads_return_expected_expert_results():
         assert result.request_id == case["hechos"]["request_id"]
         assert result.nivel_recomendacion == case["esperado"]["nivel"]
         assert result.winning_rule == case["esperado"]["regla"]
-        assert len(result.trace) == 11
+        assert len(result.trace) == 13
 
 
 def test_laravel_batch_style_correlation_by_request_id_is_unambiguous():
