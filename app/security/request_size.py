@@ -4,8 +4,6 @@ This runs before the request reaches FastAPI/Pydantic and never buffers more
 than MAX_API_REQUEST_BYTES of accepted data. No dependency or background task.
 """
 
-from collections.abc import Awaitable, Callable
-
 from starlette.responses import JSONResponse
 
 MAX_API_REQUEST_BYTES = 512 * 1024
