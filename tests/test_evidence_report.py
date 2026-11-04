@@ -172,7 +172,8 @@ def test_endpoint_rejects_invalid_json_and_honors_api_key(monkeypatch):
 def test_streamlit_pdf_generation_and_download_button(monkeypatch):
     import requests
 
-    def fake_post(url, *, json, timeout, headers):
+    def fake_post(url, *, json, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         assert url.endswith("/api/v1/evidence-report")
         assert timeout > 0
         assert json["procedencia"] == "sintetico"
