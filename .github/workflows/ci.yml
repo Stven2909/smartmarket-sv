@@ -102,5 +102,10 @@ jobs:
           python -m scripts.audit_decision_quality \
             --with-grid --json-output "$RUNNER_TEMP/decision-quality-audit.json"
 
+      - name: HU-35 - Manually reviewed decision acceptance matrix (offline)
+        run: |
+          python -m scripts.validate_recommendation_matrix \
+            --json-output "$RUNNER_TEMP/hu35-acceptance.json"
+
       - name: Lightweight expert benchmark (no external requests)
         run: python -m scripts.benchmark_inference --iterations 300
