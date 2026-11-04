@@ -4,6 +4,7 @@ from html import escape
 from math import isfinite
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import requests
 import streamlit as st
@@ -227,6 +228,29 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _service_url(
+    path: str, base_url: str | None, *, has_secret: bool = False
+) -> str:
+    """Restrict API calls to a configured HTTP(S) origin, never follow redirects."""
+    origin = (base_url or api_base_url()).strip().rstrip("/")
+    parsed = urlsplit(origin)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.path not in {"", "/"}
+    ):
+        raise ApiClientError("La URL del servicio Python no es válida.")
+    if has_secret and parsed.scheme != "https" and parsed.hostname not in {
+        "127.0.0.1", "localhost", "::1",
+    }:
+        raise ApiClientError("La API requiere HTTPS para transmitir la clave del servicio.")
+    return f"{origin}{path}"
+
+
 def _response_detail(response: requests.Response) -> str:
     try:
         detail = response.json().get("detail")
@@ -243,14 +267,16 @@ def _response_detail(response: requests.Response) -> str:
 
 
 def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
-    url = f"{(base_url or api_base_url()).rstrip('/')}/health"
+    url = _service_url("/health", base_url)
     try:
-        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+        response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS, allow_redirects=False)
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
 
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
@@ -260,19 +286,23 @@ def call_health_endpoint(base_url: str | None = None) -> dict[str, Any]:
 
 
 def _post_json(path: str, payload: dict[str, Any], base_url: str | None = None) -> dict[str, Any]:
-    url = f"{(base_url or api_base_url()).rstrip('/')}{path}"
+    headers = api_auth_headers()
+    url = _service_url(path, base_url, has_secret=bool(headers))
     try:
         response = requests.post(
             url,
             json=payload,
             timeout=REQUEST_TIMEOUT_SECONDS,
-            headers=api_auth_headers(),
+            headers=headers,
+            allow_redirects=False,
         )
     except requests.Timeout as exc:
         raise ApiClientError("La API tardó demasiado en responder.") from exc
     except requests.RequestException as exc:
         raise ApiClientError(f"No se pudo conectar con FastAPI: {exc}") from exc
 
+    if 300 <= response.status_code < 400:
+        raise ApiClientError("La API redirigió la solicitud a otro destino.", response.status_code)
     if response.status_code >= 400:
         raise ApiClientError(
             f"FastAPI respondió HTTP {response.status_code}: {_response_detail(response)}",
