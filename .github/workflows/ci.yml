@@ -97,5 +97,10 @@ jobs:
           python -m scripts.calibrate_convenience_weights \
             --with-grid --json-output "$RUNNER_TEMP/weight-calibration.json"
 
+      - name: HU-33 - Advisory coverage and critical explanation (synthetic, read-only)
+        run: |
+          python -m scripts.audit_decision_quality \
+            --with-grid --json-output "$RUNNER_TEMP/decision-quality-audit.json"
+
       - name: Lightweight expert benchmark (no external requests)
         run: python -m scripts.benchmark_inference --iterations 300
