@@ -73,7 +73,7 @@ pytest -q tests/test_decision_quality_hu33.py tests/test_quality_audit_hu33.py
 # Casos históricos + casos extremos y fronteras específicos de HU-33.
 python -m scripts.audit_decision_quality
 
-# 17 documentados + 3404 sintéticos + 8 escenarios dirigidos = 3429.
+# 17 documentados + 3404 sintéticos + 10 escenarios dirigidos = 3431.
 python -m scripts.audit_decision_quality --with-grid
 
 # Exportación opcional, sin modificar datos ni API.
