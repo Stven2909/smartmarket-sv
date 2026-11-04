@@ -175,7 +175,7 @@ def test_derived_fact_names_have_one_checked_contract():
     facts = derive_facts(make_request())
 
     assert set(facts) == DERIVED_FACT_NAMES
-    assert THRESHOLDS_VERSION == "1.0.0"
+    assert THRESHOLDS_VERSION == "1.1.0"
     assert THRESHOLDS["ahorro_bajo_max"] == 3.0
 
 
@@ -235,6 +235,7 @@ def test_default_conclusion_explains_that_no_specific_rule_was_triggered():
         make_request(
             costo_total=45,
             ahorro=5,
+            productos_disponibles=9,
             distancia_adicional_km=4,
             tiempo_estimado_min=30,
         )
