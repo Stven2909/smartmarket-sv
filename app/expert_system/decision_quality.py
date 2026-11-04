@@ -9,7 +9,7 @@ from app.schemas.recommendation import RecommendationRequest
 FAVORABLE_LEVELS = frozenset({"BUENA", "EXCELENTE"})
 TRAVEL_REVIEW = "TRAYECTO_A_REVISAR"
 LOW_INDEX = "INDICE_BAJO_CON_DICTAMEN_FAVORABLE"
-INCOMPLETE_EXCELLENT = "EXCELENTE_CON_COBERTURA_INFERIOR_80"
+INCOMPLETE_EXCELLENT = "EXCELENTE_CON_LISTA_INCOMPLETA"
 
 
 def decision_quality_flags(
@@ -32,7 +32,7 @@ def decision_quality_flags(
     if (
         level == "EXCELENTE"
         and isinstance(coverage, (int, float))
-        and coverage < 80
+        and coverage < 100
     ):
         flags.append(INCOMPLETE_EXCELLENT)
     return tuple(flags)
