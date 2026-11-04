@@ -1,0 +1,769 @@
+{
+  "version_matriz": "1.0",
+  "tipo_datos": "SINTETICOS_NO_ETIQUETADOS",
+  "base_request": {
+    "request_id": "hu35-base",
+    "alternativa_id": "hu35-alternativa",
+    "costo_total": 45,
+    "presupuesto": 50,
+    "ahorro": 5,
+    "distancia_km": 2,
+    "distancia_adicional_km": 1,
+    "tiempo_estimado_min": 12,
+    "productos_disponibles": 10,
+    "productos_totales": 10,
+    "productos_esenciales_disponibles": 5,
+    "productos_esenciales_totales": 5,
+    "numero_supermercados": 1,
+    "promociones_aplicables": false
+  },
+  "reference_cases": [
+    {
+      "source": "data/scenarios.json",
+      "id": "escenario-ideal",
+      "expected": {
+        "winner": "R06",
+        "level": "EXCELENTE"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "presupuesto-muy-excedido",
+      "expected": {
+        "winner": "R01",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "productos-esenciales-faltantes",
+      "expected": {
+        "winner": "R02",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "distancia-lejana-ahorro-bajo",
+      "expected": {
+        "winner": "R03",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "tiempo-alto-ahorro-bajo",
+      "expected": {
+        "winner": "R04",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "compra-fragmentada",
+      "expected": {
+        "winner": "R05",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "promociones-relevantes",
+      "expected": {
+        "winner": "R07",
+        "level": "BUENA"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "dos-supermercados-ahorro-alto",
+      "expected": {
+        "winner": "R08",
+        "level": "BUENA"
+      }
+    },
+    {
+      "source": "data/scenarios.json",
+      "id": "sin-regla-dominante",
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios_hu28.json",
+      "id": "sin-productos",
+      "expected": {
+        "winner": "R09",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios_hu28.json",
+      "id": "cobertura-muy-baja",
+      "expected": {
+        "winner": "R10",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios_hu28.json",
+      "id": "compra-equilibrada-sin-promocion",
+      "expected": {
+        "winner": "R11",
+        "level": "BUENA"
+      }
+    },
+    {
+      "source": "data/scenarios_hu29.json",
+      "id": "sin-esenciales-cobertura-60",
+      "expected": {
+        "winner": "R12",
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "source": "data/scenarios_hu29.json",
+      "id": "esenciales-cubiertos-lista-parcial",
+      "expected": {
+        "winner": "R13",
+        "level": "BUENA"
+      }
+    },
+    {
+      "source": "data/scenarios_hu30.json",
+      "id": "hu30-alto-ahorro-viaje-moderado",
+      "expected": {
+        "winner": "R14",
+        "level": "BUENA"
+      }
+    },
+    {
+      "source": "data/scenarios_hu30.json",
+      "id": "hu30-sin-promos-completa",
+      "expected": {
+        "winner": "R15",
+        "level": "BUENA"
+      }
+    },
+    {
+      "source": "data/scenarios_hu30.json",
+      "id": "hu30-parcial-esenciales-ponderado",
+      "expected": {
+        "winner": "R16",
+        "level": "BUENA"
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "conflicto-6-criticas",
+      "category": "contradiccion",
+      "changes": {
+        "costo_total": 56,
+        "ahorro": 2.99,
+        "distancia_adicional_km": 8,
+        "tiempo_estimado_min": 45,
+        "productos_disponibles": 4,
+        "productos_esenciales_disponibles": 2,
+        "numero_supermercados": 3,
+        "promociones_aplicables": true
+      },
+      "expected": {
+        "winner": "R01",
+        "level": "NO_RECOMENDABLE",
+        "required_active": [
+          "R01",
+          "R02",
+          "R03",
+          "R04",
+          "R05",
+          "R10"
+        ]
+      }
+    },
+    {
+      "id": "r10-vence-r03",
+      "category": "contradiccion",
+      "changes": {
+        "ahorro": 2.99,
+        "distancia_adicional_km": 8,
+        "tiempo_estimado_min": 30,
+        "productos_disponibles": 4,
+        "productos_esenciales_disponibles": 1,
+        "productos_esenciales_totales": 1
+      },
+      "expected": {
+        "winner": "R10",
+        "level": "NO_RECOMENDABLE",
+        "required_active": [
+          "R03",
+          "R10"
+        ]
+      }
+    },
+    {
+      "id": "limite-presupuesto-mas-10",
+      "category": "frontera",
+      "changes": {
+        "costo_total": 55,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 30
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "presupuesto_ligeramente_excedido": true,
+          "presupuesto_muy_excedido": false
+        }
+      }
+    },
+    {
+      "id": "limite-presupuesto-mas-10-un-centavo",
+      "category": "frontera",
+      "changes": {
+        "costo_total": 55.01,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 30
+      },
+      "expected": {
+        "winner": "R01",
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "presupuesto_muy_excedido": true
+        }
+      }
+    },
+    {
+      "id": "presupuesto-excedido-ligero",
+      "category": "provisional",
+      "changes": {
+        "costo_total": 53,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 30
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE"
+      }
+    },
+    {
+      "id": "sin-esenciales-lista-completa",
+      "category": "incertidumbre",
+      "changes": {
+        "productos_esenciales_totales": 0,
+        "productos_esenciales_disponibles": 0
+      },
+      "expected": {
+        "winner": "R06",
+        "level": "EXCELENTE",
+        "expected_flags": [
+          "SIN_ESENCIALES_IDENTIFICADOS"
+        ],
+        "expected_facts": {
+          "sin_esenciales_definidos": true,
+          "todos_esenciales_disponibles": true
+        }
+      }
+    },
+    {
+      "id": "sin-esenciales-lista-70",
+      "category": "critico",
+      "changes": {
+        "productos_esenciales_totales": 0,
+        "productos_esenciales_disponibles": 0,
+        "productos_disponibles": 7
+      },
+      "expected": {
+        "winner": "R12",
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "sin_esenciales_definidos": true,
+          "cobertura_parcial_relevante": true
+        }
+      }
+    },
+    {
+      "id": "sin-esenciales-lista-80",
+      "category": "incertidumbre",
+      "changes": {
+        "productos_esenciales_totales": 0,
+        "productos_esenciales_disponibles": 0,
+        "productos_disponibles": 8
+      },
+      "expected": {
+        "winner": "R06",
+        "level": "EXCELENTE",
+        "expected_flags": [
+          "EXCELENTE_CON_LISTA_INCOMPLETA",
+          "SIN_ESENCIALES_IDENTIFICADOS"
+        ],
+        "expected_facts": {
+          "sin_esenciales_definidos": true,
+          "cobertura_parcial_relevante": false
+        }
+      }
+    },
+    {
+      "id": "esenciales-faltantes-90",
+      "category": "critico",
+      "changes": {
+        "productos_disponibles": 9,
+        "productos_esenciales_disponibles": 4
+      },
+      "expected": {
+        "winner": "R02",
+        "level": "NO_RECOMENDABLE",
+        "required_active": [
+          "R02"
+        ]
+      }
+    },
+    {
+      "id": "cero-productos",
+      "category": "critico",
+      "changes": {
+        "productos_disponibles": 0,
+        "productos_esenciales_disponibles": 0,
+        "productos_esenciales_totales": 0,
+        "ahorro": 0,
+        "promociones_aplicables": true
+      },
+      "expected": {
+        "winner": "R09",
+        "level": "NO_RECOMENDABLE",
+        "required_active": [
+          "R09",
+          "R12"
+        ]
+      }
+    },
+    {
+      "id": "cobertura-49",
+      "category": "frontera",
+      "changes": {
+        "productos_totales": 100,
+        "productos_disponibles": 49,
+        "productos_esenciales_totales": 1,
+        "productos_esenciales_disponibles": 1
+      },
+      "expected": {
+        "winner": "R10",
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "cobertura_muy_baja": true
+        }
+      }
+    },
+    {
+      "id": "cobertura-50",
+      "category": "frontera",
+      "changes": {
+        "productos_disponibles": 5,
+        "productos_esenciales_totales": 1,
+        "productos_esenciales_disponibles": 1
+      },
+      "expected": {
+        "winner": "R13",
+        "level": "BUENA",
+        "expected_facts": {
+          "cobertura_muy_baja": false,
+          "cobertura_parcial_relevante": true
+        }
+      }
+    },
+    {
+      "id": "cobertura-80",
+      "category": "frontera",
+      "changes": {
+        "productos_disponibles": 8,
+        "productos_esenciales_totales": 1,
+        "productos_esenciales_disponibles": 1
+      },
+      "expected": {
+        "winner": "R06",
+        "level": "EXCELENTE",
+        "expected_flags": [
+          "EXCELENTE_CON_LISTA_INCOMPLETA"
+        ],
+        "expected_facts": {
+          "cobertura_parcial_relevante": false
+        }
+      }
+    },
+    {
+      "id": "dos-supermercados-ahorro-9-99",
+      "category": "frontera",
+      "changes": {
+        "numero_supermercados": 2,
+        "ahorro": 9.99,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 30
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "ahorro_alto": false
+        }
+      }
+    },
+    {
+      "id": "dos-supermercados-ahorro-10",
+      "category": "frontera",
+      "changes": {
+        "numero_supermercados": 2,
+        "ahorro": 10,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 30
+      },
+      "expected": {
+        "winner": "R08",
+        "level": "BUENA",
+        "expected_facts": {
+          "ahorro_alto": true
+        }
+      }
+    },
+    {
+      "id": "distancia-exacta-8-con-ahorro-bajo",
+      "category": "frontera",
+      "changes": {
+        "ahorro": 2.99,
+        "distancia_adicional_km": 8,
+        "tiempo_estimado_min": 35
+      },
+      "expected": {
+        "winner": "R03",
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "distancia_lejana": true,
+          "ahorro_bajo": true
+        }
+      }
+    },
+    {
+      "id": "distancia-7-99-sin-veto",
+      "category": "frontera",
+      "changes": {
+        "ahorro": 2.99,
+        "distancia_adicional_km": 7.99,
+        "tiempo_estimado_min": 35
+      },
+      "expected": {
+        "winner": "R15",
+        "level": "BUENA",
+        "expected_facts": {
+          "distancia_lejana": false,
+          "ahorro_bajo": true
+        }
+      }
+    },
+    {
+      "id": "tiempo-exacto-45-ahorro-bajo",
+      "category": "frontera",
+      "changes": {
+        "ahorro": 2.99,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 45
+      },
+      "expected": {
+        "winner": "R04",
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "tiempo_alto": true,
+          "ahorro_bajo": true
+        }
+      }
+    },
+    {
+      "id": "tiempo-44-99-balance-suficiente",
+      "category": "frontera",
+      "changes": {
+        "ahorro": 2.99,
+        "distancia_adicional_km": 4,
+        "tiempo_estimado_min": 44.99
+      },
+      "expected": {
+        "winner": "R15",
+        "level": "BUENA",
+        "expected_facts": {
+          "tiempo_alto": false
+        }
+      }
+    },
+    {
+      "id": "ahorro-exacto-3-no-dispara-r03",
+      "category": "frontera",
+      "changes": {
+        "ahorro": 3,
+        "distancia_adicional_km": 8,
+        "tiempo_estimado_min": 35
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "ahorro_bajo": false,
+          "distancia_lejana": true
+        }
+      }
+    },
+    {
+      "id": "promocion-no-elimina-veto",
+      "category": "contradiccion",
+      "changes": {
+        "ahorro": 2.99,
+        "distancia_adicional_km": 8,
+        "promociones_aplicables": true
+      },
+      "expected": {
+        "winner": "R03",
+        "level": "NO_RECOMENDABLE",
+        "required_active": [
+          "R03",
+          "R07"
+        ]
+      }
+    },
+    {
+      "id": "r07-extremo-indice-bajo",
+      "category": "advertencia",
+      "changes": {
+        "ahorro": 11,
+        "distancia_km": 101,
+        "distancia_adicional_km": 100,
+        "tiempo_estimado_min": 200,
+        "promociones_aplicables": true
+      },
+      "expected": {
+        "winner": "R07",
+        "level": "BUENA",
+        "expected_flags": [
+          "TRAYECTO_A_REVISAR",
+          "INDICE_BAJO_CON_DICTAMEN_FAVORABLE"
+        ]
+      }
+    },
+    {
+      "id": "r08-extremo-indice-bajo",
+      "category": "advertencia",
+      "changes": {
+        "ahorro": 11,
+        "distancia_km": 101,
+        "distancia_adicional_km": 100,
+        "tiempo_estimado_min": 200,
+        "numero_supermercados": 2
+      },
+      "expected": {
+        "winner": "R08",
+        "level": "BUENA",
+        "expected_flags": [
+          "TRAYECTO_A_REVISAR",
+          "INDICE_BAJO_CON_DICTAMEN_FAVORABLE"
+        ]
+      }
+    },
+    {
+      "id": "excelente-opcionales-20-faltan",
+      "category": "advertencia",
+      "changes": {
+        "productos_disponibles": 8,
+        "productos_esenciales_totales": 1,
+        "productos_esenciales_disponibles": 1
+      },
+      "expected": {
+        "winner": "R06",
+        "level": "EXCELENTE",
+        "expected_flags": [
+          "EXCELENTE_CON_LISTA_INCOMPLETA"
+        ]
+      }
+    },
+    {
+      "id": "distancia-2-y-tiempo-20",
+      "category": "frontera",
+      "changes": {
+        "distancia_adicional_km": 2,
+        "tiempo_estimado_min": 20
+      },
+      "expected": {
+        "winner": "R06",
+        "level": "EXCELENTE"
+      }
+    },
+    {
+      "id": "distancia-2-01-ahorro-bajo",
+      "category": "frontera",
+      "changes": {
+        "distancia_adicional_km": 2.01,
+        "tiempo_estimado_min": 20,
+        "ahorro": 1
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "distancia_cercana": false
+        }
+      }
+    },
+    {
+      "id": "tiempo-20-01-ahorro-bajo",
+      "category": "frontera",
+      "changes": {
+        "distancia_adicional_km": 2,
+        "tiempo_estimado_min": 20.01,
+        "ahorro": 1
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "tiempo_bajo": false
+        }
+      }
+    },
+    {
+      "id": "r14-al-umbral-75",
+      "category": "ponderacion",
+      "changes": {
+        "ahorro": 14.5,
+        "distancia_adicional_km": 6,
+        "tiempo_estimado_min": 35
+      },
+      "expected": {
+        "winner": "R14",
+        "level": "BUENA",
+        "expected_facts": {
+          "conveniencia_alta": true
+        }
+      }
+    },
+    {
+      "id": "r14-bajo-75-sin-redondeo",
+      "category": "ponderacion",
+      "changes": {
+        "ahorro": 14.499,
+        "distancia_adicional_km": 6,
+        "tiempo_estimado_min": 35
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "conveniencia_alta": false
+        }
+      }
+    },
+    {
+      "id": "r16-al-umbral-60",
+      "category": "ponderacion",
+      "changes": {
+        "ahorro": 7.86,
+        "distancia_adicional_km": 5,
+        "tiempo_estimado_min": 30,
+        "productos_disponibles": 8,
+        "productos_esenciales_totales": 3,
+        "productos_esenciales_disponibles": 3
+      },
+      "expected": {
+        "winner": "R16",
+        "level": "BUENA",
+        "expected_facts": {
+          "conveniencia_solida": true
+        }
+      }
+    },
+    {
+      "id": "r16-bajo-60-sin-redondeo",
+      "category": "ponderacion",
+      "changes": {
+        "ahorro": 7.855,
+        "distancia_adicional_km": 5,
+        "tiempo_estimado_min": 30,
+        "productos_disponibles": 8,
+        "productos_esenciales_totales": 3,
+        "productos_esenciales_disponibles": 3
+      },
+      "expected": {
+        "winner": null,
+        "level": "NO_RECOMENDABLE",
+        "expected_facts": {
+          "conveniencia_solida": false
+        }
+      }
+    },
+    {
+      "id": "r05-prevalece-ante-promocion",
+      "category": "contradiccion",
+      "changes": {
+        "numero_supermercados": 3,
+        "promociones_aplicables": true
+      },
+      "expected": {
+        "winner": "R05",
+        "level": "NO_RECOMENDABLE",
+        "required_active": [
+          "R05",
+          "R07"
+        ]
+      }
+    }
+  ],
+  "invalid_cases": [
+    {
+      "id": "sin-presupuesto",
+      "changes": {},
+      "remove": [
+        "presupuesto"
+      ]
+    },
+    {
+      "id": "presupuesto-cero",
+      "changes": {
+        "presupuesto": 0
+      }
+    },
+    {
+      "id": "productos-imposibles",
+      "changes": {
+        "productos_disponibles": 11
+      }
+    },
+    {
+      "id": "esenciales-fantasma",
+      "changes": {
+        "productos_esenciales_totales": 0,
+        "productos_esenciales_disponibles": 1
+      }
+    },
+    {
+      "id": "opcionales-incoherentes",
+      "changes": {
+        "productos_esenciales_totales": 8,
+        "productos_esenciales_disponibles": 8,
+        "productos_disponibles": 7
+      }
+    },
+    {
+      "id": "campo-ajeno",
+      "changes": {
+        "factor_oculto": 42
+      }
+    },
+    {
+      "id": "supermercados-cero",
+      "changes": {
+        "numero_supermercados": 0
+      }
+    },
+    {
+      "id": "identificador-en-blanco",
+      "changes": {
+        "request_id": "  "
+      }
+    }
+  ]
+}
