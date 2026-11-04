@@ -50,7 +50,7 @@ def test_evidence_bundle_uses_real_existing_services():
     before = payload.model_dump()
     bundle = build_evidence(payload)
     assert len(bundle.comparison.ranking) == 9
-    assert bundle.audit.escenarios_sinteticos == 2430
+    assert bundle.audit.escenarios_sinteticos == 3402
     assert len(bundle.audit.cobertura) == 8
     assert len(bundle.sensitivity) == 9
     assert all(len(item.escenarios) >= 4 for item in bundle.sensitivity)
@@ -78,7 +78,7 @@ def test_pdf_has_complete_technical_evidence_for_nine_scenarios():
         "NO_RECOMENDABLE",
         "R06",
         "R07",
-        "2430",
+        "3402",
     ):
         assert text.lower() in content.lower(), text
     assert reader.metadata.title.startswith("SmartMarket SV")
