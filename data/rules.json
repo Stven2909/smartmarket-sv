@@ -178,12 +178,32 @@
     "category": "DISPONIBILIDAD",
     "conditions": {
       "sin_esenciales_definidos": true,
-      "cobertura_alerta_sin_esenciales": true
+      "cobertura_parcial_relevante": true
     },
     "result": {
       "level": "NO_RECOMENDABLE",
       "action": "Revisar qué productos son indispensables y buscar una alternativa que cubra mejor la lista.",
       "explanation": "No se identificaron productos esenciales y la alternativa cubre menos del 80% de los productos solicitados; falta información para considerarla favorable."
+    }
+  },
+  {
+    "id": "R13",
+    "name": "Compra parcialmente cubierta con esenciales completos",
+    "priority": 4,
+    "category": "DISPONIBILIDAD",
+    "conditions": {
+      "sin_esenciales_definidos": false,
+      "cobertura_parcial_relevante": true,
+      "todos_esenciales_disponibles": true,
+      "dentro_presupuesto": true,
+      "distancia_razonable": true,
+      "tiempo_razonable": true,
+      "una_parada": true
+    },
+    "result": {
+      "level": "BUENA",
+      "action": "Considerar la tienda solo tras revisar los productos opcionales faltantes y comparar sus precios con otras opciones.",
+      "explanation": "Los productos esenciales están cubiertos, pero faltan más del 20% de los productos de la lista. Conviene comprobar el costo de completar la compra antes de priorizarla."
     }
   }
 ]
