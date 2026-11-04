@@ -41,7 +41,7 @@ def test_budget_slightly_exceeded_has_explicit_provisional_explanation():
     assert "supera ligeramente" in report.explicacion
     assert "provisional" in report.explicacion
     assert "Ajustar" in report.accion_sugerida
-    assert len(report.trace) == 11
+    assert len(report.trace) == 13
 
 
 def test_exact_budget_threshold_remains_provisional_and_above_is_critical():
@@ -75,10 +75,10 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
     assert coverage["no_winner"] == 1
     assert coverage["conflicts"] >= 1
     assert {row["Regla"] for row in coverage["rules"]} == {
-        f"R{index:02}" for index in range(1, 12)
+        f"R{index:02}" for index in range(1, 14)
     }
     # The legacy nine-scenario view has coverage for the original rules.
-    # New R09–R11 cases are isolated to avoid the 10-alternative API cap.
+    # New R09–R13 cases are isolated to avoid the 10-alternative API cap.
     historical = [row for row in coverage["rules"] if row["Regla"] <= "R08"]
     assert all(row["Activaciones"] >= 1 for row in historical)
     assert all(row["Victorias"] >= 1 for row in historical)
@@ -90,12 +90,15 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
     )
 
 
-def test_full_eleven_rule_coverage_uses_two_valid_comparison_batches():
+def test_full_thirteen_rule_coverage_uses_three_valid_comparison_batches():
     basic = load_scenarios()
     extras = load_scenarios(
         Path(__file__).resolve().parents[1] / "data" / "scenarios_hu28.json"
     )
-    assert len(basic) == 9 and len(extras) == 3
+    safety = load_scenarios(
+        Path(__file__).resolve().parents[1] / "data" / "scenarios_hu29.json"
+    )
+    assert len(basic) == 9 and len(extras) == 3 and len(safety) == 2
 
     def compare(rows):
         return compare_alternatives(
@@ -109,12 +112,16 @@ def test_full_eleven_rule_coverage_uses_two_valid_comparison_batches():
 
     first = compare(basic)
     second = compare(extras)
-    merged = {**first, "ranking": first["ranking"] + second["ranking"]}
-    report = build_coverage_report(merged, basic + extras)
-    assert report["total"] == 12
+    third = compare(safety)
+    merged = {
+        **first,
+        "ranking": first["ranking"] + second["ranking"] + third["ranking"],
+    }
+    report = build_coverage_report(merged, basic + extras + safety)
+    assert report["total"] == 14
     assert report["no_winner"] == 1
     assert {row["Regla"] for row in report["rules"]} == {
-        f"R{i:02}" for i in range(1, 12)
+        f"R{i:02}" for i in range(1, 14)
     }
     assert all(row["Activaciones"] >= 1 for row in report["rules"])
     assert all(row["Victorias"] >= 1 for row in report["rules"])
