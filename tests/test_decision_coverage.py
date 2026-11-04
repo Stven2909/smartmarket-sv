@@ -90,7 +90,7 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
     )
 
 
-def test_full_thirteen_rule_coverage_uses_three_valid_comparison_batches():
+def test_full_sixteen_rule_coverage_uses_two_valid_comparison_batches():
     basic = load_scenarios()
     extras = load_scenarios(
         Path(__file__).resolve().parents[1] / "data" / "scenarios_hu28.json"
@@ -98,7 +98,12 @@ def test_full_thirteen_rule_coverage_uses_three_valid_comparison_batches():
     safety = load_scenarios(
         Path(__file__).resolve().parents[1] / "data" / "scenarios_hu29.json"
     )
-    assert len(basic) == 9 and len(extras) == 3 and len(safety) == 2
+    weighted = load_scenarios(
+        Path(__file__).resolve().parents[1] / "data" / "scenarios_hu30.json"
+    )
+    all_extras = extras + safety + weighted
+    assert len(basic) == 9
+    assert len(all_extras) == 8
 
     def compare(rows):
         return compare_alternatives(
@@ -111,14 +116,13 @@ def test_full_thirteen_rule_coverage_uses_three_valid_comparison_batches():
         ).model_dump(mode="json")
 
     first = compare(basic)
-    second = compare(extras)
-    third = compare(safety)
+    second = compare(all_extras)
     merged = {
         **first,
-        "ranking": first["ranking"] + second["ranking"] + third["ranking"],
+        "ranking": first["ranking"] + second["ranking"],
     }
-    report = build_coverage_report(merged, basic + extras + safety)
-    assert report["total"] == 14
+    report = build_coverage_report(merged, basic + all_extras)
+    assert report["total"] == 17
     assert report["no_winner"] == 1
     assert {row["Regla"] for row in report["rules"]} == {
         f"R{i:02}" for i in range(1, 17)
