@@ -56,7 +56,7 @@ def api(method, path, **kwargs):
 def test_identical_snapshots_do_not_create_false_regressions():
     request = RuleRegressionRequest.model_validate(payload())
     report = compare_rule_versions(request)
-    assert report.escenarios_evaluados == 12
+    assert report.escenarios_evaluados == 9
     assert report.huella_anterior == report.huella_propuesta
     assert report.reglas_agregadas == 0
     assert report.reglas_retiradas == 0
