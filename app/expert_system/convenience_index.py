@@ -1,3 +1,4 @@
+from math import isclose
 from typing import Any
 
 from app.expert_system.convenience_config import (
@@ -58,10 +59,20 @@ def normalize_promotions(promociones_relevantes: bool) -> float:
     return 1.0 if promociones_relevantes else 0.0
 
 
+def meets_convenience_threshold(index: float, minimum: float) -> bool:
+    """Compara índices sin redondear; tolera solo ruido de coma flotante.
+
+    No usar round(index, 2): un 59.996 sigue siendo menor que 60.
+    """
+    return index >= minimum or isclose(
+        index, minimum, rel_tol=0.0, abs_tol=1e-12
+    )
+
+
 def classify_convenience(index: float) -> str:
-    if index >= 75:
+    if meets_convenience_threshold(index, 75):
         return "ALTA_CONVENIENCIA"
-    if index >= 50:
+    if meets_convenience_threshold(index, 50):
         return "CONVENIENCIA_MEDIA"
     return "BAJA_CONVENIENCIA"
 
