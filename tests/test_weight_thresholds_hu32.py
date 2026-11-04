@@ -17,7 +17,6 @@ from app.expert_system.convenience_index import (
 from app.expert_system.inference_engine import run_inference
 from app.schemas.recommendation import RecommendationRequest
 
-
 BASE = {
     "request_id": "hu32-limites",
     "alternativa_id": "tienda-limite",
