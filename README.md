@@ -40,6 +40,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **Paneles resistentes en Streamlit Cloud:** sustituye todas las métricas dinámicas por tarjetas HTML seguras, adapta el diseño a móvil y evita mostrar resultados obsoletos ante errores.
+- **Tablas ligeras y legibles:** presenta las tablas de hechos, auditoría, diagnóstico y comparación como HTML escapado en lugar de 16 componentes interactivos con carga JavaScript adicional.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
 - **Seguridad del canal backend → motor (HU-23):** protege los endpoints de negocio con `X-API-Key` en producción, admite rotación temporal y desactiva caché en las respuestas de la API. La autenticación de usuarios finales permanece en Laravel.
 
@@ -249,7 +250,7 @@ Para los contratos completos consulta [la documentación de la API](docs/api-con
 
 ## Reparación de Streamlit Cloud
 
-En la demostración se detectó un fallo de carga del módulo JavaScript `Metric.*.js`. Los indicadores se renderizan ahora como HTML escapado y adaptable, sin depender de ese recurso dinámico. La dependencia de Streamlit en `demo/requirements.txt` queda fijada en `1.66.1` (verificada en CI). La URL del servicio Python ya no puede ser modificada por usuarios de la demo; se configura solo en el servidor.
+En la demostración se detectó un fallo de carga del módulo JavaScript `Metric.*.js`. Los indicadores se renderizan ahora como HTML escapado y adaptable, sin depender de ese recurso dinámico. Las tablas de resultados pequeñas también se renderizan como HTML estático para reducir módulos dinámicos, con límite de 100 filas visibles y acceso a la evidencia JSON para los datos completos. La dependencia de Streamlit en `demo/requirements.txt` queda fijada en `1.66.1` (verificada en CI). La URL del servicio Python ya no puede ser modificada por usuarios de la demo; se configura solo en el servidor.
 
 **Advertencia:** las pruebas automáticas de Streamlit ejecutan Python, pero no garantizan que Streamlit Cloud entregue sus módulos JS al navegador. Una pantalla en blanco, un spinner permanente o recursos `.js` inaccesibles también pueden indicar problemas de Cloud, caché del navegador o conectividad. Revisa los logs del despliegue y sigue la [guía de reparación y verificación](docs/reparacion-streamlit-cloud-2026-11.md). Aun cuando las pruebas pasen, no consideres resuelto el incidente hasta validar el sitio publicado en un navegador real.
 
@@ -263,6 +264,8 @@ En la demostración se detectó un fallo de carga del módulo JavaScript `Metric
 | `SMARTMARKET_API_KEY_PREVIOUS` | Clave anterior opcional y temporal durante una rotación |
 
 Streamlit utiliza `http://127.0.0.1:8001` por defecto. Los endpoints `/api/v1/*` requieren `X-API-Key` cuando existe un secreto de servidor o el entorno está protegido. `/health` y `/ready` permanecen públicos; el resto devuelve `401` sin clave válida. En un entorno protegido sin clave principal, el motor devuelve `503` en lugar de permitir acceso anónimo.
+
+**Streamlit también utiliza credenciales de servidor:** en Community Cloud, abre la aplicación → Settings → Secrets y guarda `SMARTMARKET_API_URL` (URL HTTPS de Render) y `SMARTMARKET_API_KEY` (el secreto vigente en Render). La interfaz ya incluye `X-API-Key` en las llamadas de API desde Python, no desde el navegador. El botón **Verificar conexión** sigue disponible en la barra lateral; la URL y el secreto no pueden editarse desde la demo. Nunca copies estas variables al código fuente ni a React.
 
 **Importante:** si Render no tiene ni `SMARTMARKET_ENV` ni clave configuradas, todavía funciona como entorno de desarrollo. Antes de considerar el despliegue seguro, configura ambos secretos en Render y la clave correspondiente `EXPERT_SYSTEM_API_KEY` en Laravel. Nunca expongas la clave del servidor en React/Streamlit ni confundas `X-API-Key` con la autenticación de usuarios finales.
 
