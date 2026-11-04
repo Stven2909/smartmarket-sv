@@ -40,6 +40,7 @@ Como módulo de apoyo a decisiones de compra, el sistema experto recibe por HTTP
 | HU-28 | Corregir casos de cobertura insuficiente y agregar compra equilibrada sin promociones | Alta | Implementada en reglas 1.1.0; verificar regresiones |
 | HU-29 | Distinguir cobertura parcial con o sin esenciales declarados | Alta | Implementada en reglas 1.2.0, validación pendiente de cierre |
 | HU-30 | Aprovechar los cinco pesos del índice en tres reglas explicables | Alta | Implementada y sujeta a validación de CI |
+| HU-31 | Comparar pesos experimentalmente y proteger umbrales no redondeados | Alta | Implementada; conservar perfil de producción mientras falten datos etiquetados |
 
 ## Historias y criterios de aceptación
 
@@ -375,3 +376,12 @@ Como responsable del motor, quiero que los cinco pesos explícitos de ahorro, di
 **Criterios de aceptación:** R14 reconoce compras completas con ahorro alto y conveniencia ponderada alta (≥75), R15 considera compras completas con poco ahorro si el balance es al menos 50, y R16 permite compras con todos los esenciales y cobertura de al menos 80 % si su índice alcanza 60, siempre bajo restricciones concretas de presupuesto, parada, recorrido y promociones. Pruebas comparan pares de escenarios con diferentes índices pero las mismas condiciones de negocio relevantes y comprueban que las protecciones críticas continúen ganando. La matriz Streamlit cubre R01–R16 en dos peticiones HTTP con 9 y 8 escenarios, sin cambiar el contrato de 14/16 campos.
 
 **Evidencia:** `tests/test_weighted_rules_hu30.py`, `data/scenarios_hu30.json` y [HU-30 — políticas, pesos y límites](hu30-reglas-ponderadas.md). Los pesos son del prototipo y todavía necesitan calibración con compras reales; las nuevas reglas no convierten el índice en una probabilidad.
+
+
+## HU-31 — Calibración segura de ponderaciones y trazabilidad
+
+Como responsable de inferencia quiero comparar cinco perfiles explícitos de ponderaciones en el mismo motor que usa FastAPI, usando escenarios reproducibles, para saber qué dictámenes se ven afectados y proteger la base de reglas sin adoptar por error pesos no validados comercialmente.
+
+**Criterios de aceptación:** los cinco perfiles suman 100 %, los valores NaN/infinitos se rechazan, el perfil actual reproduce exactamente la salida de `run_inference`, las 17 demostraciones y una rejilla adicional de 3404 ejemplos se ejecutan con perfil aislado, el reporte compara niveles/reglas/índices y bloquea pérdidas críticas, R16 usa el índice sin redondear, las pruebas y la CI validan estabilidad, y los 14/16 campos de Laravel no cambian. Sin escribir `rules.json`, secretos ni código del compañero.
+
+**Evidencia:** `scripts/calibrate_convenience_weights.py`, `tests/test_calibration_hu31.py`, paso de CI y [metodología HU-31](hu31-calibracion-pesos.md). Los resultados son de sensibilidad sintética, no exactitud comercial.
