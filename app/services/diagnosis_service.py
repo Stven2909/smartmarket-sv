@@ -14,13 +14,32 @@ from app.schemas.recommendation import RecommendationRequest
 from app.services.recommendation_service import recommend
 
 
-def _orientation(name: str, item: RecommendationRequest) -> str:
+def _orientation(name: str, item: RecommendationRequest, expected: bool = True) -> str:
     """Describe un requisito observable, sin crear ni estimar datos comerciales."""
 
     descriptions = {
         "dentro_presupuesto": (
             f"Costo actual: {item.costo_total:.2f}; presupuesto: {item.presupuesto:.2f}. "
             "Revisar el costo para que no supere el presupuesto."
+        ),
+        "todos_productos_disponibles": (
+            f"Faltan {item.productos_totales - item.productos_disponibles} "
+            "producto(s) de la lista para considerar la compra completa."
+        ),
+        "distancia_razonable": (
+            f"Distancia adicional: {item.distancia_adicional_km:.2f} km; "
+            f"el criterio de recorrido equilibrado es como máximo "
+            f"{THRESHOLDS['distancia_razonable_max_km']:.2f} km."
+        ),
+        "tiempo_razonable": (
+            f"Tiempo estimado: {item.tiempo_estimado_min:.2f} min; "
+            f"el criterio de recorrido equilibrado es como máximo "
+            f"{THRESHOLDS['tiempo_razonable_max_min']:.2f} min."
+        ),
+        "ahorro_bajo": (
+            f"Ahorro informado: {item.ahorro:.2f}; "
+            f"se requiere al menos {THRESHOLDS['ahorro_bajo_max']:.2f} "
+            "para justificar una compra sin promociones."
         ),
         "todos_esenciales_disponibles": (
             "Comprobar disponibilidad de "
@@ -52,6 +71,11 @@ def _orientation(name: str, item: RecommendationRequest) -> str:
             "Solo indicar que existen si fueron comprobadas por el origen de datos."
         ),
     }
+    if name == "promociones_relevantes" and expected is False:
+        return (
+            "Esta regla contempla una compra sin promociones registradas. "
+            "La condición se cumple cuando promociones_aplicables es falso."
+        )
     return descriptions.get(name, f"Revisar la condición '{name}' en los datos de entrada.")
 
 
@@ -78,7 +102,7 @@ def diagnose(request: DiagnosisRequest) -> DiagnosisResponse:
                 hecho=name,
                 valor_esperado=condition["expected"],
                 valor_actual=condition["actual"],
-                orientacion=_orientation(name, facts),
+                orientacion=_orientation(name, facts, condition["expected"]),
             )
             for name, condition in audit["conditions"].items()
             if not condition["matched"]
