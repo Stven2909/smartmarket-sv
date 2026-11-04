@@ -222,9 +222,11 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
         errors.append("Productos esenciales totales no puede superar productos totales.")
     if essentials is not None and available is not None and essentials > available:
         errors.append("Productos esenciales disponibles no puede superar productos disponibles.")
-    if None not in (available, total, essentials, essential_total):
-        if available - essentials > total - essential_total:
-            errors.append("Productos opcionales disponibles no pueden superar su total.")
+    if (
+        None not in (available, total, essentials, essential_total)
+        and available - essentials > total - essential_total
+    ):
+        errors.append("Productos opcionales disponibles no pueden superar su total.")
     return errors
 
 
