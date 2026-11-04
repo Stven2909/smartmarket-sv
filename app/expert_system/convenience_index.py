@@ -5,6 +5,10 @@ from app.expert_system.convenience_config import (
     DEFAULT_CONVENIENCE_CONFIG,
     ConvenienceConfig,
 )
+from app.expert_system.decision_quality import (
+    decision_quality_advisories,
+    decision_quality_flags,
+)
 from app.schemas.recommendation import RecommendationRequest
 
 CONVENIENCE_CLASSIFICATIONS = frozenset(
@@ -125,9 +129,14 @@ def enrich_inference_result(
     }
 
     winning_rule = result.get("winning_rule")
-    critical_rule = next(
-        (rule_id for rule_id in result.get("activated_rules", []) if rule_id in CRITICAL_RULE_IDS),
-        None,
+    critical_rule = (
+        winning_rule
+        if winning_rule in CRITICAL_RULE_IDS
+        else next(
+            (rule_id for rule_id in result.get("activated_rules", [])
+             if rule_id in CRITICAL_RULE_IDS),
+            None,
+        )
     )
     if critical_rule:
         note = (
@@ -140,6 +149,12 @@ def enrich_inference_result(
             "El índice auxiliar indica el nivel de conveniencia de la alternativa."
         )
 
-    enriched["explanation"] = f"{result['explanation']} {note}"
+    flags = decision_quality_flags(
+        level=result["level"],
+        facts=result["facts"],
+        convenience_classification=convenience["clasificacion_conveniencia"],
+    )
+    advisories = decision_quality_advisories(flags, request)
+    enriched["explanation"] = " ".join([result["explanation"], note, *advisories])
     enriched["convenience_decision_rule"] = winning_rule if critical_rule else None
     return enriched

@@ -1,6 +1,7 @@
 """Comparación experta determinista de alternativas independientes."""
 
 from app.expert_system.convenience_index import CRITICAL_RULE_IDS
+from app.expert_system.decision_quality import decision_quality_flags
 from app.schemas.comparison import (
     ComparisonRequest,
     ComparisonResponse,
@@ -43,6 +44,7 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
     ]
     ranked = sorted(evaluated, key=_sort_key)
     alternatives: list[RankedAlternative] = []
+    flagged_count = 0
     for position, (alternative_id, cost, result) in enumerate(ranked, start=1):
         critical = bool(set(result.reglas_activadas) & CRITICAL_RULE_IDS)
         if critical:
@@ -56,6 +58,14 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
                 f"Regla {result.winning_rule}, nivel {result.nivel_recomendacion}; "
                 f"índice auxiliar {result.indice_conveniencia:.2f}/100."
             )
+        quality_flags = decision_quality_flags(
+            level=result.nivel_recomendacion,
+            facts=result.hechos_derivados,
+            convenience_classification=result.clasificacion_conveniencia,
+        )
+        if quality_flags:
+            flagged_count += 1
+            reason += " La opción requiere revisar advertencias comerciales en su explicación."
         alternatives.append(
             RankedAlternative(
                 posicion=position,
@@ -84,6 +94,13 @@ def compare_alternatives(request: ComparisonRequest) -> ComparisonResponse:
         warnings.append(
             "Las alternativas tienen distintos totales de productos o esenciales. "
             "Comprueba que corresponden a la misma lista antes de interpretar el ranking."
+        )
+
+    if flagged_count:
+        warnings.append(
+            f"{flagged_count} alternativa(s) favorables tienen advertencias "
+            "comerciales: consulte su explicación antes de decidir. "
+            "El ranking no cambia por estas advertencias."
         )
 
     if all(_tier(row.recomendacion) >= 2 for row in alternatives):

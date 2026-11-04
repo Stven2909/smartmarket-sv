@@ -12,7 +12,7 @@ from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
 # hechos resultantes, sin repetir estas comparaciones numéricas.
-THRESHOLDS_VERSION = "1.3.1"
+THRESHOLDS_VERSION = "1.3.2"
 
 THRESHOLDS = {
     "presupuesto_exceso_max_pct": 10.0,

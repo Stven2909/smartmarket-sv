@@ -2,6 +2,10 @@
 
 from app.expert_system.classifiers import THRESHOLDS
 from app.expert_system.convenience_index import CRITICAL_RULE_IDS
+from app.expert_system.decision_quality import (
+    decision_quality_advisories,
+    decision_quality_flags,
+)
 from app.expert_system.rule_loader import load_rules
 from app.schemas.diagnosis import (
     CriticalRisk,
@@ -143,6 +147,13 @@ def diagnose(request: DiagnosisRequest) -> DiagnosisResponse:
             f"{result.winning_rule}. Se muestran las condiciones de las otras reglas favorables."
         )
 
+    quality_flags = decision_quality_flags(
+        level=result.nivel_recomendacion,
+        facts=result.hechos_derivados,
+        convenience_classification=result.clasificacion_conveniencia,
+    )
+    quality_advisories = decision_quality_advisories(quality_flags, facts)
+
     return DiagnosisResponse(
         alternativa_id=facts.alternativa_id,
         nivel_actual=result.nivel_recomendacion,
@@ -155,5 +166,6 @@ def diagnose(request: DiagnosisRequest) -> DiagnosisResponse:
             "Las condiciones son lógicas y no constituyen una optimización automática.",
             "El orden refleja requisitos pendientes, no costos ni viabilidad real.",
             "No se modifican los hechos enviados por el backend.",
+            *quality_advisories,
         ],
     )
