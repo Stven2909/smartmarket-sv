@@ -10,6 +10,7 @@ FAVORABLE_LEVELS = frozenset({"BUENA", "EXCELENTE"})
 TRAVEL_REVIEW = "TRAYECTO_A_REVISAR"
 LOW_INDEX = "INDICE_BAJO_CON_DICTAMEN_FAVORABLE"
 INCOMPLETE_EXCELLENT = "EXCELENTE_CON_LISTA_INCOMPLETA"
+NO_ESSENTIALS_DEFINED = "SIN_ESENCIALES_IDENTIFICADOS"
 
 
 def decision_quality_flags(
@@ -35,6 +36,8 @@ def decision_quality_flags(
         and coverage < 100
     ):
         flags.append(INCOMPLETE_EXCELLENT)
+    if facts.get("sin_esenciales_definidos") is True:
+        flags.append(NO_ESSENTIALS_DEFINED)
     return tuple(flags)
 
 
@@ -66,5 +69,12 @@ def decision_quality_advisories(
             "Aviso comercial: EXCELENTE se refiere a los criterios de la "
             f"regla, no a la lista completa; solo {coverage:.1f}% "
             "de los productos está disponible. Revise los opcionales faltantes."
+        )
+    if NO_ESSENTIALS_DEFINED in flags:
+        warnings.append(
+            "Aviso comercial: no se identificaron productos esenciales en "
+            "la lista (0 de 0). Que todos los esenciales figuren disponibles "
+            "en este caso no significa que se haya verificado su prioridad. "
+            "Compruebe si la lista realmente no contiene artículos indispensables."
         )
     return warnings

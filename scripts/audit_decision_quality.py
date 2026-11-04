@@ -16,6 +16,7 @@ from app.expert_system.convenience_index import CRITICAL_RULE_IDS
 from app.expert_system.decision_quality import (
     INCOMPLETE_EXCELLENT,
     LOW_INDEX,
+    NO_ESSENTIALS_DEFINED,
     TRAVEL_REVIEW,
     decision_quality_advisories,
     decision_quality_flags,
@@ -65,6 +66,19 @@ TARGETED: tuple[tuple[str, dict[str, Any]], ...] = (
                                   "productos_esenciales_disponibles": 1,
                                   "productos_esenciales_totales": 1,
                                   "promociones_aplicables": False}),
+    ("sin-esenciales-completa", {"ahorro": 10,
+                                   "distancia_km": 1,
+                                   "distancia_adicional_km": 1,
+                                   "tiempo_estimado_min": 10,
+                                   "productos_esenciales_disponibles": 0,
+                                   "productos_esenciales_totales": 0}),
+    ("sin-esenciales-cobertura-70", {"ahorro": 10,
+                                       "distancia_km": 1,
+                                       "distancia_adicional_km": 1,
+                                       "tiempo_estimado_min": 10,
+                                       "productos_disponibles": 7,
+                                       "productos_esenciales_disponibles": 0,
+                                       "productos_esenciales_totales": 0}),
     ("r10-prioridad-sobre-r03", {"ahorro": 1,
                                   "distancia_adicional_km": 9,
                                   "tiempo_estimado_min": 30,
@@ -134,6 +148,7 @@ def audit_quality(
                 (INCOMPLETE_EXCELLENT,
                  outcome["level"] == "EXCELENTE"
                  and facts["porcentaje_productos_disponibles"] < 100),
+                (NO_ESSENTIALS_DEFINED, facts["sin_esenciales_definidos"]),
             )
             for flag, condition in checks:
                 if bool(condition) != (flag in flags):
@@ -157,7 +172,7 @@ def audit_quality(
         "activaciones_criticas": counts["activaciones_criticas"],
         "alertas": {
             name: counts[name]
-            for name in (TRAVEL_REVIEW, LOW_INDEX, INCOMPLETE_EXCELLENT)
+            for name in (TRAVEL_REVIEW, LOW_INDEX, INCOMPLETE_EXCELLENT, NO_ESSENTIALS_DEFINED)
         },
         "reglas_favorables": dict(sorted(rules.items())),
         "violaciones": problems[:25],
