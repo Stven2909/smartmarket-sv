@@ -41,7 +41,7 @@ def test_budget_slightly_exceeded_has_explicit_provisional_explanation():
     assert "supera ligeramente" in report.explicacion
     assert "provisional" in report.explicacion
     assert "Ajustar" in report.accion_sugerida
-    assert len(report.trace) == 8
+    assert len(report.trace) == 11
 
 
 def test_exact_budget_threshold_remains_provisional_and_above_is_critical():
@@ -54,7 +54,7 @@ def test_exact_budget_threshold_remains_provisional_and_above_is_critical():
 
 
 def test_normal_unmatched_case_keeps_existing_generic_fallback():
-    report = recommend(case())
+    report = recommend(case(productos_disponibles=9))
     assert report.winning_rule is None
     assert report.accion_sugerida == "Comparar con otras alternativas antes de decidir."
     assert "Ninguna regla" in report.explicacion
@@ -71,11 +71,11 @@ def test_coverage_matrix_runs_all_example_cases_without_laravel():
         )
     )
     coverage = build_coverage_report(result.model_dump(mode="json"), scenarios)
-    assert coverage["total"] == len(scenarios) == 9
+    assert coverage["total"] == len(scenarios) == 12
     assert coverage["no_winner"] == 1
     assert coverage["conflicts"] >= 1
     assert {row["Regla"] for row in coverage["rules"]} == {
-        f"R{index:02}" for index in range(1, 9)
+        f"R{index:02}" for index in range(1, 12)
     }
     assert all(row["Activaciones"] >= 1 for row in coverage["rules"])
     assert all(row["Victorias"] >= 1 for row in coverage["rules"])
