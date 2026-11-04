@@ -387,6 +387,39 @@ def _post_json(path: str, payload: dict[str, Any], base_url: str | None = None) 
     return _json_dict(response)
 
 
+def verify_api_authentication(base_url: str | None = None) -> None:
+    """Verify that the service secret works AND anonymous access is blocked.
+
+    This check is initiated only by an operator pressing the sidebar button.
+    It intentionally doesn't expose or return the shared secret.
+    """
+    if not api_auth_headers():
+        raise ApiClientError(
+            "Streamlit no tiene SMARTMARKET_API_KEY configurada en Secrets."
+        )
+
+    # Authenticated call must succeed before claiming the service is ready.
+    call_knowledge_api(base_url)
+
+    # Also check the backend actually refuses a request without the secret.
+    url = _service_url("/api/v1/knowledge", base_url)
+    try:
+        response = requests.get(
+            url,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            allow_redirects=False,
+        )
+    except requests.Timeout as exc:
+        raise ApiClientError("La prueba de autenticación excedió el tiempo límite.") from exc
+    except requests.RequestException as exc:
+        raise ApiClientError("No se pudo verificar la protección de la API.") from exc
+    if response.status_code != 401:
+        raise ApiClientError(
+            "La API no confirmó el bloqueo de solicitudes sin clave. "
+            "Revisa SMARTMARKET_ENV=production y SMARTMARKET_API_KEY en Render."
+        )
+
+
 def call_recommendation_api(payload: dict[str, Any], base_url: str | None = None) -> dict[str, Any]:
     return _post_json("/api/v1/recommend", payload, base_url)
 
@@ -1582,7 +1615,12 @@ def main() -> None:
     if st.sidebar.button("Verificar conexión", key="health_button"):
         try:
             health = call_health_endpoint(base_url)
-            st.sidebar.success(f"API disponible: {health.get('status', 'ok')}")
+            verify_api_authentication(base_url)
+            st.sidebar.success(
+                "API disponible, clave de Streamlit aceptada y "
+                "solicitudes anónimas bloqueadas. "
+                f"Estado: {health.get('status', 'ok')}."
+            )
         except ApiClientError as exc:
             st.sidebar.error(str(exc))
 
