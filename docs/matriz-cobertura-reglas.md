@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Comprobar que los escenarios de prueba ejercitan las once reglas del sistema experto y hacen visibles los conflictos y los casos sin regla. Esta es una **verificación funcional de escenarios sintéticos**, no una medición de precisión sobre compras reales.
+Comprobar que los escenarios de prueba ejercitan las dieciséis reglas del sistema experto y hacen visibles los conflictos y los casos sin regla. Esta es una **verificación funcional de escenarios sintéticos**, no una medición de precisión sobre compras reales.
 
 La matriz histórica utiliza los nueve escenarios de `data/scenarios.json` y consulta `POST /api/v1/compare` para ejecutar el motor con los mismos hechos que procesa `POST /api/v1/recommend`. No recopila datos, no consulta Laravel y no agrega endpoints.
 
@@ -22,6 +22,9 @@ La matriz histórica utiliza los nueve escenarios de `data/scenarios.json` y con
 
 **Casos complementarios HU-28:** `data/scenarios_hu28.json` contiene tres escenarios que ejercitan R09 (ningún producto), R10 (cobertura del 20 %) y R11 (compra completa equilibrada sin promoción). Se ejecutan por separado en tests y no se concatenan a una solicitud de comparación que limita a diez alternativas.
 
+**Ampliaciones HU-29/HU-30:** dos casos de R12–R13 están en `data/scenarios_hu29.json` y tres casos ponderados R14–R16 en `data/scenarios_hu30.json`. Streamlit reúne 17 escenarios en **dos solicitudes** de comparación, con lotes de 9 y 8 (máximo permitido: 10). Los casos ponderados muestran diferencias reales de índice: un valor insuficiente no debe activar la regla favorable.
+
+
 El escenario ideal activa tanto R06 como R07, y debe ganar R06 por su mayor prioridad. El caso sin regla dominante conserva `winning_rule = null`; no se inventa una regla adicional.
 
 ## Cómo leer los resultados
@@ -40,7 +43,7 @@ Los valores del panel se calculan a partir de la **traza completa devuelta por F
 
 La clasificación pública mantiene tres niveles: `EXCELENTE`, `BUENA` y `NO_RECOMENDABLE`. Cuando el costo excede el presupuesto hasta el 10 % y ninguna regla se activa, se conserva `NO_RECOMENDABLE` provisional y se indica explícitamente el exceso y la recomendación de ajustar la lista. Si el exceso supera el 10 %, R01 es crítica y determina el rechazo.
 
-La distinción entre una conclusión provisional y un rechazo respaldado por R01–R05 es importante: el índice de conveniencia auxiliar no convierte ninguno de los dos en una regla favorable.
+La distinción entre una conclusión provisional y un rechazo respaldado por una regla crítica R01–R05, R09, R10 o R12 es importante: el índice de conveniencia auxiliar no convierte ninguno de los dos en una regla favorable.
 
 ## Ejecución automatizada
 
@@ -53,4 +56,4 @@ ruff check app demo tests
 El objetivo es demostrar la **coherencia del software frente a casos definidos**. La matriz no certifica que los umbrales o las preferencias representen las decisiones de todos los compradores.
 
 
-La matriz básica de nueve casos cubre las reglas históricas R01–R08. La interfaz reúne su resultado con los tres casos adicionales R09–R11 en **dos solicitudes de comparación** independientes, sin alterar los límites HTTP; el auditor `GET /api/v1/rule-audit` utiliza 3402 combinaciones representativas de las once reglas.
+La matriz histórica cubre R01–R08. La versión actual combina los nueve clásicos con los ocho escenarios complementarios R09–R16, en dos solicitudes de comparación de 9 y 8 elementos. El auditor `GET /api/v1/rule-audit` evalúa 3404 muestras sintéticas (3402 combinaciones y dos adicionales para casos ponderados), sin modificar datos comerciales.

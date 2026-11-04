@@ -25,6 +25,7 @@ REQUEST_TIMEOUT_SECONDS = 90
 SCENARIOS_PATH = Path(__file__).resolve().parents[1] / "data" / "scenarios.json"
 EXTRA_RULE_SCENARIOS_PATH = SCENARIOS_PATH.with_name("scenarios_hu28.json")
 COVERAGE_GUARD_SCENARIOS_PATH = SCENARIOS_PATH.with_name("scenarios_hu29.json")
+WEIGHTED_RULE_SCENARIOS_PATH = SCENARIOS_PATH.with_name("scenarios_hu30.json")
 
 
 class ScenarioLoadError(ValueError):
@@ -1132,9 +1133,9 @@ def render_rule_coverage(
 ) -> None:
     st.subheader("Matriz de cobertura de reglas")
     st.caption(
-        "Evalúa nueve alternativas clásicas y cinco casos complementarios "
-        "en tres solicitudes independientes para no superar el límite de diez. "
-        "La matriz muestra activaciones y prioridades, no exactitud comercial."
+        "Evalúa nueve casos clásicos y ocho complementarios en dos "
+        "solicitudes de nueve y ocho alternativas, sin superar el límite "
+        "de diez. La matriz muestra activaciones, no exactitud comercial."
     )
     if st.button("Evaluar cobertura", key="coverage_button"):
         if not 2 <= len(scenarios) <= 10:
@@ -1145,24 +1146,19 @@ def render_rule_coverage(
                     [scenario["facts"] for scenario in scenarios], base_url
                 )
                 extras = load_scenarios(EXTRA_RULE_SCENARIOS_PATH)
-                complementary = call_comparison_api(
-                    [scenario["facts"] for scenario in extras], base_url
-                )
                 safety_cases = load_scenarios(COVERAGE_GUARD_SCENARIOS_PATH)
-                safety_results = call_comparison_api(
-                    [scenario["facts"] for scenario in safety_cases], base_url
+                weighted_cases = load_scenarios(WEIGHTED_RULE_SCENARIOS_PATH)
+                all_extras = extras + safety_cases + weighted_cases
+                # 9 + 8 scenarios in two HTTP calls; /compare allows at most 10.
+                complementary = call_comparison_api(
+                    [scenario["facts"] for scenario in all_extras], base_url
                 )
-                # The 10-alternative HTTP limit remains unchanged.
                 together = {
                     **primary,
-                    "ranking": (
-                        primary["ranking"]
-                        + complementary["ranking"]
-                        + safety_results["ranking"]
-                    ),
+                    "ranking": primary["ranking"] + complementary["ranking"],
                 }
                 st.session_state["rule_coverage"] = build_coverage_report(
-                    together, scenarios + extras + safety_cases
+                    together, scenarios + all_extras
                 )
             except (ApiClientError, ScenarioLoadError) as exc:
                 st.error(f"No se pudo evaluar la cobertura: {exc}")

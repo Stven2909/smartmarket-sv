@@ -1,10 +1,11 @@
 """Clasificadores deterministas de hechos; sus cambios se revisan entre commits en CI."""
 
+from app.expert_system.convenience_index import calculate_convenience_index
 from app.schemas.recommendation import RecommendationRequest
 
 # Umbrales de clasificación. Las reglas del futuro motor consumirán los
 # hechos resultantes, sin repetir estas comparaciones numéricas.
-THRESHOLDS_VERSION = "1.2.0"
+THRESHOLDS_VERSION = "1.3.0"
 
 THRESHOLDS = {
     "presupuesto_exceso_max_pct": 10.0,
@@ -90,6 +91,11 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
     )
     tiempo_alto = request.tiempo_estimado_min >= THRESHOLDS["tiempo_medio_max_min"]
 
+    weighted = calculate_convenience_index(request)
+    conveniencia_alta = weighted["clasificacion_conveniencia"] == "ALTA_CONVENIENCIA"
+    conveniencia_no_baja = weighted["clasificacion_conveniencia"] != "BAJA_CONVENIENCIA"
+    conveniencia_solida = weighted["indice_conveniencia"] >= 60.0
+
     una_parada = request.numero_supermercados == 1
     dos_paradas = request.numero_supermercados == 2
     compra_fragmentada = (
@@ -124,6 +130,9 @@ def derive_facts(request: RecommendationRequest) -> dict[str, bool | float]:
         "dos_paradas": dos_paradas,
         "compra_fragmentada": compra_fragmentada,
         "promociones_relevantes": request.promociones_aplicables,
+        "conveniencia_alta": conveniencia_alta,
+        "conveniencia_no_baja": conveniencia_no_baja,
+        "conveniencia_solida": conveniencia_solida,
         "diferencia_presupuesto": diferencia_presupuesto,
         "porcentaje_exceso_presupuesto": porcentaje_exceso_presupuesto,
         "porcentaje_productos_disponibles": porcentaje_productos_disponibles,

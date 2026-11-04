@@ -33,7 +33,7 @@ def change_priority(rule_id, priority):
 def test_original_rules_pass_with_all_representative_scenarios():
     result = check_changes(RULES, RULES, SCENARIOS)
     assert result["resultado"] == "APROBADO"
-    assert result["metricas"]["casos"] == 3411
+    assert result["metricas"]["casos"] == 3413
     assert result["metricas"]["regresiones_criticas"] == 0
     assert result["metricas"]["perdidas_proteccion"] == 0
     assert result["hallazgos_nuevos"] == []
@@ -63,7 +63,7 @@ def test_critical_promotion_overrides_are_blocked_in_full_grid(tmp_path):
     proposed = save_modified(tmp_path, unsafe)
     result = check_changes(RULES, proposed, SCENARIOS)
     assert result["resultado"] == "BLOQUEADO"
-    assert result["metricas"]["casos"] == 3411
+    assert result["metricas"]["casos"] == 3413
     assert result["metricas"]["regresiones_criticas"] > 0
     assert any(item["regresion_critica"] for item in result["ejemplos"])
 
@@ -168,7 +168,7 @@ def test_cli_writes_summary_and_returns_correct_exit_code(tmp_path, monkeypatch)
     assert status == 0
     report = json.loads(output.read_text(encoding="utf-8"))
     assert report["resultado"] == "APROBADO"
-    assert report["metricas"]["casos"] == 3411
+    assert report["metricas"]["casos"] == 3413
     assert "HU-14" in summary.read_text(encoding="utf-8")
 
 

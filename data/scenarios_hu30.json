@@ -1,0 +1,65 @@
+[
+  {
+    "id": "hu30-alto-ahorro-viaje-moderado",
+    "name": "Compra completa con fuerte ahorro y balance alto",
+    "description": "Compra completa, ahorro alto y trayecto moderado; el índice elevado permite BUENA sin exigir recorrido mínimo.",
+    "facts": {
+      "request_id": "hu30-r14",
+      "alternativa_id": "hu30-tienda-r14",
+      "costo_total": 45,
+      "presupuesto": 50,
+      "ahorro": 20,
+      "distancia_km": 6,
+      "distancia_adicional_km": 6,
+      "tiempo_estimado_min": 35,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "hu30-sin-promos-completa",
+    "name": "Compra completa sin promoción con balance suficiente",
+    "description": "Con poco ahorro, disponibilidad completa y traslado razonable/moderado, el balance permite BUENA.",
+    "facts": {
+      "request_id": "hu30-r15",
+      "alternativa_id": "hu30-tienda-r15",
+      "costo_total": 45,
+      "presupuesto": 50,
+      "ahorro": 2.5,
+      "distancia_km": 5,
+      "distancia_adicional_km": 5,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 10,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  },
+  {
+    "id": "hu30-parcial-esenciales-ponderado",
+    "name": "Casi completa, esenciales cubiertos y ahorro intermedio",
+    "description": "Faltan opcionales, pero todos los esenciales están cubiertos y el índice llega a 60 puntos.",
+    "facts": {
+      "request_id": "hu30-r16",
+      "alternativa_id": "hu30-tienda-r16",
+      "costo_total": 45,
+      "presupuesto": 50,
+      "ahorro": 7,
+      "distancia_km": 4,
+      "distancia_adicional_km": 4,
+      "tiempo_estimado_min": 30,
+      "productos_disponibles": 9,
+      "productos_totales": 10,
+      "productos_esenciales_disponibles": 6,
+      "productos_esenciales_totales": 6,
+      "numero_supermercados": 1,
+      "promociones_aplicables": false
+    }
+  }
+]

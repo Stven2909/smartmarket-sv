@@ -40,12 +40,12 @@ def test_audit_is_lazy_cached_and_returns_independent_results():
     assert _cached_default_audit.cache_info().currsize == 0
     first = audit_rules()
     assert _cached_default_audit.cache_info().misses == 1
-    assert first.escenarios_sinteticos == 3402
+    assert first.escenarios_sinteticos == 3404
     first.resumen = "texto mutado en consumidor"
     first.cobertura.clear()
     second = audit_rules()
     assert second.resumen != first.resumen
-    assert len(second.cobertura) == 13
+    assert len(second.cobertura) == 16
     assert _cached_default_audit.cache_info().hits == 1
 
 

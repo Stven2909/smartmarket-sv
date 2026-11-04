@@ -142,7 +142,7 @@ def test_added_and_removed_rules_are_detected():
     current = rules()
     changed = [r for r in current if r["id"] != "R07"]
     added = json.loads(json.dumps(current[-1]))
-    added["id"] = "R14"
+    added["id"] = "R17"
     changed.append(added)
     report = compare_rule_versions(
         RuleRegressionRequest.model_validate(
@@ -153,7 +153,7 @@ def test_added_and_removed_rules_are_detected():
     assert report.reglas_retiradas == 1
     assert {(row.regla, row.tipo) for row in report.cambios_reglas} == {
         ("R07", "RETIRADA"),
-        ("R14", "AGREGADA"),
+        ("R17", "AGREGADA"),
     }
 
 

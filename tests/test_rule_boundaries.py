@@ -121,7 +121,7 @@ def test_deterministic_sample_of_one_hundred_consistent_alternatives():
         second = recommend(request)
         assert first.model_dump() == second.model_dump()
         assert 0 <= first.indice_conveniencia <= 100
-        assert len(first.trace) == 13
+        assert len(first.trace) == 16
         assert set(first.reglas_activadas) == {
             trace["rule_id"] for trace in first.trace if trace["activated"]
         }
