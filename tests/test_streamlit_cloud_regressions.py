@@ -14,6 +14,7 @@ from demo.streamlit_app import (
     call_health_endpoint,
     call_recommendation_api,
     metric_cards_html,
+    validate_payload,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,7 +86,8 @@ class FakeResponse:
     FakeResponse(data="not an object"),
 ])
 def test_bad_successful_api_response_is_controlled(monkeypatch, response):
-    def fake_post(url, *, json, timeout, headers):
+    def fake_post(url, *, json, timeout, headers, allow_redirects):
+        assert allow_redirects is False
         return response
 
     monkeypatch.setattr("demo.streamlit_app.requests.post", fake_post)
@@ -95,7 +97,8 @@ def test_bad_successful_api_response_is_controlled(monkeypatch, response):
 
 
 def test_health_never_sends_server_secret_in_public_probe(monkeypatch):
-    def fake_get(url, *, timeout):
+    def fake_get(url, *, timeout, allow_redirects):
+        assert allow_redirects is False
         assert url == "http://testserver/health"
         return FakeResponse(data={"status": "ok"})
 
@@ -148,3 +151,77 @@ def test_all_four_tabs_render_without_api_on_initial_load(tab, monkeypatch):
 def test_cloud_version_is_pinned_to_a_ci_tested_release():
     requirements = (ROOT / "demo" / "requirements.txt").read_text(encoding="utf-8")
     assert "streamlit==1.66.1" in requirements
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"costo_total": "abc"},
+        {"presupuesto": float("nan")},
+        {"ahorro": float("inf")},
+        {"numero_supermercados": 1.5},
+        {"productos_disponibles": None},
+        {"promociones_aplicables": "true"},
+        {"request_id": "x" * 257},
+    ],
+)
+def test_demo_validation_rejects_malformed_values_without_crashing(changes):
+    original = {
+        "request_id": "x",
+        "alternativa_id": "y",
+        "costo_total": 30.0,
+        "presupuesto": 40.0,
+        "ahorro": 5.0,
+        "distancia_km": 2.0,
+        "distancia_adicional_km": 1.0,
+        "tiempo_estimado_min": 10.0,
+        "productos_disponibles": 5,
+        "productos_totales": 5,
+        "productos_esenciales_disponibles": 3,
+        "productos_esenciales_totales": 3,
+        "numero_supermercados": 1,
+        "promociones_aplicables": False,
+    }
+    assert validate_payload({**original, **changes})
+
+
+def test_secret_must_not_be_sent_over_public_http(monkeypatch):
+    called = []
+
+    def fake_post(*args, **kwargs):
+        called.append((args, kwargs))
+        raise AssertionError("The key must never leave the configured server")
+
+    monkeypatch.setattr("demo.streamlit_app.requests.post", fake_post)
+    monkeypatch.setattr(
+        "demo.streamlit_app.api_auth_headers", lambda: {"X-API-Key": "sensitive-test-key"}
+    )
+    with pytest.raises(ApiClientError, match="HTTPS"):
+        call_recommendation_api({"request_id": "r"}, base_url="http://external.example")
+    assert not called
+
+
+@pytest.mark.parametrize("bad_url", [
+    "https://user:password@example.com",
+    "file:///tmp/secrets.txt",
+    "http://localhost:8001/?target=other",
+    "https://api.example.com/unexpected/path",
+])
+def test_service_client_rejects_invalid_operator_urls(monkeypatch, bad_url):
+    monkeypatch.setattr("demo.streamlit_app.api_auth_headers", lambda: {})
+    with pytest.raises(ApiClientError, match="URL"):
+        call_recommendation_api({"request_id": "r"}, base_url=bad_url)
+
+
+def test_http_redirect_does_not_follow_or_leak_server_key(monkeypatch):
+    def fake_post(url, *, json, timeout, headers, allow_redirects):
+        assert allow_redirects is False
+        assert headers == {"X-API-Key": "sensitive-test-key"}
+        return FakeResponse(data={}, status_code=302)
+
+    monkeypatch.setattr("demo.streamlit_app.requests.post", fake_post)
+    monkeypatch.setattr(
+        "demo.streamlit_app.api_auth_headers", lambda: {"X-API-Key": "sensitive-test-key"}
+    )
+    with pytest.raises(ApiClientError, match="redirigió"):
+        call_recommendation_api({"request_id": "r"}, base_url="https://api.example.com")
