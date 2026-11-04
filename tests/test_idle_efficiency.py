@@ -45,7 +45,7 @@ def test_audit_is_lazy_cached_and_returns_independent_results():
     first.cobertura.clear()
     second = audit_rules()
     assert second.resumen != first.resumen
-    assert len(second.cobertura) == 11
+    assert len(second.cobertura) == 13
     assert _cached_default_audit.cache_info().hits == 1
 
 
