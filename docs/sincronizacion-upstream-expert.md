@@ -4,7 +4,7 @@
 
 Mantener `Stven2909/smartmarket-sv:expert-system-python` alineada con las mejoras probadas en `HenryBo06/Sistema-experto-fork:main`, **sin modificar** la rama `develop` donde se trabaja en Laravel/React.
 
-Se verificó el 3 de noviembre de 2026 que la rama Python del equipo estaba en `03c256b4ea1df05ed6c5e1ad26ca53cc72036292` y que dicho commit es ancestro de `main` de nuestro fork (`bf9186fadc61d4562e6d8632181bdf5ba3f44a06`); por tanto, el estado observado permitía un fast-forward de 222 commits. **Este número describe el estado histórico observado, no una garantía futura**.
+El 3 de noviembre de 2026 se comprobó que el commit del equipo `03c256b4ea1df05ed6c5e1ad26ca53cc72036292` seguía siendo ancestro de nuestro `main`. Al inicio de HU-22 el fork ya llevaba 246 commits de ventaja. El script vuelve a consultar el origen antes de cada publicación: estos números **son observaciones históricas**, no una garantía de que siga siendo posible el avance rápido. La conexión GitHub de este chat puede leer el repositorio del compañero, pero `update_ref` devolvió `Resource not accessible by integration`; eso no demuestra que las credenciales Git personales del usuario carezcan de permisos.
 
 ## Pasos desde Windows PowerShell
 
