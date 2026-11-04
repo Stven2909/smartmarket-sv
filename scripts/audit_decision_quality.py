@@ -51,13 +51,20 @@ TARGETED: tuple[tuple[str, dict[str, Any]], ...] = (
                           "tiempo_estimado_min": 44.99}),
     ("r07-exacto-45-min", {"distancia_adicional_km": 7.99,
                             "tiempo_estimado_min": 45.0}),
-    ("r06-cobertura-parcial", {"ahorro": 1, "distancia_km": 1,
+    ("r13-cobertura-parcial", {"ahorro": 1, "distancia_km": 1,
                                 "distancia_adicional_km": 1,
                                 "tiempo_estimado_min": 10,
                                 "productos_disponibles": 5,
                                 "productos_esenciales_disponibles": 1,
                                 "productos_esenciales_totales": 1,
                                 "promociones_aplicables": False}),
+    ("r06-lista-incompleta", {"ahorro": 1, "distancia_km": 1,
+                                  "distancia_adicional_km": 1,
+                                  "tiempo_estimado_min": 10,
+                                  "productos_disponibles": 8,
+                                  "productos_esenciales_disponibles": 1,
+                                  "productos_esenciales_totales": 1,
+                                  "promociones_aplicables": False}),
     ("r10-prioridad-sobre-r03", {"ahorro": 1,
                                   "distancia_adicional_km": 9,
                                   "tiempo_estimado_min": 30,
@@ -126,7 +133,7 @@ def audit_quality(
                 (LOW_INDEX, outcome["clasificacion_conveniencia"] == "BAJA_CONVENIENCIA"),
                 (INCOMPLETE_EXCELLENT,
                  outcome["level"] == "EXCELENTE"
-                 and facts["porcentaje_productos_disponibles"] < 80),
+                 and facts["porcentaje_productos_disponibles"] < 100),
             )
             for flag, condition in checks:
                 if bool(condition) != (flag in flags):
