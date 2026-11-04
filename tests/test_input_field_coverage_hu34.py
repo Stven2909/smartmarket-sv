@@ -5,8 +5,7 @@ Only synthetic, valid inputs. No changes to commercial rule priorities.
 
 import pytest
 
-from app.expert_system.decision_quality import NO_ESSENTIALS_DEFINED
-from app.expert_system.decision_quality import decision_quality_flags
+from app.expert_system.decision_quality import NO_ESSENTIALS_DEFINED, decision_quality_flags
 from app.schemas.recommendation import RecommendationRequest, RecommendationResponse
 from app.services.recommendation_service import recommend
 
@@ -83,7 +82,7 @@ def test_identifiers_are_not_commercial_features():
 
 
 def test_absolute_distance_is_context_only_under_current_rules():
-    original = recommend(case(distancia_km=0.0))
+    original = recommend(case(distancia_km=1.0))
     altered = recommend(case(distancia_km=9999.0))
     assert altered.model_dump(mode="json") == original.model_dump(mode="json")
 
