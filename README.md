@@ -38,6 +38,7 @@ Cada recomendación incluye su conclusión, una acción sugerida y la explicaci�
 - **Chatbot explicativo:** responde preguntas sobre una recomendación ya calculada mediante detección de intenciones y plantillas.
 - **Interfaz interactiva:** permite probar escenarios, inspeccionar resultados, comparar alternativas y consultar la base de conocimiento.
 - **API REST:** expone las funcionalidades a través de FastAPI y valida las solicitudes con Pydantic.
+- **Seguridad del canal backend → motor (HU-23):** protege los endpoints de negocio con `X-API-Key` en producción, admite rotación temporal y desactiva caché en las respuestas de la API. La autenticación de usuarios finales permanece en Laravel.
 
 ## Arquitectura
 
@@ -247,11 +248,15 @@ Para los contratos completos consulta [la documentación de la API](docs/api-con
 | Variable | Uso |
 |---|---|
 | `SMARTMARKET_API_URL` | Dirección base del servicio FastAPI utilizada por Streamlit |
-| `SMARTMARKET_API_KEY` | Clave opcional para proteger los endpoints de recomendación, comparación, conocimiento, sensibilidad y chatbot |
+| `SMARTMARKET_ENV` | En Render usa `production`; cualquier entorno explícito salvo `local/dev/development/test/testing` exige API key |
+| `SMARTMARKET_API_KEY` | Secreto principal del servidor Python, obligatorio cuando `SMARTMARKET_ENV` indica un entorno desplegado |
+| `SMARTMARKET_API_KEY_PREVIOUS` | Clave anterior opcional y temporal durante una rotación |
 
-Streamlit utiliza `http://127.0.0.1:8001` por defecto. Cuando `SMARTMARKET_API_KEY` está definida en el servidor, los endpoints protegidos requieren la cabecera `X-API-Key`. El endpoint `/health` permanece público.
+Streamlit utiliza `http://127.0.0.1:8001` por defecto. Los endpoints `/api/v1/*` requieren `X-API-Key` cuando existe un secreto de servidor o el entorno está protegido. `/health` y `/ready` permanecen públicos; el resto devuelve `401` sin clave válida. En un entorno protegido sin clave principal, el motor devuelve `503` en lugar de permitir acceso anónimo.
 
-No incluyas claves reales en el código, el README ni archivos versionados.
+**Importante:** si Render no tiene ni `SMARTMARKET_ENV` ni clave configuradas, todavía funciona como entorno de desarrollo. Antes de considerar el despliegue seguro, configura ambos secretos en Render y la clave correspondiente `EXPERT_SYSTEM_API_KEY` en Laravel. Nunca expongas la clave del servidor en React/Streamlit ni confundas `X-API-Key` con la autenticación de usuarios finales.
+
+No incluyas claves reales en el código, el README ni archivos versionados. Ver [HU-23: seguridad y rotación de claves](docs/seguridad-api-hu23.md).
 
 ## Estructura del repositorio
 
@@ -298,4 +303,4 @@ Las mejoras del servicio se integran por PR en nuestro `main`. Para publicar los
 
 En la integración, Python **solo recibe hechos, ejecuta las reglas y devuelve JSON**. No modifica el ranking económico, el ETL, las bases de datos ni la interfaz Laravel/React. El contrato de 14 campos se contrasta con `develop` en modo lectura mediante `python -m scripts.check_laravel_contract --upstream`.
 
-[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md).
+[Contrato actual y despliegue HU-20/HU-21](docs/contrato-integracion-develop-2026-11-03.md) · [Huella de reglas HU-22](docs/hu22-huella-reglas.md) · [Seguridad API HU-23](docs/seguridad-api-hu23.md).
