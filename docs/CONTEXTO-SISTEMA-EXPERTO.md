@@ -288,10 +288,10 @@ La base real está en `Sistema-Experto-Python/data/rules.json`.
 | R08 | 5 | `AHORRO_FRAGMENTACION` | `dos_paradas AND ahorro_alto AND dentro_presupuesto AND todos_esenciales_disponibles` | `BUENA` |
 | R09 | 2 | `DISPONIBILIDAD` | `ningun_producto_disponible` | `NO_RECOMENDABLE` |
 | R10 | 2 | `DISPONIBILIDAD` | `algun_producto_disponible AND cobertura_muy_baja` | `NO_RECOMENDABLE` |
-| R11 | 5 | `CONVENIENCIA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_razonable AND tiempo_razonable AND NOT ahorro_bajo AND NOT promociones_relevantes` | `BUENA` |
+| R11 | 7 | `CONVENIENCIA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_razonable AND tiempo_razonable AND NOT ahorro_bajo AND NOT promociones_relevantes` | `BUENA` |
 | R12 | 2 | `DISPONIBILIDAD` | `sin_esenciales_definidos AND cobertura_parcial_relevante` | `NO_RECOMENDABLE` |
-| R13 | 2 | `DISPONIBILIDAD` | NOT `sin_esenciales_definidos` AND `cobertura_parcial_relevante` AND `todos_esenciales_disponibles` AND `dentro_presupuesto` AND `distancia_razonable` AND `tiempo_razonable` AND `una_parada` | `BUENA` |
-| R14 | 5 | `CONVENIENCIA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_media AND tiempo_medio AND ahorro_alto AND NOT promociones_relevantes AND conveniencia_alta` | `BUENA` |
+| R13 | 4 | `DISPONIBILIDAD` | NOT `sin_esenciales_definidos` AND `cobertura_parcial_relevante` AND `todos_esenciales_disponibles` AND `dentro_presupuesto` AND `distancia_razonable` AND `tiempo_razonable` AND `una_parada` | `BUENA` |
+| R14 | 7 | `CONVENIENCIA_PONDERADA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_media AND tiempo_medio AND ahorro_alto AND NOT promociones_relevantes AND conveniencia_alta` | `BUENA` |
 | R15 | 7 | `CONVENIENCIA_PONDERADA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_media AND tiempo_medio AND ahorro_bajo AND NOT promociones_relevantes AND conveniencia_no_baja` | `BUENA` |
 | R16 | 7 | `CONVENIENCIA_PONDERADA` | `dentro_presupuesto AND NOT sin_esenciales_definidos AND todos_esenciales_disponibles AND faltan_productos AND NOT cobertura_parcial_relevante AND una_parada AND distancia_razonable AND tiempo_razonable AND ahorro_medio AND NOT promociones_relevantes AND conveniencia_solida` | `BUENA` |
 
@@ -316,8 +316,8 @@ activa, Python devuelve la conclusión predeterminada `NO_RECOMENDABLE` con
 | `cobertura_muy_baja` | disponibles / totales < 50% |
 | `sin_esenciales_definidos` | esenciales totales igual a 0 |
 | `cobertura_parcial_relevante` | disponibles / totales < 80% |
-| `distancia_razonable` | distancia adicional dentro del rango aceptado |
-| `tiempo_razonable` | tiempo estimado dentro del rango aceptado |
+| `distancia_razonable` | adicional <= 5 km |
+| `tiempo_razonable` | <= 30 minutos |
 | `todos_productos_disponibles` | disponibles igual a totales |
 | `faltan_productos` | disponibles menor que totales |
 | `todos_esenciales_disponibles` | esenciales disponibles igual a totales |
@@ -335,13 +335,31 @@ activa, Python devuelve la conclusión predeterminada `NO_RECOMENDABLE` con
 | `dos_paradas` | exactamente 2 supermercados |
 | `compra_fragmentada` | 3 o más supermercados |
 | `promociones_relevantes` | promociones aplicables verdaderas |
-| `conveniencia_alta` | índice de conveniencia alto |
-| `conveniencia_no_baja` | índice de conveniencia no bajo |
-| `conveniencia_solida` | índice de conveniencia sólido |
+| `conveniencia_alta` | índice >= 75 |
+| `conveniencia_no_baja` | índice >= 50 |
+| `conveniencia_solida` | índice >= 60 |
 
-Los umbrales exactos de `distancia_razonable`, `tiempo_razonable` y los cortes
-del índice de conveniencia viven en `data/rules.json` del servicio Python. Si
-cambian, se actualiza ese repositorio y esta tabla.
+### Índice de conveniencia
+
+El índice es auxiliar: complementa la recomendación, no reemplaza la decisión de
+las reglas. Usa cinco componentes normalizados con estos pesos:
+
+| Componente | Peso |
+|---|---:|
+| Ahorro | 35% |
+| Disponibilidad de productos | 25% |
+| Distancia adicional | 20% |
+| Tiempo estimado | 15% |
+| Promociones | 5% |
+
+Clasificación: `ALTA_CONVENIENCIA` desde 75, `CONVENIENCIA_MEDIA` desde 50 y
+`BAJA_CONVENIENCIA` por debajo de 50. No es una probabilidad ni una confianza
+estadística. Las reglas críticas tienen precedencia sobre el índice.
+
+La fuente autoritativa de reglas, umbrales, pesos y versiones es
+`GET /api/v1/knowledge` del servicio desplegado. En la auditoría del 2026-11-04
+devolvió `rules_version = 1.3.2`, `thresholds_version = 1.3.2` y
+`convenience_version = 1.0.0`; el contrato sigue en `1.0.0`.
 
 Laravel y React no deben duplicar estas comparaciones.
 
@@ -396,6 +414,12 @@ productos_totales
 Se cuentan líneas de detalle, no unidades. Un detalle está disponible si existe
 un `PrecioActual` para ese producto y esa sucursal. `numero_supermercados` debe
 contar `supermercado_id` distintos, no `sucursal_id`.
+
+**Estado actual del MVP:** `contarSupermercadosDeAlternativa()` devuelve 1
+porque cada alternativa es una sola sucursal. Por eso R05 (`compra_fragmentada`)
+y R08 (`dos_paradas`) están implementadas y probadas en Python, pero no se
+activan desde el flujo actual de Laravel. Es un límite de la integración, no un
+fallo del motor.
 
 ## 8. Cambios requeridos en Laravel
 

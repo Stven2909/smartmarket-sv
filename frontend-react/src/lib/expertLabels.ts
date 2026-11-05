@@ -7,14 +7,14 @@ export const EXPERT_RULE_LABELS: Record<string, string> = {
   R06: 'Alternativa conveniente',
   R07: 'Promociones relevantes',
   R08: 'Ahorro alto con dos paradas',
-  R09: 'Sin productos disponibles',
-  R10: 'Cobertura muy baja',
-  R11: 'Conveniencia con cobertura completa',
-  R12: 'Sin esenciales definidos y cobertura parcial',
-  R13: 'Esenciales cubiertos y faltan productos',
-  R14: 'Alta conveniencia con ahorro',
-  R15: 'Conveniencia ponderada con ahorro bajo',
-  R16: 'Cobertura alta con faltantes opcionales',
+  R09: 'Ningún producto disponible',
+  R10: 'Disponibilidad extremadamente baja',
+  R11: 'Compra completa y equilibrada sin promociones',
+  R12: 'Cobertura insuficiente sin esenciales definidos',
+  R13: 'Compra parcial con esenciales completos',
+  R14: 'Alto balance ponderado con ahorro',
+  R15: 'Balance ponderado suficiente sin descuento',
+  R16: 'Casi completa con balance suficiente',
 }
 
 export const EXPERT_PRIORITY_LABELS: Record<string, string> = {
