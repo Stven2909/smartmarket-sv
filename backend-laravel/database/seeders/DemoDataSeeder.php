@@ -105,8 +105,10 @@ class DemoDataSeeder extends Seeder
                         // "descuento_directo" y también viaja como objeto de promoción).
                         'tiene_promocion' => $promocion !== null,
                         'tipo_promocion' => $promocion['tipo'] ?? null,
-                        'fecha_actualizacion' => $precio['fecha_actualizacion'] ?? now(),
-                        'origen_dato' => $precio['origen_dato'] ?? 'manual',
+                        'fecha_actualizacion' => ($precio['origen_dato'] ?? null) === 'mock-seeder'
+                            ? now()
+                            : ($precio['fecha_actualizacion'] ?? now()),
+                        'origen_dato' => $precio['origen_dato'] ?? 'mock-seeder',
                     ]
                 );
             }

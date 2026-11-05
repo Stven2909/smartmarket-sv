@@ -49,7 +49,7 @@ Laravel debe:
 7. Adjuntar la recomendación a cada alternativa.
 8. Mantener la optimización aunque Python no responda.
 
-Laravel no debe copiar R01-R08 ni decidir los niveles expertos.
+Laravel no debe copiar R01-R16 ni decidir los niveles expertos.
 
 ### Python
 
@@ -155,7 +155,13 @@ Laravel debe llamar:
 POST {EXPERT_SYSTEM_URL}/api/v1/recommend
 Content-Type: application/json
 Accept: application/json
+X-API-Key: {EXPERT_SYSTEM_API_KEY}
 ```
+
+`X-API-Key` es obligatorio. El servicio desplegado responde `401` si falta o no
+coincide con la clave configurada. Laravel ya la envía desde
+`ExpertSystemService`; la clave local vive en `backend-laravel/.env` como
+`EXPERT_SYSTEM_API_KEY`.
 
 Request exacto:
 
@@ -242,12 +248,17 @@ los datos de Laravel.
     "porcentaje_productos_disponibles": 100.0,
     "porcentaje_esenciales_disponibles": 100.0
   },
-  "version_reglas": "1.0.0",
+  "version_reglas": "1.3.2",
   "winning_rule": "R06",
   "losing_rules": ["R07"],
   "trace": []
 }
 ```
+
+La respuesta puede incluir campos adicionales de conveniencia
+(`version_contrato`, `indice_conveniencia`, `clasificacion_conveniencia`,
+`componentes_conveniencia` y `pesos_conveniencia`). El validador de Laravel
+acepta campos extra y exige los 11 campos del contrato.
 
 `hechos_derivados` tiene `boolean` y `float`; en TypeScript debe ser
 `Record<string, boolean | number>`.
@@ -274,12 +285,24 @@ La base real está en `Sistema-Experto-Python/data/rules.json`.
 | R05 | 4 | `FRAGMENTACION` | `compra_fragmentada` | `NO_RECOMENDABLE` |
 | R06 | 5 | `CONVENIENCIA` | presupuesto, esenciales, distancia, tiempo y una parada favorables | `EXCELENTE` |
 | R07 | 6 | `PROMOCIONES` | presupuesto, esenciales y promociones favorables | `BUENA` |
-| R08 | 5 | `AHORRO_FRAGMENTACION` | `dos_paradas AND ahorro_alto AND dentro_presupuesto` | `BUENA` |
+| R08 | 5 | `AHORRO_FRAGMENTACION` | `dos_paradas AND ahorro_alto AND dentro_presupuesto AND todos_esenciales_disponibles` | `BUENA` |
+| R09 | 2 | `DISPONIBILIDAD` | `ningun_producto_disponible` | `NO_RECOMENDABLE` |
+| R10 | 2 | `DISPONIBILIDAD` | `algun_producto_disponible AND cobertura_muy_baja` | `NO_RECOMENDABLE` |
+| R11 | 5 | `CONVENIENCIA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_razonable AND tiempo_razonable AND NOT ahorro_bajo AND NOT promociones_relevantes` | `BUENA` |
+| R12 | 2 | `DISPONIBILIDAD` | `sin_esenciales_definidos AND cobertura_parcial_relevante` | `NO_RECOMENDABLE` |
+| R13 | 2 | `DISPONIBILIDAD` | NOT `sin_esenciales_definidos` AND `cobertura_parcial_relevante` AND `todos_esenciales_disponibles` AND `dentro_presupuesto` AND `distancia_razonable` AND `tiempo_razonable` AND `una_parada` | `BUENA` |
+| R14 | 5 | `CONVENIENCIA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_media AND tiempo_medio AND ahorro_alto AND NOT promociones_relevantes AND conveniencia_alta` | `BUENA` |
+| R15 | 7 | `CONVENIENCIA_PONDERADA` | `dentro_presupuesto AND todos_productos_disponibles AND una_parada AND distancia_media AND tiempo_medio AND ahorro_bajo AND NOT promociones_relevantes AND conveniencia_no_baja` | `BUENA` |
+| R16 | 7 | `CONVENIENCIA_PONDERADA` | `dentro_presupuesto AND NOT sin_esenciales_definidos AND todos_esenciales_disponibles AND faltan_productos AND NOT cobertura_parcial_relevante AND una_parada AND distancia_razonable AND tiempo_razonable AND ahorro_medio AND NOT promociones_relevantes AND conveniencia_solida` | `BUENA` |
 
 Se devuelven todas las reglas activadas. Gana la de menor número de prioridad.
 En empate gana el ID menor, por ejemplo R03 antes de R04. Si ninguna se
 activa, Python devuelve la conclusión predeterminada `NO_RECOMENDABLE` con
 `prioridad_aplicada = "SIN_REGLA"`.
+
+> **Importante para la UI:** R13 y R16 pueden clasificar como `BUENA` una lista
+> con productos faltantes. Eso no cambia el ranking ni el Score de Laravel: la
+> vista debe seguir mostrando el aviso de subtotal parcial y “faltan N”.
 
 ### Umbrales de hechos derivados
 
@@ -288,6 +311,13 @@ activa, Python devuelve la conclusión predeterminada `NO_RECOMENDABLE` con
 | `dentro_presupuesto` | costo menor o igual al presupuesto |
 | `presupuesto_ligeramente_excedido` | exceso mayor que 0 y hasta 10% |
 | `presupuesto_muy_excedido` | exceso mayor que 10% |
+| `ningun_producto_disponible` | disponibles igual a 0 |
+| `algun_producto_disponible` | disponibles mayor que 0 |
+| `cobertura_muy_baja` | disponibles / totales < 50% |
+| `sin_esenciales_definidos` | esenciales totales igual a 0 |
+| `cobertura_parcial_relevante` | disponibles / totales < 80% |
+| `distancia_razonable` | distancia adicional dentro del rango aceptado |
+| `tiempo_razonable` | tiempo estimado dentro del rango aceptado |
 | `todos_productos_disponibles` | disponibles igual a totales |
 | `faltan_productos` | disponibles menor que totales |
 | `todos_esenciales_disponibles` | esenciales disponibles igual a totales |
@@ -305,6 +335,13 @@ activa, Python devuelve la conclusión predeterminada `NO_RECOMENDABLE` con
 | `dos_paradas` | exactamente 2 supermercados |
 | `compra_fragmentada` | 3 o más supermercados |
 | `promociones_relevantes` | promociones aplicables verdaderas |
+| `conveniencia_alta` | índice de conveniencia alto |
+| `conveniencia_no_baja` | índice de conveniencia no bajo |
+| `conveniencia_solida` | índice de conveniencia sólido |
+
+Los umbrales exactos de `distancia_razonable`, `tiempo_razonable` y los cortes
+del índice de conveniencia viven en `data/rules.json` del servicio Python. Si
+cambian, se actualiza ese repositorio y esta tabla.
 
 Laravel y React no deben duplicar estas comparaciones.
 
@@ -487,7 +524,7 @@ Para el MVP se puede guardar el resultado enriquecido en la columna existente
       "reglas_activadas": ["R06"],
       "prioridad_aplicada": "CONVENIENCIA",
       "hechos_derivados": {},
-      "version_reglas": "1.0.0",
+      "version_reglas": "1.3.2",
       "winning_rule": "R06",
       "losing_rules": [],
       "trace": []
@@ -700,7 +737,7 @@ React 5173 -> Laravel 8000 -> Python 8001
 - No conectar Python directamente a PostgreSQL.
 - No hacer que Python consulte Laravel.
 - No enviar SQL, modelos Eloquent ni reglas a Python.
-- No duplicar R01-R08 en PHP o TypeScript.
+- No duplicar R01-R16 en PHP o TypeScript.
 - No enviar `score` al contrato Python.
 - No inventar presupuesto cuando sea null.
 - No derribar la optimización si Python no responde.

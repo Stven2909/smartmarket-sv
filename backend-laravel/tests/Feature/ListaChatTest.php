@@ -87,6 +87,32 @@ class ListaChatTest extends TestCase
             ]);
     }
 
+    public function test_chat_con_respuesta_invalida_responde_fallback(): void
+    {
+        $usuario = $this->crearUsuario('a@test.sv');
+        $lista = $this->crearLista($usuario->id);
+        $ro = $this->crearRun($lista->id, 7, $this->recommendation(), true);
+
+        // HTTP 200 con forma incompleta: no se debe devolver como respuesta
+        // válida del asistente.
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-'.$lista->id.'-sucursal-7',
+                'intent' => 'EXPLICACION',
+            ], 200),
+        ]);
+
+        $this->actingAs($usuario)->postJson("/api/listas/{$lista->id}/chat", [
+            'message' => '¿Por qué?',
+            'resultado_optimizacion_id' => $ro->id,
+            'sucursal_id' => 7,
+        ])->assertOk()->assertJson([
+            'intent' => 'NO_DISPONIBLE',
+            'supported' => false,
+            'chatbot_available' => false,
+        ]);
+    }
+
     public function test_chat_500_responde_fallback(): void
     {
         $usuario = $this->crearUsuario('a@test.sv');

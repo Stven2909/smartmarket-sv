@@ -299,11 +299,44 @@ class OptimizationServiceTest extends TestCase
         $this->assertCount(2, $salida['resultados']);
         $this->assertNotNull($salida['mejor_opcion']);
 
-        // Todas las alternativas deben tener expert_system_available = false.
+        // Todas las alternativas deben tener expert_system_available = false
+        // y un motivo explícito para que la UI explique la omisión.
         foreach ($salida['resultados'] as $r) {
             $this->assertFalse($r['expert_system_available']);
             $this->assertNull($r['recommendation']);
+            $this->assertSame('sin_respuesta', $r['expert_omission_reason']);
         }
+    }
+
+    public function test_respuesta_invalida_del_experto_se_descarta_y_se_persiste_el_motivo(): void
+    {
+        $mundo = $this->crearMundoDosSucursales();
+
+        // HTTP 200 pero el cuerpo no cumple el contrato: recomendación nula,
+        // ranking local intacto y motivo explícito.
+        Http::fake([
+            '*' => Http::response([
+                'request_id' => 'lista-'.$mundo['lista']->id.'-sucursal-1',
+                'nivel_recomendacion' => 'EXCELENTE',
+            ], 200),
+        ]);
+
+        $salida = $this->optimizar($mundo['lista']);
+
+        $this->assertCount(2, $salida['resultados']);
+        $this->assertNotNull($salida['mejor_opcion']);
+
+        foreach ($salida['resultados'] as $r) {
+            $this->assertFalse($r['expert_system_available']);
+            $this->assertNull($r['recommendation']);
+            $this->assertSame('respuesta_invalida', $r['expert_omission_reason']);
+        }
+
+        $guardado = ResultadoOptimizacion::findOrFail($salida['resultado_optimizacion_id']);
+        $this->assertSame(
+            'respuesta_invalida',
+            $guardado->resultado_json['resultados'][0]['expert_omission_reason'],
+        );
     }
 
     public function test_numero_supermercados_se_cuenta_correctamente(): void

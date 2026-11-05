@@ -172,12 +172,14 @@ class ListaCompraController extends Controller
             'lng' => ['required', 'numeric', 'between:-180,180'],
         ]);
 
-        $comparacionPrevia = $this->comparisonService->comparar($lista);
-        if (empty($comparacionPrevia['resultados'])) {
+        // El OptimizationService ya ejecuta ComparisonService una sola vez.
+        // Antes se comparaba aquí para validar y otra vez dentro del servicio:
+        // el mismo trabajo se hacía dos veces por cada optimización.
+        $resultado = $this->optimizationService->optimizar($lista, (float) $data['lat'], (float) $data['lng']);
+
+        if (empty($resultado['resultados'])) {
             return response()->json(['message' => 'La lista no tiene productos todavía, o ninguno tiene precio disponible.'], 422);
         }
-
-        $resultado = $this->optimizationService->optimizar($lista, (float) $data['lat'], (float) $data['lng']);
 
         return response()->json($resultado);
     }

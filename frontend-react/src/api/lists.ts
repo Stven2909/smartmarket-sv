@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, EXPERT_REQUEST_TIMEOUT_MS } from './client'
 import type {
   ApiChatResponse,
   ApiComparar,
@@ -83,7 +83,9 @@ export async function optimizarLista(
   lat: number,
   lng: number,
 ): Promise<{ nombre: string; presupuesto: number | null; mejorOpcion: OptimizarResultado | null; resultados: OptimizarResultado[]; resultadoOptimizacionId: number | null }> {
-  const data = await api.get<ApiOptimizar>(`/listas/${listaId}/optimizar?lat=${lat}&lng=${lng}`)
+  const data = await api.get<ApiOptimizar>(`/listas/${listaId}/optimizar?lat=${lat}&lng=${lng}`, {
+    timeoutMs: EXPERT_REQUEST_TIMEOUT_MS,
+  })
   return {
     nombre: data.lista,
     presupuesto: data.presupuesto,
@@ -103,6 +105,8 @@ export async function chatLista(
     resultado_optimizacion_id: resultadoOptimizacionId,
     sucursal_id: sucursalId,
     message,
+  }, {
+    timeoutMs: EXPERT_REQUEST_TIMEOUT_MS,
   })
   return expertChatFromApi(data)
 }

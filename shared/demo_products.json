@@ -35,7 +35,7 @@
           "sucursal": "selectos-centro",
           "precio_normal": 2.10,
           "precio_final": 2.10,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": null
         },
@@ -43,7 +43,7 @@
           "sucursal": "walmart-metrocentro",
           "precio_normal": 2.25,
           "precio_final": 1.95,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": { "tipo": "descuento_directo", "descripcion": "Precio rebajado" }
         }
@@ -63,7 +63,7 @@
           "sucursal": "selectos-santa-elena",
           "precio_normal": 1.15,
           "precio_final": 1.15,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": null
         },
@@ -71,7 +71,7 @@
           "sucursal": "pricesmart-santa-elena",
           "precio_normal": 1.05,
           "precio_final": 1.05,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": null
         }
@@ -91,7 +91,7 @@
           "sucursal": "walmart-metrocentro",
           "precio_normal": 1.80,
           "precio_final": 1.80,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": { "tipo": "2x1", "descripcion": "Compra 2 y paga 1" }
         }
@@ -111,7 +111,7 @@
           "sucursal": "selectos-centro",
           "precio_normal": 4.50,
           "precio_final": 4.50,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": null
         },
@@ -119,7 +119,7 @@
           "sucursal": "pricesmart-santa-elena",
           "precio_normal": 4.10,
           "precio_final": 4.10,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": null
         }
@@ -139,7 +139,7 @@
           "sucursal": "walmart-metrocentro",
           "precio_normal": 1.95,
           "precio_final": 1.95,
-          "origen_dato": "manual",
+          "origen_dato": "mock-seeder",
           "fecha_actualizacion": "2026-07-22T10:30:00",
           "promocion": null
         }

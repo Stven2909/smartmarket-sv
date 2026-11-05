@@ -262,19 +262,31 @@ class OptimizationService
         unset($resultado);
 
         // Llamar al Sistema Experto una sola vez con todos los payloads válidos.
+        // Cada alternativa conserva null + un motivo explícito cuando el
+        // experto no respondió, respondió mal o se agotó el presupuesto de
+        // tiempo. El ranking local nunca se cae por un fallo del experto.
         if ($payloadsValidos !== []) {
-            $respuestas = $this->expertSystemService->recommend($payloadsValidos);
+            $lote = $this->expertSystemService->recommend($payloadsValidos);
 
-            if ($respuestas !== null) {
-                foreach ($comparacion['resultados'] as &$resultado) {
-                    $requestId = 'lista-'.$lista->id.'-sucursal-'.$resultado['sucursal_id'];
-                    if (isset($respuestas[$requestId]) && is_array($respuestas[$requestId])) {
-                        $resultado['recommendation'] = $respuestas[$requestId];
-                        $resultado['expert_system_available'] = true;
-                    }
+            foreach ($comparacion['resultados'] as &$resultado) {
+                $requestId = 'lista-'.$lista->id.'-sucursal-'.$resultado['sucursal_id'];
+                $respuesta = $lote['respuestas'][$requestId] ?? null;
+
+                if (is_array($respuesta)) {
+                    $resultado['recommendation'] = $respuesta;
+                    $resultado['expert_system_available'] = true;
+                    $resultado['expert_omission_reason'] = null;
+
+                    continue;
                 }
-                unset($resultado);
+
+                // La alternativa era válida para el experto (no la omitió
+                // debeOmitir), pero esta vez no hubo una recomendación fiable.
+                $resultado['recommendation'] = null;
+                $resultado['expert_system_available'] = false;
+                $resultado['expert_omission_reason'] = $lote['motivos'][$requestId] ?? 'sin_respuesta';
             }
+            unset($resultado);
         }
 
         $mejorOpcion = $comparacion['resultados'][0] ?? null;

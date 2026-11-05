@@ -39,8 +39,13 @@ return [
         'url' => env('EXPERT_SYSTEM_URL', 'https://sistema-experto-fork.onrender.com'),
         'api_key' => env('EXPERT_SYSTEM_API_KEY'),
         'timeout' => (int) env('EXPERT_SYSTEM_TIMEOUT', 15),
+        'connect_timeout' => (float) env('EXPERT_SYSTEM_CONNECT_TIMEOUT', 5),
         'retry_times' => (int) env('EXPERT_SYSTEM_RETRY_TIMES', 3),
         'retry_sleep_ms' => (int) env('EXPERT_SYSTEM_RETRY_SLEEP_MS', 2000),
+        // Presupuesto total para una corrida de optimización. Evita que un
+        // Render frío, varios reintentos o muchas sucursales bloqueen la
+        // petición del usuario más allá de lo razonable.
+        'total_budget_ms' => (int) env('EXPERT_SYSTEM_TOTAL_BUDGET_MS', 25000),
     ],
 
 ];
